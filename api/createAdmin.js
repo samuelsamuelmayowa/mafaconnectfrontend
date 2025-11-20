@@ -21,7 +21,7 @@ require("dotenv").config();
     } else {
       await User.create({
         name: "System Administrator",
-         email: "adminnew@mafaconnect.com", 
+         email: "adminew@mafaconnect.com", 
         account_number,
         password: hashedPassword,
         role: "admin",
