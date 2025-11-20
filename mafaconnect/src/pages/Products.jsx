@@ -181,106 +181,130 @@ export default function Products() {
 
         <CardContent>
           {/* PRODUCTS */}
-          <div className="space-y-4">
-            {filteredProducts?.map((product) => (
-              <div
-                key={product.id}
-                className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
-              >
-                {/* Image */}
-                <div className="flex items-center gap-4 flex-1">
-                  {product.images?.[0]?.image_url ? (
-                    <img
-                      src={product.images[0].image_url}
-                      alt={product.name}
-                      
-                      className="w-28 h-28 rounded-lg object-cover border"
-                    />
-                  ) : (
-                    <div className="p-3 rounded-lg bg-gradient-primary">
-                      <Package className="h-5 w-5 text-primary-foreground" />
-                    </div>
-                  )}
+         <div
+  key={product.id}
+  className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+>
+  {/* Left Side */}
+  <div className="flex items-center gap-4 flex-1">
+    <div className="p-3 rounded-lg bg-gradient-primary">
+      {product.images?.[0]?.image_url ? (
+        <img
+          src={product.images[0].image_url}
+          alt={product.name}
+          className="h-12 w-12 rounded-md object-cover"
+        />
+      ) : (
+        <Package className="h-5 w-5 text-primary-foreground" />
+      )}
+    </div>
 
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <p className="font-semibold text-foreground">
-                        {product.name}
-                      </p>
+    <div className="flex-1">
+      <div className="flex items-center gap-3 mb-1">
+        <p className="font-semibold text-foreground">{product.name}</p>
 
-                      {isStaff &&
-                        product.stock_qty <=
-                          product.reorder_level && (
-                          <Badge
-                            variant="outline"
-                            className="bg-warning/10 text-warning border-warning/20"
-                          >
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Low Stock
-                          </Badge>
-                        )}
-                    </div>
+        {isStaff && product.stock_qty <= product.reorder_level && (
+          <Badge
+            variant="outline"
+            className="bg-warning/10 text-warning border-warning/20"
+          >
+            <AlertCircle className="h-3 w-3 mr-1" />
+            Low Stock
+          </Badge>
+        )}
+      </div>
 
-                    <p className="text-sm text-muted-foreground">
-                      SKU: {product.sku}
-                    </p>
-                  </div>
-                </div>
+      {product.description && (
+        <p className="text-sm text-muted-foreground mb-1">
+          {product.description}
+        </p>
+      )}
 
-                {/* STATS */}
-                <div
-                  className={`grid ${
-                    isStaff ? "grid-cols-3" : "grid-cols-1"
-                  } gap-8 text-right`}
-                >
-                  {isStaff && (
-                    <div>
-                      <p className="text-xs font-bold">Stock</p>
-                      <p className="font-semibold">
-                        {product.stock_qty} units 
-                      </p>
-                    </div>
-                  )}
+      <p className="text-sm text-muted-foreground">
+        SKU: {product.sku}
+      </p>
+    </div>
+  </div>
 
-                  <div>
-                    <p className="text-xs font-bold">Price</p>
-                    <p className="font-semibold">
-                      ₦{Number(product.sale_price).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
+  {/* Right Side Stats */}
+  <div
+    className={`grid ${
+      isStaff ? "grid-cols-3" : "grid-cols-1"
+    } gap-8 text-right`}
+  >
+    {isStaff && (
+      <div>
+        <p className="text-xs text-muted-foreground mb-1">Stock</p>
+        <p className="font-semibold text-foreground">
+          {product.stock_qty} units
+        </p>
+      </div>
+    )}
 
-                {/* ACTIONS */}
-                {isStaff && (
-                  <div className="flex gap-2 sm:ml-4 w-full sm:w-auto">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setEditingProduct(product);
-                        setShowDialog(true);
-                      }}
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
+    {/* PRICE */}
+    <div>
+      <p className="text-xs text-muted-foreground mb-1">Price</p>
+      <p className="font-semibold text-foreground">
+        ${Number(product.sale_price).toLocaleString()}
+      </p>
+    </div>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedProduct(product);
-                        setShowLocationDialog(true);
-                      }}
-                    >
-                      <MapPin className="h-4 w-4 mr-1" />
-                      Locations
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+    {/* ✅ MARGIN ADDED BACK */}
+    {isStaff && product.cost_price && (
+      <div>
+        <p className="text-xs text-muted-foreground mb-1">Margin</p>
+
+        <p
+          className={`font-semibold ${
+            Number(product.sale_price) > Number(product.cost_price)
+              ? "text-success"
+              : "text-destructive"
+          }`}
+        >
+          {Math.round(
+            ((Number(product.sale_price) - Number(product.cost_price)) /
+              Number(product.sale_price)) *
+              100
+          )}
+          %
+        </p>
+      </div>
+    )}
+
+    {!isStaff && product.stock_qty > 0 && (
+      <div className="flex items-center justify-end">
+        <Badge variant="outline" className="bg-success/10 text-success">
+          Available
+        </Badge>
+      </div>
+    )}
+
+    {!isStaff && product.stock_qty === 0 && (
+      <div className="flex items-center justify-end">
+        <Badge variant="outline" className="bg-destructive/10 text-destructive">
+          Out of Stock
+        </Badge>
+      </div>
+    )}
+  </div>
+
+  {/* Staff Actions */}
+  {isStaff && (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => {
+        setSelectedProduct(product);
+        setShowLocationDialog(true);
+      }}
+      className="sm:ml-4 h-11 w-full sm:w-auto"
+    >
+      <MapPin className="h-4 w-4 mr-2" />
+      Locations
+    </Button>
+  )}
+</div>
+
 
           {/* PAGINATION */}
           {totalCount > pagination.pageSize && (

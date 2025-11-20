@@ -29,6 +29,7 @@ import LocationDetail from "./pages/LocationDetail";
 import Suppliers from "./pages/Suppliers";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import Messages from "./pages/Messages";
+import Shop from "./pages/Shop";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,17 @@ function App() {
             }
           />
           {/* Customer Routes */}
+            <Route
+            path="/shop"
+            element={
+              <AuthProtectedRoute>
+                <DashboardLayout>
+                  <Shop />
+                </DashboardLayout>
+              </AuthProtectedRoute>
+            }
+          />
+
           {/* <Route
             path="/customer-dashboard"
             element={

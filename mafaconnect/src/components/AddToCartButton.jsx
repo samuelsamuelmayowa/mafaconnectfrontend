@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { Button } from "@/components/uimain/button";
+import { Button } from "@/components/ui/Button";
 import { ShoppingCart, Check } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { cn } from "@/lib/utils";
-
-
 
 export function AddToCartButton({
   productId,
@@ -13,16 +11,18 @@ export function AddToCartButton({
   variant = "default",
   size = "default",
   className,
-}: AddToCartButtonProps) {
+}) {
   const { addToCart, isAddingToCart } = useCart();
   const [showSuccess, setShowSuccess] = useState(false);
 
   const handleAddToCart = () => {
-    if (stockQty < defaultQuantity) {
-      return;
-    }
+    if (stockQty < defaultQuantity) return;
 
-    addToCart({ productId, quantity: defaultQuantity });
+    addToCart({
+      productId,
+      quantity: defaultQuantity,
+    });
+
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 2000);
   };
@@ -31,7 +31,12 @@ export function AddToCartButton({
 
   if (isOutOfStock) {
     return (
-      <Button variant="outline" size={size} disabled className={className}>
+      <Button
+        variant="outline"
+        size={size}
+        disabled
+        className={className}
+      >
         Out of Stock
       </Button>
     );
@@ -39,7 +44,12 @@ export function AddToCartButton({
 
   if (showSuccess) {
     return (
-      <Button variant="default" size={size} disabled className={cn("gap-2", className)}>
+      <Button
+        variant="default"
+        size={size}
+        disabled
+        className={cn("gap-2", className)}
+      >
         <Check className="h-4 w-4" />
         Added
       </Button>
