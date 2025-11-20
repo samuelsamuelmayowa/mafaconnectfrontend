@@ -39,17 +39,10 @@ export default function Auth() {
   const [signupPhone, setSignupPhone] = useState("");
   const [customerType, setCustomerType] = useState("individual");
   const [signupError, setSignupError] = useState("");
-
   // RESET STATES
   const [resetEmail, setResetEmail] = useState("");
   const [resetError, setResetError] = useState("");
-
   const API_URL = import.meta.env.VITE_HOME_OO
-  // "https://mafaconnectbackendapi.onrender.com/api/v1";
-
-  // ------------------------------------------------------------
-  // LOGIN
-  // ------------------------------------------------------------
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
