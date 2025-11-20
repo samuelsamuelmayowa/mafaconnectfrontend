@@ -26,8 +26,6 @@ app.use(
   })
 );
 
-app.options("*", cors());
-
 
 // ROUTES
 app.use("/api/v1", adminRoutes);
