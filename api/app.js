@@ -14,6 +14,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: [
+      "https://mafaconnectfrontend-5d7q.vercel.app",
       "https://mafaconnectfrontend-ltyc.vercel.app",
       "http://localhost:8081",
       "http://127.0.0.1:8081",
