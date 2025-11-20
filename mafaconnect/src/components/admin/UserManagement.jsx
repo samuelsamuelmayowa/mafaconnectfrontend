@@ -34,7 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/Dropdown-menu.jsx";
+} from "@/components/ui/dropdown-menu";
 
 import {
   AlertDialog,
