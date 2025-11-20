@@ -64,6 +64,17 @@ function App() {
             }
           />
 
+           {/* <Route
+            path="/customer-orders"
+            element={
+              <CustomerProtectedRoute>
+                <DashboardLayout>
+                  <CustomerOrders />
+                </DashboardLayout>
+              </CustomerProtectedRoute>
+            }
+          /> */}
+
           {/* <Route
             path="/customer-dashboard"
             element={

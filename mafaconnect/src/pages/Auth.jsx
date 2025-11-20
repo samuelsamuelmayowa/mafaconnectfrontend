@@ -22,6 +22,7 @@ import mafaLogo from "@/assets/mafa-logo.png";
 export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("login");
   const { theme, toggleTheme } = useTheme();
 
   const [loading, setLoading] = useState(false);
@@ -109,10 +110,14 @@ export default function Auth() {
 
       setShowSuccessPopup(true);
 
+      // setTimeout(() => {
+      //   setShowSuccessPopup(false);
+      //   document.querySelector('[data-state="login"]')?.click();
+      // }, 2500);
       setTimeout(() => {
-        setShowSuccessPopup(false);
-        document.querySelector('[data-state="login"]')?.click();
-      }, 2500);
+  setShowSuccessPopup(false);
+  setActiveTab("login");   //  Switch to login tab
+}, 2000);
 
       setSignupEmail("");
       setSignupPassword("");
@@ -198,7 +203,8 @@ export default function Auth() {
         </CardHeader>
 
         <CardContent>
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          {/* <Tabs defaultValue="login" className="w-full"> */}
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -365,7 +371,7 @@ export default function Auth() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-[90%] max-w-sm shadow-xl text-center border">
             <h2 className="text-2xl font-bold text-green-600 dark:text-green-400">
-              🎉 Sign-Up Successful!
+               Sign-Up Successful!
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
               Redirecting to login...

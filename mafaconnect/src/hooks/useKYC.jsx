@@ -110,7 +110,7 @@ export function useSubmitIndividualKYC() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["kyc-status"]);
-      toast.success("✅ KYC submitted successfully", {
+      toast.success(" KYC submitted successfully", {
         description: "Your documents are under review.",
       });
     },

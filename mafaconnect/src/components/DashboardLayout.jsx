@@ -74,7 +74,7 @@ export function DashboardLayout({ children }) {
   const { isOnline } = useOfflineSync();
   const { theme, toggleTheme } = useTheme();
   const { getUnreadCount } = useConversations();
-  const [accountNumber, setAccountNumber] = React.useState("");
+  // const [accountNumber, setAccountNumber] = React.useState("");
   console.log("✅ Auth data:", { user, roles });
   React.useEffect(() => {
     // Dummy API call simulation — replace with your Node API later
@@ -82,11 +82,14 @@ export function DashboardLayout({ children }) {
       if (user) {
         // Example: Simulated API response
         const fakeData = { account_number: "00000123" };
-        setAccountNumber(fakeData.account_number);
+        // setAccountNumber(fakeData.account_number);
+        const accountNumber = user?.account_number || user?.accountNumber || user?.account;
+
       }
     };
     fetchAccountNumber();
   }, [user]);
+       const accountNumber = user?.account_number || user?.accountNumber || user?.account;
 
   if (loading) {
     return (
@@ -246,10 +249,16 @@ export function DashboardLayout({ children }) {
   ))}
 </div>
               {accountNumber && (
+  <div className="text-xs font-semibold text-primary mb-2 p-2 bg-primary/5 rounded">
+    MFC-{accountNumber}
+  </div>
+)}
+
+              {/* {accountNumber && (
                 <div className="text-xs font-semibold text-primary mb-2 p-2 bg-primary/5 rounded">
                   MFC-{accountNumber}
                 </div>
-              )}
+              )} */}
               <div className="text-sm text-muted-foreground mb-2 truncate flex items-center gap-2">
                 {isOnline ? (
                   <Wifi className="h-3 w-3 text-success" />
