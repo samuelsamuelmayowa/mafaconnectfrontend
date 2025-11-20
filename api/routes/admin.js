@@ -10,6 +10,7 @@ const {
   approveUser,
   createProduct,
   getAllProducts,
+  getSingleProduct,
 } = require("../controllers/adminController");
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
@@ -39,6 +40,10 @@ router.post(
 router.get(
   "/products",
   getAllProducts
+);
+router.get(
+  "/products/:id",
+  getSingleProduct
 );
 
 router.post("/login", adminLogin);

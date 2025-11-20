@@ -217,6 +217,49 @@ exports.getAllProducts = async (req, res) => {
 
 
 
+exports.getSingleProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const product = await Product.findOne({
+      where: { id },
+      include: [
+        {
+          model: ProductImage,
+          as: "images",
+          attributes: ["id", "image_url", "cloudinary_public_id"],
+        },
+        {
+          model: User,
+          as: "creator",
+          attributes: ["id", "name", "email", "role"],
+        },
+      ],
+    });
+
+    // If product not found
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Product fetched successfully",
+      data: product,
+    });
+
+  } catch (err) {
+    console.error("❌ Fetch single product error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error fetching product",
+    });
+  }
+};
 
 
 

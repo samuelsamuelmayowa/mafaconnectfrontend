@@ -1,61 +1,38 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/uimain/button";
-import { Badge } from "@/components/uimain/Badge";
-import { Card, CardContent } from "@/components/uimain/card";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Card, CardContent } from "@/components/ui/Card";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { formatCurrency } from "@/lib/transactionUtils";
 import { ArrowLeft, Package } from "lucide-react";
-import { Skeleton } from "@/components/uimain/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hookss/useAuth";
 
 export default function ProductDetail() {
-  const { id } = useParams<{ id: string }>();
-  const { toast } = useToast();
+  const { id } = useParams();
   const { isStaff } = useAuth();
-  const [product, setProduct] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
 
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        if (isStaff) {
-          // Staff can see full product details including cost_price
-          const { data, error } = await supabase
-            .from("products")
-            .select("*")
-            .eq("id", id)
-            .maybeSingle();
+  const API_URL = import.meta.env.VITE_HOME_OO;
 
-          if (error) throw error;
-          setProduct(data);
-        } else {
-          // Non-staff users get products without cost_price
-          const { data, error } = await supabase
-            .rpc("get_public_products");
-
-          if (error) throw error;
-          const productData = data?.find((p) => p.id === id);
-          setProduct(productData);
-        }
-      } catch (error) {
-        toast({
-          title: "Error loading product",
-          description: error.message,
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchProduct();
-    }
-  }, [id, isStaff, toast]);
+  // 🔥 React Query Fetch
+  const { data: product, isLoading, isError } = useQuery({
+    queryKey: ["product", id],
+    queryFn: async () => {
+      const res = await axios.get(
+        // `${API_URL}/api/products/${id}?staff=${isStaff}`
+         `${API_URL}/products/${id}`
+      );
+      return res.data.data;
+    },
+    enabled: !!id,
+  });
 
   if (isLoading) {
     return (
@@ -74,13 +51,13 @@ export default function ProductDetail() {
     );
   }
 
-  if (!product) {
+  if (isError || !product) {
     return (
       <div className="text-center py-12">
         <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
         <h2 className="text-2xl font-bold mb-2">Product Not Found</h2>
         <p className="text-muted-foreground mb-4">
-          The product you're looking for doesn't exist or has been removed.
+          The product you're looking for doesn't exist.
         </p>
         <Button asChild>
           <Link to="/shop">Browse Products</Link>
@@ -94,6 +71,8 @@ export default function ProductDetail() {
 
   return (
     <div className="space-y-6">
+
+      {/* Back */}
       <Button variant="ghost" asChild>
         <Link to="/shop">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -102,72 +81,114 @@ export default function ProductDetail() {
       </Button>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
         {/* Product Image */}
         <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-          <div className="text-6xl font-bold text-muted-foreground">
-            {product.name.substring(0, 2).toUpperCase()}
-          </div>
+          {product.images?.length > 0 ? (
+            <img
+              src={product.images[0].image_url}
+              alt={product.name}
+              className="h-full w-full object-cover rounded-lg"
+            />
+          ) : (
+            <div className="text-6xl font-bold text-muted-foreground">
+              {product.name.substring(0, 2).toUpperCase()}
+            </div>
+          )}
         </div>
 
         {/* Product Info */}
         <div className="space-y-6">
+
           <div>
             <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-            <p className="text-muted-foreground">SKU: {product.sku}</p>
+            <p className="text-muted-foreground">
+              SKU: {product.sku}
+            </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          {/* Price & Stock */}
+          <div className="flex flex-wrap items-center gap-4">
             <span className="text-3xl font-bold">
               {formatCurrency(product.sale_price)}
             </span>
+
             {isLowStock && (
-              <Badge variant="destructive">Only {product.stock_qty} left!</Badge>
+              <Badge variant="destructive">
+                Only {product.stock_qty} left!
+              </Badge>
             )}
-            {isOutOfStock && <Badge variant="outline">Out of Stock</Badge>}
+
+            {isOutOfStock && (
+              <Badge variant="outline">
+                Out of Stock
+              </Badge>
+            )}
+
             {!isLowStock && !isOutOfStock && (
-              <Badge variant="default">In Stock ({product.stock_qty})</Badge>
+              <Badge variant="default">
+                In Stock ({product.stock_qty})
+              </Badge>
             )}
           </div>
 
+          {/* Description */}
           {product.description && (
             <Card>
               <CardContent className="pt-6">
                 <h3 className="font-semibold mb-2">Description</h3>
-                <p className="text-muted-foreground">{product.description}</p>
+                <p className="text-muted-foreground">
+                  {product.description}
+                </p>
               </CardContent>
             </Card>
           )}
 
+          {/* Product Details */}
           <Card>
             <CardContent className="pt-6">
               <h3 className="font-semibold mb-4">Product Details</h3>
+
               <dl className="space-y-2">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">SKU</dt>
                   <dd className="font-medium">{product.sku}</dd>
                 </div>
-                {isStaff && product.cost_price !== undefined && (
+
+                {isStaff && (
                   <div className="flex justify-between">
                     <dt className="text-muted-foreground">Cost Price</dt>
-                    <dd className="font-medium">{formatCurrency(product.cost_price)}</dd>
+                    <dd className="font-medium">
+                      {formatCurrency(product.cost_price)}
+                    </dd>
                   </div>
                 )}
+
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Sale Price</dt>
-                  <dd className="font-medium">{formatCurrency(product.sale_price)}</dd>
+                  <dd className="font-medium">
+                    {formatCurrency(product.sale_price)}
+                  </dd>
                 </div>
+
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Stock Quantity</dt>
-                  <dd className="font-medium">{product.stock_qty} units</dd>
+                  <dd className="font-medium">
+                    {product.stock_qty}
+                  </dd>
                 </div>
+
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Reorder Level</dt>
-                  <dd className="font-medium">{product.reorder_level} units</dd>
+                  <dd className="font-medium">
+                    {product.reorder_level}
+                  </dd>
                 </div>
               </dl>
             </CardContent>
           </Card>
 
+          {/* Quantity Selector */}
           <div className="flex gap-4">
             <div className="flex items-center gap-2 border rounded-md">
               <Button
@@ -177,16 +198,23 @@ export default function ProductDetail() {
               >
                 -
               </Button>
-              <span className="w-12 text-center font-medium">{quantity}</span>
+
+              <span className="w-12 text-center font-medium">
+                {quantity}
+              </span>
+
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setQuantity(Math.min(product.stock_qty, quantity + 1))}
+                onClick={() =>
+                  setQuantity(Math.min(product.stock_qty, quantity + 1))
+                }
                 disabled={quantity >= product.stock_qty}
               >
                 +
               </Button>
             </div>
+
             <AddToCartButton
               productId={product.id}
               stockQty={product.stock_qty}
@@ -195,6 +223,7 @@ export default function ProductDetail() {
               className="flex-1"
             />
           </div>
+
         </div>
       </div>
     </div>

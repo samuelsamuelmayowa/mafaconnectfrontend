@@ -30,6 +30,7 @@ import Suppliers from "./pages/Suppliers";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import Messages from "./pages/Messages";
 import Shop from "./pages/Shop";
+import ProductDetail from "./pages/ProductDetail";
 
 const queryClient = new QueryClient();
 
@@ -63,7 +64,16 @@ function App() {
               </AuthProtectedRoute>
             }
           />
-
+  <Route
+            path="/products/:id"
+            element={
+              <AuthProtectedRoute>
+                <DashboardLayout>
+                  <ProductDetail />
+                </DashboardLayout>
+              </AuthProtectedRoute>
+            }
+          />
            {/* <Route
             path="/customer-orders"
             element={
