@@ -31,6 +31,7 @@ import PurchaseOrders from "./pages/PurchaseOrders";
 import Messages from "./pages/Messages";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
+import KYCOnboarding from "./pages/KYCOnboarding";
 
 const queryClient = new QueryClient();
 
@@ -54,7 +55,7 @@ function App() {
             }
           />
           {/* Customer Routes */}
-            <Route
+          <Route
             path="/shop"
             element={
               <AuthProtectedRoute>
@@ -64,7 +65,7 @@ function App() {
               </AuthProtectedRoute>
             }
           />
-  <Route
+          <Route
             path="/products/:id"
             element={
               <AuthProtectedRoute>
@@ -74,7 +75,18 @@ function App() {
               </AuthProtectedRoute>
             }
           />
-           {/* <Route
+           <Route
+            path="/kyc-onboarding"
+            element={
+              <CustomerProtectedRoute>
+                <DashboardLayout>
+                  <KYCOnboarding />
+                </DashboardLayout>
+              </CustomerProtectedRoute>
+            }
+          />
+
+          {/* <Route
             path="/customer-orders"
             element={
               <CustomerProtectedRoute>
@@ -209,7 +221,7 @@ function App() {
             } */}
           {/* /> */}
 
-           <Route
+          <Route
             path="/messages"
             element={
               <AuthProtectedRoute>
@@ -217,7 +229,8 @@ function App() {
                   <Messages />
                 </DashboardLayout>
               </AuthProtectedRoute>
-            } />
+            }
+          />
 
           <Route
             path="/"
