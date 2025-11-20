@@ -15,6 +15,8 @@ export function KYCStatusCard({ kycStatus, customerType, kycNotes }) {
   const getStatusConfig = () => {
     switch (kycStatus) {
       case "approved":
+      case "pending":
+
         return {
           icon: CheckCircle,
           iconColor: "text-green-500",
