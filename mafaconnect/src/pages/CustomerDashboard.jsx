@@ -45,7 +45,9 @@ export default function CustomerDashboard() {
   const { data: recentOrders, isLoading: loadingOrders } = useQuery({
     queryKey: ["customer-recent-orders", user?.id],
     queryFn: async () => {
-      const { data } = await axios.get(`${API_BASE}/api/orders/${user?.id}?limit=5`);
+      const { data } = await axios.get(
+        `${API_BASE}/api/orders/${user?.id}?limit=5`
+      );
       return data;
     },
     enabled: !!user?.id,
@@ -55,7 +57,9 @@ export default function CustomerDashboard() {
   const { data: pendingInvoices } = useQuery({
     queryKey: ["customer-pending-invoices", user?.id],
     queryFn: async () => {
-      const { data } = await axios.get(`${API_BASE}/api/invoices/${user?.id}?status=pending`);
+      const { data } = await axios.get(
+        `${API_BASE}/api/invoices/${user?.id}?status=pending`
+      );
       return data;
     },
     enabled: !!user?.id,
@@ -65,7 +69,9 @@ export default function CustomerDashboard() {
   const { data: orderStats } = useQuery({
     queryKey: ["customer-order-stats", user?.id],
     queryFn: async () => {
-      const { data } = await axios.get(`${API_BASE}/api/orders/stats/${user?.id}`);
+      const { data } = await axios.get(
+        `${API_BASE}/api/orders/stats/${user?.id}`
+      );
       return data;
     },
     enabled: !!user?.id,
@@ -101,11 +107,10 @@ export default function CustomerDashboard() {
         />
       )} */}
       <KYCStatusCard
-  kStatus={user?.kyc_status || "pending"}
-  customerType={profile?.customer_type || "individual"}
-  kycNotes={profile?.kyc_notes || ""}
-/>
-
+        kStatus={user?.kyc_status || "pending"}
+        customerType={profile?.customer_type || "individual"}
+        kycNotes={profile?.kyc_notes || ""}
+      />
 
       {/* ✅ Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -115,7 +120,9 @@ export default function CustomerDashboard() {
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{orderStats?.totalOrders || 0}</div>
+            <div className="text-2xl font-bold">
+              {orderStats?.totalOrders || 0}
+            </div>
             <p className="text-xs text-muted-foreground">
               {orderStats?.monthlyOrders || 0} this month
             </p>
@@ -124,11 +131,15 @@ export default function CustomerDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Loyalty Points</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Loyalty Points
+            </CardTitle>
             <Gift className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{loyaltyAccount?.points_balance || 0}</div>
+            <div className="text-2xl font-bold">
+              {loyaltyAccount?.points_balance || 0}
+            </div>
             <p className="text-xs text-muted-foreground">Available to redeem</p>
           </CardContent>
         </Card>
@@ -139,18 +150,24 @@ export default function CustomerDashboard() {
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{loyaltyAccount?.tier || "Silver"}</div>
+            <div className="text-2xl font-bold">
+              {loyaltyAccount?.tier || "Silver"}
+            </div>
             <p className="text-xs text-muted-foreground">Member status</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Invoices</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Pending Invoices
+            </CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pendingInvoices?.length || 0}</div>
+            <div className="text-2xl font-bold">
+              {pendingInvoices?.length || 0}
+            </div>
             <p className="text-xs text-muted-foreground">Awaiting payment</p>
           </CardContent>
         </Card>
@@ -292,7 +309,7 @@ export default function CustomerDashboard() {
 //       const now = new Date();
 //       const thisMonth = data?.filter(sale => {
 //         const saleDate = new Date(sale.created_at);
-//         return saleDate.getMonth() === now.getMonth() && 
+//         return saleDate.getMonth() === now.getMonth() &&
 //                saleDate.getFullYear() === now.getFullYear();
 //       }) || [];
 

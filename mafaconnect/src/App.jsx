@@ -66,7 +66,7 @@ function App() {
             }
           />
           <Route
-            path="/products/:id"
+            path="/products/:productid"
             element={
               <AuthProtectedRoute>
                 <DashboardLayout>

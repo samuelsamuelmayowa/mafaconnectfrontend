@@ -107,7 +107,7 @@ export function useAuth() {
     loading,
     signOut,
     roles,
-    hasRole,
+hasRole,
     isAdmin,
     isManager,
     isStaff,

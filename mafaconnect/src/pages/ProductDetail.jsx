@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
 export default function ProductDetail() {
-  const { id } = useParams();
+  const { productid } = useParams();
   const { isStaff } = useAuth();
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
@@ -23,15 +23,15 @@ export default function ProductDetail() {
 
   // 🔥 React Query Fetch
   const { data: product, isLoading, isError } = useQuery({
-    queryKey: ["product", id],
+    queryKey: ["product", productid],
     queryFn: async () => {
       const res = await axios.get(
         // `${API_URL}/api/products/${id}?staff=${isStaff}`
-         `${API_URL}/products/${id}`
+         `${API_URL}/products/${productid}`
       );
       return res.data.data;
     },
-    enabled: !!id,
+    enabled: !!productid,
   });
 
   if (isLoading) {

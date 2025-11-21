@@ -85,7 +85,7 @@ export function useAuth() {
   const isStaff = isAdmin || isManager || isSalesAgent; // for dashboard filtering
 
   // ✅ Log for debugging
-  console.log("🔍 Auth roles:", { role, roles, isAdmin, isManager, isSalesAgent, isStaff });
+  console.log(" Auth roles:", { role, roles, isAdmin, isManager, isSalesAgent, isStaff });
 
   return {
     user,

@@ -42,9 +42,9 @@ router.get(
   getAllProducts
 );
 router.get(
-  "/products/:id",
+  "/products/:productid",
   getSingleProduct
-);
+)
 
 router.post("/login", adminLogin);
 

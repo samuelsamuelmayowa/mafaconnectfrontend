@@ -219,10 +219,10 @@ exports.getAllProducts = async (req, res) => {
 
 exports.getSingleProduct = async (req, res) => {
   try {
-    const { id } = req.params;
+    const {  productid } = req.params;
 
     const product = await Product.findOne({
-      where: { id },
+      where: {  productid },
       include: [
         {
           model: ProductImage,

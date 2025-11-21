@@ -10,7 +10,7 @@ export function ProductCard({ product }) {
 
   return (
     <Card className="group hover:shadow-lg transition-shadow">
-      <Link to={`/products/${product.id}`}>
+      <Link to={`/products/${product.productid}`}>
         <div className="aspect-square bg-muted flex items-center justify-center rounded-t-lg overflow-hidden">
           {product.images?.[0]?.image_url ? (
             <img
@@ -64,7 +64,7 @@ export function ProductCard({ product }) {
 
       <CardFooter className="p-3 sm:p-4 pt-0">
         <AddToCartButton
-          productId={product.id}
+          productId={product.productid  }  // this was id 
           stockQty={product.stock_qty}
           className="w-full h-10 sm:h-11 text-sm sm:text-base"
         />
