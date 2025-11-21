@@ -99,6 +99,7 @@ export default function Auth() {
         name: signupFullName,
         email: signupEmail,
         phone: signupPhone,
+        customer_type:customerType,
         password: signupPassword,
         customer_type: customerType,
       });

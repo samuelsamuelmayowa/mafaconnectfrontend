@@ -222,9 +222,13 @@ export default function ProductDetail() {
                 +
               </Button>
             </div>
+{/* <AddToCartButton
+  product={product}
+  stockQty={product.stock_qty}
+/> */}
 
             <AddToCartButton
-              productId={product.id}
+              productId={product}
               stockQty={product.stock_qty}
               defaultQuantity={quantity}
               size="lg"

@@ -32,6 +32,7 @@ import Messages from "./pages/Messages";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import KYCOnboarding from "./pages/KYCOnboarding";
+import Checkout from "./pages/Checkout";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,17 @@ function App() {
               <CustomerProtectedRoute>
                 <DashboardLayout>
                   <KYCOnboarding />
+                </DashboardLayout>
+              </CustomerProtectedRoute>
+            }
+          />
+
+           <Route
+            path="/checkout"
+            element={
+              <CustomerProtectedRoute>
+                <DashboardLayout>
+                  <Checkout/>
                 </DashboardLayout>
               </CustomerProtectedRoute>
             }

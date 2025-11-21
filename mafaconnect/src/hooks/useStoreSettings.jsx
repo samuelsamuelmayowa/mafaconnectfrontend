@@ -1,24 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
+
+const API_BASE = import.meta.env.VITE_HOME_OO;
 
 export function useStoreSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch all store settings
+  // 🔹 Fetch all store settings
   const { data: settings, isLoading } = useQuery({
     queryKey: ["store-settings"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("store_settings")
-        .select("*");
+      const token = localStorage.getItem("ACCESS_TOKEN");
 
-      if (error) throw error;
+      const res = await axios.get(`${API_BASE}/api/store-settings`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      // Convert array to object for easier access
+      // Convert array to object for easy access
       const settingsMap = {};
-      data.forEach((setting) => {
+
+      res.data.data.forEach((setting) => {
         settingsMap[setting.setting_key] = setting.setting_value;
       });
 
@@ -26,32 +31,45 @@ export function useStoreSettings() {
     },
   });
 
-  // Get specific setting
-  const getSetting = (key, defaultValue?) => {
-    return settings?.[key] || defaultValue;
+  // 🔹 Get one setting
+  const getSetting = (key, defaultValue = null) => {
+    return settings && settings[key] !== undefined
+      ? settings[key]
+      : defaultValue;
   };
 
-  // Update setting mutation (admin only)
+  // 🔹 Update store setting (Admin)
   const updateSetting = useMutation({
-    mutationFn: async ({ key, value }: { key; value: any }) => {
-      const { error } = await supabase
-        .from("store_settings")
-        .update({ setting_value: value })
-        .eq("setting_key", key);
+    mutationFn: async ({ key, value }) => {
+      const token = localStorage.getItem("ACCESS_TOKEN");
 
-      if (error) throw error;
+      const res = await axios.put(
+        `${API_BASE}/api/store-settings/update`,
+        { key, value },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      return res.data;
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["store-settings"] });
+
       toast({
         title: "Settings updated",
-        description: "Store settings have been updated successfully.",
+        description: "Store settings updated successfully ✅",
       });
     },
+
     onError: (error) => {
       toast({
         title: "Error updating settings",
-        description: error.message,
+        description:
+          error?.response?.data?.message || error.message || "Update failed",
         variant: "destructive",
       });
     },
