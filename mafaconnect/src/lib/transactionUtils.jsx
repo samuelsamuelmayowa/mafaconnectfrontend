@@ -88,11 +88,11 @@ export function calculateDueDate(paymentTerms) {
   return dueDate;
 }
 
-// 🔹 Format currency (USD-friendly, can change to NGN or USD)
+// 🔹 Format currency in Naira (₦)
 export function formatCurrency(amount) {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-NG", {
     style: "currency",
-    currency: "USD", // changed to USD as per your preference
+    currency: "NGN",
   }).format(amount);
 }
 

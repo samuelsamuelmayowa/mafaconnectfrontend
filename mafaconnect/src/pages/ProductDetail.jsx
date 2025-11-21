@@ -20,6 +20,8 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
 
   const API_URL = import.meta.env.VITE_HOME_OO;
+  // ✅ Get token
+  const token = localStorage.getItem("ACCESS_TOKEN");
 
   // 🔥 React Query Fetch
   const { data: product, isLoading, isError } = useQuery({
@@ -27,7 +29,12 @@ export default function ProductDetail() {
     queryFn: async () => {
       const res = await axios.get(
         // `${API_URL}/api/products/${id}?staff=${isStaff}`
-         `${API_URL}/products/${productid}`
+         `${API_URL}/products/${productid}`,
+            {
+          headers: {
+            Authorization: `Bearer ${token}`, // ✅ Token added here
+          },
+        }
       );
       return res.data.data;
     },
@@ -110,7 +117,8 @@ export default function ProductDetail() {
           {/* Price & Stock */}
           <div className="flex flex-wrap items-center gap-4">
             <span className="text-3xl font-bold">
-              {formatCurrency(product.sale_price)}
+               ₦ {formatCurrency(product.sale_price)}
+              {/* ₦  { product.sale_price} */}
             </span>
 
             {isLowStock && (
