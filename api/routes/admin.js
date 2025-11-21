@@ -20,14 +20,6 @@ router.get('/allusers',authenticate, requireRole( "admin"), showAllUser)
 router.get("/auth/me", authenticate, requireRole("customer", "sales_person", "manager", "admin"), getCurrentUser);
 router.get('/users/{userId}/approval',authenticate, requireRole( "admin"), approveUser)
 router.post('/users/:userId/roles',authenticate, requireRole( "admin"),assignRole)
-// router.post(
-//   "/products",
-//   authenticate,
-//   requireRole("admin", "manager"),   
-//   upload.array("images"),        
-//   createProduct
-// );
-
 router.post(
   "/products",
   authenticate,
@@ -35,28 +27,56 @@ router.post(
   upload.array("images"),
   createProduct
 );
-
 // admin and manager  logged-in can view products
 router.get(
   "/products",
+  authenticate,
+  requireRole("admin", "manager","customer","sales_agent"),
   getAllProducts
 );
+// admin and manager and all   logged-in can view products
 router.get(
   "/products/:productid",
+  authenticate,
+  requireRole("admin", "manager","customer", "sales_agent"),
   getSingleProduct
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 router.post("/login", adminLogin);
 
 // router.get("/auth/me", authenticate, requireRole("user"), getCurrentUser);
-
 router.post("/refresh", refreshToken);
-
-
 router.post("/logout", logout);
-
 // Only admins can access dashboard
 router.get("/dashboard", authenticate, requireRole("admin"), getDashboard);
 // router.get("/dashboard", getDashboard);
 
 module.exports = router;
+
+
+// router.post(
+//   "/products",
+//   authenticate,
+//   requireRole("admin", "manager"),   
+//   upload.array("images"),        
+//   createProduct
+// );

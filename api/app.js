@@ -35,7 +35,7 @@ app.use("/api/v1", customer_bussiness);
 
 // HEALTH CHECK
 app.get("/", (req, res) => res.send("MafaConnect Backend is running..."));
-app.get("/health", (req, res) => res.send("Healthy 🚀"));
+app.get("/health", (req, res) => res.send("Healthy "));
 
 // 404 (Not Found)
 app.use((req, res, next) => {
