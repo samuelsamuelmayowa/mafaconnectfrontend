@@ -117,7 +117,7 @@ export default function ProductDetail() {
           {/* Price & Stock */}
           <div className="flex flex-wrap items-center gap-4">
             <span className="text-3xl font-bold">
-               ₦ {formatCurrency(product.sale_price)}
+               {formatCurrency(product.sale_price)}
               {/* ₦  { product.sale_price} */}
             </span>
 
