@@ -1,6 +1,44 @@
 const bcrypt = require("bcrypt");
 const { User } = require("../models/user");
 
+
+
+exports.getKYCStatus = async (req, res) => {
+  try {
+    const userId = req.user.id; // from JWT
+       console.log("REQ.USER ->", req.user); // ADD THIS
+    const user = await User.findByPk(userId, {
+      attributes: ["id", "name", "email", "kyc_status", "account_number","customer_type"],
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "KYC status fetched successfully",
+      data: {
+        user_id: user.id,
+        kyc_status: user.kyc_status,
+        account_number: user.account_number || null,
+      },
+    });
+
+  } catch (error) {
+    console.error("KYC Status Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+
 function generateAccountNumber(id) {
   const prefix = "MFC";
   const padded = String(id).padStart(8, "0");
@@ -10,7 +48,6 @@ function generateAccountNumber(id) {
 function generateAccountNumber(id) {
   return String(id).padStart(8, "0");
 }
-
 
 // ✅ Customer/Business Registration
 exports.register = async (req, res) => {
@@ -66,6 +103,11 @@ exports.register = async (req, res) => {
     res.status(500).json({ message: "Server error during registration." });
   }
 };
+
+
+
+
+
 // // ✅ Customer/Business Registration
 // exports.register = async (req, res) => {
 //   try {

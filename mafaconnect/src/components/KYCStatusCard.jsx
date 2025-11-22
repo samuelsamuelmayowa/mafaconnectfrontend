@@ -12,61 +12,116 @@ import { Link } from "react-router-dom";
 import { Shield, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 
 export function KYCStatusCard({ kycStatus, customerType, kycNotes }) {
-  const getStatusConfig = () => {
-    switch (kycStatus) {
-      case "approved":
-      case "pending":
+  // const getStatusConfig = () => {
+  //   switch (kycStatus) {
+  //     case "approved":
+  //     case "pending":
 
-        return {
-          icon: CheckCircle,
-          iconColor: "text-green-500",
-          bgColor: "bg-green-50 dark:bg-green-950/30",
-          borderColor: "border-green-200 dark:border-green-800",
-          label: "Verified",
-          badgeVariant: "default",
-          message: "Your KYC has been approved. You can now place orders.",
-          showAction: false,
-        };
-      case "submitted":
-        return {
-          icon: Clock,
-          iconColor: "text-blue-500",
-          bgColor: "bg-blue-50 dark:bg-blue-950/30",
-          borderColor: "border-blue-200 dark:border-blue-800",
-          label: "Under Review",
-          badgeVariant: "secondary",
-          message:
-            "Your documents are being reviewed. We'll notify you once complete.",
-          showAction: false,
-        };
-      case "rejected":
-        return {
-          icon: XCircle,
-          iconColor: "text-red-500",
-          bgColor: "bg-red-50 dark:bg-red-950/30",
-          borderColor: "border-red-200 dark:border-red-800",
-          label: "Resubmission Required",
-          badgeVariant: "destructive",
-          message:
-            kycNotes ||
-            "Your submission was rejected. Please review and resubmit.",
-          showAction: true,
-        };
-      default:
-        return {
-          icon: AlertCircle,
-          iconColor: "text-yellow-500",
-          bgColor: "bg-yellow-50 dark:bg-yellow-950/30",
-          borderColor: "border-yellow-200 dark:border-yellow-800",
-          label: "Action Required",
-          badgeVariant: "outline",
-          message: `Complete your ${
-            customerType === "corporate" ? "corporate" : "individual"
-          } KYC to start ordering.`,
-          showAction: true,
-        };
-    }
-  };
+  //       return {
+  //         icon: CheckCircle,
+  //         iconColor: "text-green-500",
+  //         bgColor: "bg-green-50 dark:bg-green-950/30",
+  //         borderColor: "border-green-200 dark:border-green-800",
+  //         label: "Verified",
+  //         badgeVariant: "default",
+  //         message: "Your KYC has been approved. You can now place orders.",
+  //         showAction: false,
+  //       };
+  //     case "submitted":
+  //       return {
+  //         icon: Clock,
+  //         iconColor: "text-blue-500",
+  //         bgColor: "bg-blue-50 dark:bg-blue-950/30",
+  //         borderColor: "border-blue-200 dark:border-blue-800",
+  //         label: "Under Review",
+  //         badgeVariant: "secondary",
+  //         message:
+  //           "Your documents are being reviewed. We'll notify you once complete.",
+  //         showAction: false,
+  //       };
+  //     case "rejected":
+  //       return {
+  //         icon: XCircle,
+  //         iconColor: "text-red-500",
+  //         bgColor: "bg-red-50 dark:bg-red-950/30",
+  //         borderColor: "border-red-200 dark:border-red-800",
+  //         label: "Resubmission Required",
+  //         badgeVariant: "destructive",
+  //         message:
+  //           kycNotes ||
+  //           "Your submission was rejected. Please review and resubmit.",
+  //         showAction: true,
+  //       };
+  //     default:
+  //       return {
+  //         icon: AlertCircle,
+  //         iconColor: "text-yellow-500",
+  //         bgColor: "bg-yellow-50 dark:bg-yellow-950/30",
+  //         borderColor: "border-yellow-200 dark:border-yellow-800",
+  //         label: "Action Required",
+  //         badgeVariant: "outline",
+  //         message: `Complete your ${
+  //           customerType === "corporate" ? "corporate" : "individual"
+  //         } KYC to start ordering.`,
+  //         showAction: true,
+  //       };
+  //   }
+  // };
+const getStatusConfig = () => {
+  switch (kycStatus) {
+    case "approved":
+      return {
+        icon: CheckCircle,
+        iconColor: "text-green-500",
+        bgColor: "bg-green-50 dark:bg-green-950/30",
+        borderColor: "border-green-200 dark:border-green-800",
+        label: "Verified",
+        badgeVariant: "default",
+        message: "Your KYC has been approved. You can now place orders.",
+        showAction: false,
+      };
+
+    case "pending":
+      return {
+        icon: Clock,
+        iconColor: "text-yellow-500",
+        bgColor: "bg-yellow-50 dark:bg-yellow-950/30",
+        borderColor: "border-yellow-200 dark:border-yellow-800",
+        label: "Pending",
+        badgeVariant: "secondary",
+        message: "Your KYC is under review. Please wait for approval.",
+        showAction: false,
+      };
+
+    case "rejected":
+      return {
+        icon: XCircle,
+        iconColor: "text-red-500",
+        bgColor: "bg-red-50 dark:bg-red-950/30",
+        borderColor: "border-red-200 dark:border-red-800",
+        label: "Rejected",
+        badgeVariant: "destructive",
+        message:
+          kycNotes ||
+          "Your submission was rejected. Please review and resubmit.",
+        showAction: true,
+      };
+
+    default:
+      return {
+        icon: AlertCircle,
+        iconColor: "text-gray-500",
+        bgColor: "bg-gray-50 dark:bg-gray-950/30",
+        borderColor: "border-gray-200 dark:border-gray-800",
+        label: "Not Submitted",
+        badgeVariant: "outline",
+        message: `Complete your ${
+          customerType === "corporate" ? "corporate" : "individual"
+        } KYC to start ordering.`,
+        showAction: true,
+      };
+  }
+};
 
   const config = getStatusConfig();
   const StatusIcon = config.icon;

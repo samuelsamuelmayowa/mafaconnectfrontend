@@ -93,7 +93,7 @@ console.log("PROFILE KYC STATUS:", profile?.kyc_status);
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">
-          Welcome, {profile?.name || "Customer"}!
+          Welcome, {user?.name || "Customer"}!
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground">
           Here's your account overview
@@ -114,12 +114,16 @@ console.log("PROFILE KYC STATUS:", profile?.kyc_status);
         customerType={profile?.customer_type || "individual"}
         kycNotes={profile?.kyc_notes || ""}
       /> */}
-      <KYCStatusCard
+      {/* <KYCStatusCard
   kStatus={user?.kyc_status === "approved" ? "approved" : "pending"}
+  customerType={user?.customer_type || "individual"}
+  kycNotes={user?.kyc_notes || ""}
+/> */}
+<KYCStatusCard
+  kycStatus={user?.kyc_status}
   customerType={profile?.customer_type || "individual"}
   kycNotes={profile?.kyc_notes || ""}
 />
-
 
       {/* ✅ Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
