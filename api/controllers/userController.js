@@ -51,8 +51,9 @@ exports.register = async (req, res) => {
     return res.status(201).json({
       message: "Account created successfully. Waiting for admin approval.",
       user: {
-        id: user.id,
+      id: user.id,
         name: user.name,
+        customer_type:user.individual,
         email: user.email,
         account_number: user.account_number,
         role: user.role,

@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { Op } = require("sequelize");
 const { User } = require("../models/user");
 require("dotenv").config();
 const cloudinary = require("../cloudinary");
@@ -130,7 +131,7 @@ exports.createProduct = async (req, res) => {
   try {
     const userId = req.user.id;
 
-  
+
     const product = await Product.create({
       name: req.body.name,
       sku: req.body.sku,
@@ -181,7 +182,6 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-
 exports.getAllProducts = async (req, res) => {
   try {
     const products = await Product.findAll({
@@ -194,7 +194,7 @@ exports.getAllProducts = async (req, res) => {
         {
           model: User,
           as: "creator",
-          attributes: ["id", "name", "email", "role"], 
+          attributes: ["id", "name", "email", "role"],
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -205,7 +205,7 @@ exports.getAllProducts = async (req, res) => {
       message: "Products fetched successfully",
       data: products,
     });
-    
+
   } catch (err) {
     console.error("❌ Fetch products error:", err);
     return res.status(500).json({
@@ -215,14 +215,12 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
-
-
 exports.getSingleProduct = async (req, res) => {
   try {
-    const {  productid } = req.params;
+    const { productid } = req.params;
 
     const product = await Product.findOne({
-      where: {  productid },
+      where: { productid },
       include: [
         {
           model: ProductImage,
@@ -262,6 +260,221 @@ exports.getSingleProduct = async (req, res) => {
 };
 
 
+// LIVE SEARCH PRODUCTS
+exports.searchProducts = async (req, res) => {
+  try {
+    const keyword = req.query.q;
+
+    if (!keyword) {
+      return res.status(400).json({
+        success: false,
+        message: "Search keyword is required",
+      });
+    }
+
+    const searchTerm = keyword.toLowerCase();
+
+    const products = await Product.findAll({
+      where: {
+        active: true, 
+        [Op.or]: [
+          Sequelize.where(
+            Sequelize.fn("LOWER", Sequelize.col("name")),
+            { [Op.like]: `%${searchTerm}%` }
+          ),
+          Sequelize.where(
+            Sequelize.fn("LOWER", Sequelize.col("sku")),
+            { [Op.like]: `%${searchTerm}%` }
+          ),
+        ],
+      },
+      include: [
+        {
+          model: ProductImage,
+          as: "images",
+          attributes: ["id", "image_url"],
+        },
+        {
+          model: User,
+          as: "creator",
+          attributes: ["id", "name"],
+        },
+      ],
+      limit: 20,
+    });
+
+    if (!products || products.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products,
+    });
+
+  } catch (error) {
+    console.error("Search error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during search",
+    });
+  }
+};
+// exports.searchProducts = async (req, res) => {
+//   try {
+//     const { q } = req.query;
+
+//     if (!q) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Search query is required",
+//       });
+//     }
+
+//     const products = await Product.findAll({
+//       where: {
+//         [Op.or]: [
+//           { name: { [Op.like]: `%${q}%` } },
+//           { sku: { [Op.like]: `%${q}%` } },
+//         ],
+//         active: true
+//       },
+//       include: [
+//         {
+//           model: ProductImage,
+//           as: "images",
+//           attributes: ["image_url"],
+//         },
+//       ],
+//       limit: 10, // ✅ important for fast search-as-you-type
+//     });
+
+//     if (products.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Product not found",
+//       });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       results: products.length,
+//       data: products,
+//     });
+//   } catch (error) {
+//     console.error("Search error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error during search",
+//     });
+//   }
+// };
+// exports.searchProducts = async (req, res) => {
+//   try {
+//     const { q } = req.query;
+
+//     if (!q || q.trim() === "") {
+//       return res.json({ success: true, data: [] });
+//     }
+
+//     const products = await Product.findAll({
+//       where: {
+//         active: true,
+//         [Op.or]: [
+//           { name: { [Op.like]: `%${q}%` } },
+//           { sku: { [Op.like]: `%${q}%` } },
+//         ],
+//       },
+
+//       include: [
+//         {
+//           model: ProductImage,
+//           as: "images",
+//           attributes: ["id", "image_url", "cloudinary_public_id"],
+//         },
+//         {
+//           model: User,
+//           as: "creator",
+//           attributes: ["id", "name", "email", "role"],
+//         },
+//       ],
+
+//       limit: 20, // fast response
+//       order: [["name", "ASC"]],
+//     });
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Search results",
+//       data: products,
+//     });
+
+//   } catch (err) {
+//     console.error("search error:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error while searching",
+//     });
+//   }
+// };
+
+// exports.searchProducts = async (req, res) => {
+//   try {
+//     const { q } = req.query;
+
+//     // If nothing typed
+//     if (!q || q.trim() === "") {
+//       return res.status(200).json({
+//         success: true,
+//         message: "No search query",
+//         data: [],
+//       });
+//     }
+
+//     const products = await Product.findAll({
+//       where: {
+//         [Op.or]: [
+//           { name: { [Op.like]: `%${q}%` } },
+//           { sku: { [Op.like]: `%${q}%` } },
+//         ],
+//       },
+//       include: [
+//         {
+//           model: ProductImage,
+//           as: "images",
+//           attributes: ["id", "image_url"],
+//         },
+//         {
+//           model: User,
+//           as: "creator",
+//           attributes: ["id", "name", "role"],
+//         },
+//       ],
+
+//       // ⚡ Important for fast search dropdown
+//       limit: 10,
+//       order: [["createdAt", "DESC"]],
+//     });
+
+//     return res.status(200).json({
+//       success: true,
+//       message: products.length ? "Products found" : "No product found",
+//       data: products,
+//     });
+
+//   } catch (err) {
+//     console.error(" Search error:", err);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error searching product",
+//     });
+//   }
+// };
 
 
 

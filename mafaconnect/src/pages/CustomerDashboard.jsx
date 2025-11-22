@@ -76,6 +76,9 @@ export default function CustomerDashboard() {
     },
     enabled: !!user?.id,
   });
+  console.log("USER KYC STATUS:", user?.kyc_status);
+console.log("PROFILE KYC STATUS:", profile?.kyc_status);
+
 
   if (loadingOrders) {
     return (
@@ -106,11 +109,17 @@ export default function CustomerDashboard() {
           kycNotes={kycStatus.kyc_notes}
         />
       )} */}
-      <KYCStatusCard
-        kStatus={user?.kyc_status || "pending"}
+      {/* <KYCStatusCard
+        kStatus={user?.kyc_status ==='approved' || "pending"}
         customerType={profile?.customer_type || "individual"}
         kycNotes={profile?.kyc_notes || ""}
-      />
+      /> */}
+      <KYCStatusCard
+  kStatus={user?.kyc_status === "approved" ? "approved" : "pending"}
+  customerType={profile?.customer_type || "individual"}
+  kycNotes={profile?.kyc_notes || ""}
+/>
+
 
       {/* ✅ Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

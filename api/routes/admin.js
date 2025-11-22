@@ -11,6 +11,7 @@ const {
   createProduct,
   getAllProducts,
   getSingleProduct,
+  searchProducts,
 } = require("../controllers/adminController");
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
@@ -41,6 +42,9 @@ router.get(
   requireRole("admin", "manager","customer", "sales_agent"),
   getSingleProduct
 )
+// sarch for product for both admin and everyone 
+// Live product search
+router.get("/products/search", searchProducts);
 
 
 

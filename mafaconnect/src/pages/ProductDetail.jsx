@@ -24,13 +24,17 @@ export default function ProductDetail() {
   const token = localStorage.getItem("ACCESS_TOKEN");
 
   // 🔥 React Query Fetch
-  const { data: product, isLoading, isError } = useQuery({
+  const {
+    data: product,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["product", productid],
     queryFn: async () => {
       const res = await axios.get(
         // `${API_URL}/api/products/${id}?staff=${isStaff}`
-         `${API_URL}/products/${productid}`,
-            {
+        `${API_URL}/products/${productid}`,
+        {
           headers: {
             Authorization: `Bearer ${token}`, // ✅ Token added here
           },
@@ -78,7 +82,6 @@ export default function ProductDetail() {
 
   return (
     <div className="space-y-6">
-
       {/* Back */}
       <Button variant="ghost" asChild>
         <Link to="/shop">
@@ -88,7 +91,6 @@ export default function ProductDetail() {
       </Button>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
         {/* Product Image */}
         <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
           {product.images?.length > 0 ? (
@@ -106,18 +108,15 @@ export default function ProductDetail() {
 
         {/* Product Info */}
         <div className="space-y-6">
-
           <div>
             <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-            <p className="text-muted-foreground">
-              SKU: {product.sku}
-            </p>
+            <p className="text-muted-foreground">SKU: {product.sku}</p>
           </div>
 
           {/* Price & Stock */}
           <div className="flex flex-wrap items-center gap-4">
             <span className="text-3xl font-bold">
-               {formatCurrency(product.sale_price)}
+              {formatCurrency(product.sale_price)}
               {/* ₦  { product.sale_price} */}
             </span>
 
@@ -127,16 +126,10 @@ export default function ProductDetail() {
               </Badge>
             )}
 
-            {isOutOfStock && (
-              <Badge variant="outline">
-                Out of Stock
-              </Badge>
-            )}
+            {isOutOfStock && <Badge variant="outline">Out of Stock</Badge>}
 
             {!isLowStock && !isOutOfStock && (
-              <Badge variant="default">
-                In Stock ({product.stock_qty})
-              </Badge>
+              <Badge variant="default">In Stock ({product.stock_qty})</Badge>
             )}
           </div>
 
@@ -145,9 +138,7 @@ export default function ProductDetail() {
             <Card>
               <CardContent className="pt-6">
                 <h3 className="font-semibold mb-2">Description</h3>
-                <p className="text-muted-foreground">
-                  {product.description}
-                </p>
+                <p className="text-muted-foreground">{product.description}</p>
               </CardContent>
             </Card>
           )}
@@ -181,16 +172,12 @@ export default function ProductDetail() {
 
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Stock Quantity</dt>
-                  <dd className="font-medium">
-                    {product.stock_qty}
-                  </dd>
+                  <dd className="font-medium">{product.stock_qty}</dd>
                 </div>
 
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Reorder Level</dt>
-                  <dd className="font-medium">
-                    {product.reorder_level}
-                  </dd>
+                  <dd className="font-medium">{product.reorder_level}</dd>
                 </div>
               </dl>
             </CardContent>
@@ -207,9 +194,7 @@ export default function ProductDetail() {
                 -
               </Button>
 
-              <span className="w-12 text-center font-medium">
-                {quantity}
-              </span>
+              <span className="w-12 text-center font-medium">{quantity}</span>
 
               <Button
                 variant="ghost"
@@ -222,7 +207,7 @@ export default function ProductDetail() {
                 +
               </Button>
             </div>
-{/* <AddToCartButton
+            {/* <AddToCartButton
   product={product}
   stockQty={product.stock_qty}
 /> */}
@@ -235,7 +220,6 @@ export default function ProductDetail() {
               className="flex-1"
             />
           </div>
-
         </div>
       </div>
     </div>

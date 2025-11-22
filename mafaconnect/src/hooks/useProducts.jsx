@@ -10,19 +10,6 @@ export function useProducts() {
 
   const apiBaseUrl = import.meta.env.VITE_HOME_OO;
   const token = localStorage.getItem("ACCESS_TOKEN");
-
-  //Fetch products
-  // const { data: products, isLoading } = useQuery({
-  //   queryKey: ["products"],
-  //   queryFn: async () => {
-  //     const endpoint = isStaff ? "products" : "public-products";
-  //     const res = await axios.get(`${apiBaseUrl}/products`, {
-  //       headers: { Authorization: `Bearer ${token}` },
-  //     });
-  //     return res.data;
-  //   },
-  // });
-
   const { data: products, isLoading } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
@@ -82,6 +69,42 @@ export function useProducts() {
 
   return { products, isLoading, createProduct };
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // import axios from "axios";

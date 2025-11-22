@@ -51,7 +51,7 @@ export function ProductCard({ product }) {
           {isOutOfStock && (
             <Badge variant="outline" className="text-xs">
               Out of Stock
-            </Badge> 
+            </Badge>
           )}
 
           {!isLowStock && !isOutOfStock && (
@@ -63,16 +63,7 @@ export function ProductCard({ product }) {
       </CardContent>
 
       <CardFooter className="p-3 sm:p-4 pt-0">
-        {/* <AddToCartButton
-          productId={product  }  // this was id 
-          stockQty={product.stock_qty}
-          className="w-full h-10 sm:h-11 text-sm sm:text-base"
-        /> */}
-        {/* <AddToCartButton product={product} /> */}
-<AddToCartButton
-  product={product}
-  stockQty={product.stock_qty}
-/>
+        <AddToCartButton product={product} stockQty={product.stock_qty} />
       </CardFooter>
     </Card>
   );
