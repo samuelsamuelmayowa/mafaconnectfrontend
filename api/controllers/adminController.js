@@ -259,6 +259,49 @@ exports.getSingleProduct = async (req, res) => {
   }
 };
 
+exports.getSingleProductId = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const product = await Product.findOne({
+      where: { id },
+      include: [
+        {
+          model: ProductImage,
+          as: "images",
+          attributes: ["id", "image_url", "cloudinary_public_id"],
+        },
+        {
+          model: User,
+          as: "creator",
+          attributes: ["id", "name", "email", "role"],
+        },
+      ],
+    });
+
+    // If product not found
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Product fetched successfully",
+      data: product,
+    });
+
+  } catch (err) {
+    console.error("❌ Fetch single product error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error fetching product",
+    });
+  }
+};
 
 // LIVE SEARCH PRODUCTS
 exports.searchProducts = async (req, res) => {
@@ -478,7 +521,92 @@ exports.searchProducts = async (req, res) => {
 
 
 
+exports.updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
 
+    const product = await Product.findByPk(id, {
+      include: [{ model: ProductImage, as: "images" }],
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    // ✅ Update product fields
+    await product.update({
+      name: req.body.name || product.name,
+      sku: req.body.sku || product.sku,
+      description: req.body.description || product.description,
+      cost_price: req.body.cost_price || product.cost_price,
+      sale_price: req.body.sale_price || product.sale_price,
+      stock_qty: req.body.stock_qty || product.stock_qty,
+      reorder_level: req.body.reorder_level || product.reorder_level,
+      active: req.body.active ?? product.active,
+      created_by: userId,
+    });
+
+    // ✅ If new images are uploaded, replace old ones
+    if (req.files && req.files.length > 0) {
+
+      // 1️⃣ Delete old images from Cloudinary
+      for (const img of product.images) {
+        if (img.cloudinary_public_id) {
+          await cloudinary.uploader.destroy(img.cloudinary_public_id);
+        }
+      }
+
+      // 2️⃣ Remove old images from DB
+      await ProductImage.destroy({
+        where: { product_id: product.id },
+      });
+
+      // 3️⃣ Upload new images
+      const newImages = [];
+
+      for (const file of req.files) {
+        const upload = await cloudinary.uploader.upload(file.path, {
+          folder: "mafaconnect/products",
+        });
+
+        newImages.push({
+          product_id: product.id,
+          image_url: upload.secure_url,
+          cloudinary_public_id: upload.public_id,
+        });
+      }
+
+      // 4️⃣ Save new images
+      await ProductImage.bulkCreate(newImages);
+    }
+
+    // ✅ Fetch updated product with images
+    const updatedProduct = await Product.findByPk(product.id, {
+      include: [
+        { model: ProductImage, as: "images" },
+        { model: User, as: "creator", attributes: ["id", "name", "email"] },
+      ],
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      data: updatedProduct,
+    });
+
+  } catch (err) {
+    console.error(" Update product error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error updating product",
+      error: err.message,
+    });
+  }
+};
 
 
 

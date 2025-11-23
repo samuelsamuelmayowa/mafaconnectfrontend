@@ -29,7 +29,7 @@ export function ProductCard({ product }) {
       <CardContent className="p-3 sm:p-4">
         <Link to={`/products/${product.productid}`} className="hover:underline">
           <h3 className="font-semibold text-sm sm:text-base line-clamp-2 mb-1">
-            {product.name}
+            {product.name}  HELLO 
           </h3>
         </Link>
 

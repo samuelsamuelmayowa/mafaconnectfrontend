@@ -1,218 +1,426 @@
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
-import { useProducts } from "@/hooks/useProducts";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, Upload } from "lucide-react";
+// import { API_BASE, getToken } from "@/utils/auth";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
-export function ProductDialog({ open, onOpenChange }) {
-  const { createProduct } = useProducts();
-
-  const [formError, setFormError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
-
-  const [formData, setFormData] = useState({
+export function ProductDialog({ open, onOpenChange, product }) {
+  const getToken = () => {
+  return  localStorage.getItem("ACCESS_TOKEN");
+  } 
+  const queryClient = useQueryClient();
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
+const API_BASE = import.meta.env.VITE_HOME_OO;
+  const [form, setForm] = useState({
     name: "",
     sku: "",
     description: "",
     cost_price: "",
     sale_price: "",
     stock_qty: "",
-    reorder_level: "50",
-    image: null,
+    reorder_level: "",
   });
 
-  const [preview, setPreview] = useState(null);
+  // ✅ Populate fields when editing
+  useEffect(() => {
+    if (product) {
+      setForm({
+        name: product.name || "",
+        sku: product.sku || "",
+        description: product.description || "",
+        cost_price: product.cost_price || "",
+        sale_price: product.sale_price || "",
+        stock_qty: product.stock_qty || "",
+        reorder_level: product.reorder_level || "",
+      });
+    } else {
+      resetForm();
+    }
+  }, [product]);
 
-  const handleChange = (field, value) =>
-    setFormData((prev) => ({ ...prev, [field]: value }));
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    handleChange("image", file);
-    setPreview(URL.createObjectURL(file));
+  const resetForm = () => {
+    setForm({
+      name: "",
+      sku: "",
+      description: "",
+      cost_price: "",
+      sale_price: "",
+      stock_qty: "",
+      reorder_level: "",
+    });
+    setImages([]);
   };
 
-  const validateFields = () => {
-    if (!formData.name.trim()) return "Product name is required.";
-    if (!formData.sku.trim()) return "SKU is required.";
-    if (!formData.cost_price) return "Cost price is required.";
-    if (!formData.sale_price) return "Sale price is required.";
-    if (!formData.stock_qty) return "Stock quantity is required.";
-    return "";
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setFormError("");
-    setSuccessMsg("");
+  const handleImageChange = (e) => {
+    setImages([...e.target.files]);
+  };
 
-    const error = validateFields();
-    if (error) {
-      setFormError(error);
+  const handleSubmit = async () => {
+    if (!form.name || !form.sku) {
+      toast.error("Product name and SKU are required");
       return;
     }
 
+    setLoading(true);
+
     try {
-      await createProduct.mutateAsync({
-        name: formData.name.trim(),
-        sku: formData.sku.trim(),
-        description: formData.description || "",
-        cost_price: Number(formData.cost_price),
-        sale_price: Number(formData.sale_price),
-        stock_qty: Number(formData.stock_qty),
-        reorder_level: Number(formData.reorder_level),
-        image: formData.image,
+      const token = getToken();
+      const formData = new FormData();
+
+      Object.entries(form).forEach(([key, value]) => {
+        formData.append(key, value);
       });
 
-      setSuccessMsg("Product added successfully!");
-      setTimeout(() => onOpenChange(false), 1200);
-
-      // Reset form
-      setFormData({
-        name: "",
-        sku: "",
-        description: "",
-        cost_price: "",
-        sale_price: "",
-        stock_qty: "",
-        reorder_level: "50",
-        image: null,
+      // ✅ Add images if selected
+      images.forEach((img) => {
+        formData.append("images", img);
       });
-      setPreview(null);
+
+      const isEditing = !!product;
+
+      const url = isEditing
+        ? `${API_BASE}/products/${product.id}`
+        : `${API_BASE}/products`;
+
+      const method = isEditing ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Something went wrong");
+      }
+
+      toast.success(
+        isEditing ? "Product updated successfully" : "Product created successfully"
+      );
+
+      queryClient.invalidateQueries(["products"]);
+      resetForm();
+      onOpenChange(false);
 
     } catch (err) {
-      setFormError(err.response?.data?.message || err.message);
+      console.error("Product error:", err);
+      toast.error(err.message || "Failed to save product");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px] p-4">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add New Product</DialogTitle>
+          <DialogTitle>
+            {product ? "Edit Product" : "Add New Product"}
+          </DialogTitle>
         </DialogHeader>
 
-        {/* ERROR MESSAGE */}
-        {formError && (
-          <Alert variant="destructive">
-            <AlertDescription>{formError}</AlertDescription>
-          </Alert>
-        )}
-
-        {/* SUCCESS MESSAGE */}
-        {successMsg && (
-          <Alert className="bg-green-500/10 border-green-500 text-green-700">
-            <AlertDescription>{successMsg}</AlertDescription>
-          </Alert>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {/* IMAGE UPLOAD */}
-          <div className="flex items-center gap-3">
-            {preview ? (
-              <img src={preview} className="h-16 w-16 rounded border object-cover" />
-            ) : (
-              <div className="h-16 w-16 bg-muted rounded flex items-center justify-center text-xs">
-                No Image
-              </div>
-            )}
-
-            <div className="flex-1">
-              <Label>Upload Image</Label>
-              <Input type="file" accept="image/*" onChange={handleImageUpload} />
-            </div>
-          </div>
-
-          {/* Name */}
+        <div className="space-y-4">
           <div>
-            <Label>Product Name *</Label>
-            <Input
-              value={formData.name}
-              onChange={(e) => handleChange("name", e.target.value)}
-            />
+            <Label>Product Name</Label>
+            <Input name="name" value={form.name} onChange={handleChange} />
           </div>
 
-          {/* SKU */}
           <div>
-            <Label>SKU *</Label>
-            <Input
-              value={formData.sku}
-              onChange={(e) => handleChange("sku", e.target.value)}
-            />
+            <Label>SKU</Label>
+            <Input name="sku" value={form.sku} onChange={handleChange} />
           </div>
 
-          {/* Description */}
           <div>
             <Label>Description</Label>
-            <Textarea
-              rows={2}
-              value={formData.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-            />
+            <Textarea name="description" value={form.description} onChange={handleChange} />
           </div>
 
-          {/* Prices */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Cost Price *</Label>
-              <Input
-                type="number"
-                value={formData.cost_price}
-                onChange={(e) => handleChange("cost_price", e.target.value)}
-              />
+              <Label>Cost Price</Label>
+              <Input name="cost_price" value={form.cost_price} onChange={handleChange} />
             </div>
 
             <div>
-              <Label>Sale Price *</Label>
-              <Input
-                type="number"
-                value={formData.sale_price}
-                onChange={(e) => handleChange("sale_price", e.target.value)}
-              />
+              <Label>Sale Price</Label>
+              <Input name="sale_price" value={form.sale_price} onChange={handleChange} />
             </div>
           </div>
 
-          {/* Stock & reorder */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Stock Qty *</Label>
-              <Input
-                type="number"
-                value={formData.stock_qty}
-                onChange={(e) => handleChange("stock_qty", e.target.value)}
-              />
+              <Label>Stock</Label>
+              <Input name="stock_qty" value={form.stock_qty} onChange={handleChange} />
             </div>
 
             <div>
               <Label>Reorder Level</Label>
-              <Input
-                type="number"
-                value={formData.reorder_level}
-                onChange={(e) => handleChange("reorder_level", e.target.value)}
-              />
+              <Input name="reorder_level" value={form.reorder_level} onChange={handleChange} />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-
-            <Button type="submit" disabled={createProduct.isPending}>
-              {createProduct.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Add
-            </Button>
+          <div>
+            <Label>Product Images</Label>
+            <Input type="file" multiple accept="image/*" onChange={handleImageChange}/>
           </div>
-        </form>
+
+          {/* Show old product images if editing */}
+          {product?.images?.length > 0 && (
+            <div className="flex gap-2 flex-wrap mt-2">
+              {product.images.map((img) => (
+                <img
+                  key={img.id}
+                  src={img.image_url}
+                  alt="product"
+                  className="w-16 h-16 object-cover border rounded"
+                />
+              ))}
+            </div>
+          )}
+
+          <Button
+            onClick={handleSubmit}
+            className="w-full bg-gradient-primary"
+            disabled={loading}
+          >
+            {loading && <Loader2 className="animate-spin mr-2 h-4 w-4" />}
+            {product ? "Update Product" : "Create Product"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+// import React, { useState } from "react";
+// import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+// import { Button } from "@/components/ui/Button";
+// import { Input } from "@/components/ui/Input";
+// import { Label } from "@/components/ui/Label";
+// import { Textarea } from "@/components/ui/textarea";
+// import { Loader2 } from "lucide-react";
+// import { useProducts } from "@/hooks/useProducts";
+// import { Alert, AlertDescription } from "@/components/ui/alert";
+
+// export function ProductDialog({ open, onOpenChange }) {
+//   const { createProduct } = useProducts();
+
+//   const [formError, setFormError] = useState("");
+//   const [successMsg, setSuccessMsg] = useState("");
+
+//   const [formData, setFormData] = useState({
+//     name: "",
+//     sku: "",
+//     description: "",
+//     cost_price: "",
+//     sale_price: "",
+//     stock_qty: "",
+//     reorder_level: "50",
+//     image: null,
+//   });
+
+//   const [preview, setPreview] = useState(null);
+
+//   const handleChange = (field, value) =>
+//     setFormData((prev) => ({ ...prev, [field]: value }));
+
+//   const handleImageUpload = (e) => {
+//     const file = e.target.files?.[0];
+//     if (!file) return;
+//     handleChange("image", file);
+//     setPreview(URL.createObjectURL(file));
+//   };
+
+//   const validateFields = () => {
+//     if (!formData.name.trim()) return "Product name is required.";
+//     if (!formData.sku.trim()) return "SKU is required.";
+//     if (!formData.cost_price) return "Cost price is required.";
+//     if (!formData.sale_price) return "Sale price is required.";
+//     if (!formData.stock_qty) return "Stock quantity is required.";
+//     return "";
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     setFormError("");
+//     setSuccessMsg("");
+
+//     const error = validateFields();
+//     if (error) {
+//       setFormError(error);
+//       return;
+//     }
+
+//     try {
+//       await createProduct.mutateAsync({
+//         name: formData.name.trim(),
+//         sku: formData.sku.trim(),
+//         description: formData.description || "",
+//         cost_price: Number(formData.cost_price),
+//         sale_price: Number(formData.sale_price),
+//         stock_qty: Number(formData.stock_qty),
+//         reorder_level: Number(formData.reorder_level),
+//         image: formData.image,
+//       });
+
+//       setSuccessMsg("Product added successfully!");
+//       setTimeout(() => onOpenChange(false), 1200);
+
+//       // Reset form
+//       setFormData({
+//         name: "",
+//         sku: "",
+//         description: "",
+//         cost_price: "",
+//         sale_price: "",
+//         stock_qty: "",
+//         reorder_level: "50",
+//         image: null,
+//       });
+//       setPreview(null);
+
+//     } catch (err) {
+//       setFormError(err.response?.data?.message || err.message);
+//     }
+//   };
+
+//   return (
+//     <Dialog open={open} onOpenChange={onOpenChange}>
+//       <DialogContent className="sm:max-w-[420px] p-4">
+//         <DialogHeader>
+//           <DialogTitle>Add New Product</DialogTitle>
+//         </DialogHeader>
+
+//         {/* ERROR MESSAGE */}
+//         {formError && (
+//           <Alert variant="destructive">
+//             <AlertDescription>{formError}</AlertDescription>
+//           </Alert>
+//         )}
+
+//         {/* SUCCESS MESSAGE */}
+//         {successMsg && (
+//           <Alert className="bg-green-500/10 border-green-500 text-green-700">
+//             <AlertDescription>{successMsg}</AlertDescription>
+//           </Alert>
+//         )}
+
+//         <form onSubmit={handleSubmit} className="space-y-3">
+//           {/* IMAGE UPLOAD */}
+//           <div className="flex items-center gap-3">
+//             {preview ? (
+//               <img src={preview} className="h-16 w-16 rounded border object-cover" />
+//             ) : (
+//               <div className="h-16 w-16 bg-muted rounded flex items-center justify-center text-xs">
+//                 No Image
+//               </div>
+//             )}
+
+//             <div className="flex-1">
+//               <Label>Upload Image</Label>
+//               <Input type="file" accept="image/*" onChange={handleImageUpload} />
+//             </div>
+//           </div>
+
+//           {/* Name */}
+//           <div>
+//             <Label>Product Name *</Label>
+//             <Input
+//               value={formData.name}
+//               onChange={(e) => handleChange("name", e.target.value)}
+//             />
+//           </div>
+
+//           {/* SKU */}
+//           <div>
+//             <Label>SKU *</Label>
+//             <Input
+//               value={formData.sku}
+//               onChange={(e) => handleChange("sku", e.target.value)}
+//             />
+//           </div>
+
+//           {/* Description */}
+//           <div>
+//             <Label>Description</Label>
+//             <Textarea
+//               rows={2}
+//               value={formData.description}
+//               onChange={(e) => handleChange("description", e.target.value)}
+//             />
+//           </div>
+
+//           {/* Prices */}
+//           <div className="grid grid-cols-2 gap-3">
+//             <div>
+//               <Label>Cost Price *</Label>
+//               <Input
+//                 type="number"
+//                 value={formData.cost_price}
+//                 onChange={(e) => handleChange("cost_price", e.target.value)}
+//               />
+//             </div>
+
+//             <div>
+//               <Label>Sale Price *</Label>
+//               <Input
+//                 type="number"
+//                 value={formData.sale_price}
+//                 onChange={(e) => handleChange("sale_price", e.target.value)}
+//               />
+//             </div>
+//           </div>
+
+//           {/* Stock & reorder */}
+//           <div className="grid grid-cols-2 gap-3">
+//             <div>
+//               <Label>Stock Qty *</Label>
+//               <Input
+//                 type="number"
+//                 value={formData.stock_qty}
+//                 onChange={(e) => handleChange("stock_qty", e.target.value)}
+//               />
+//             </div>
+
+//             <div>
+//               <Label>Reorder Level</Label>
+//               <Input
+//                 type="number"
+//                 value={formData.reorder_level}
+//                 onChange={(e) => handleChange("reorder_level", e.target.value)}
+//               />
+//             </div>
+//           </div>
+
+//           <div className="flex justify-end gap-2 pt-2">
+//             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+//               Cancel
+//             </Button>
+
+//             <Button type="submit" disabled={createProduct.isPending}>
+//               {createProduct.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+//               Add
+//             </Button>
+//           </div>
+//         </form>
+//       </DialogContent>
+//     </Dialog>
+//   );
+// }
 
 // import React, { useState } from "react";
 // import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";

@@ -12,6 +12,8 @@ const {
   getAllProducts,
   getSingleProduct,
   searchProducts,
+  updateProduct,
+  getSingleProductId,
 } = require("../controllers/adminController");
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
@@ -28,6 +30,9 @@ router.post(
   upload.array("images"),
   createProduct
 );
+// sarch for product for both admin and everyone 
+// Live product search
+router.get("/products/search", searchProducts);
 // admin and manager  logged-in can view products
 router.get(
   "/products",
@@ -39,12 +44,23 @@ router.get(
 router.get(
   "/products/:productid",
   authenticate,
-  requireRole("admin", "manager","customer", "sales_agent"),
+  requireRole("admin", "manager"),
   getSingleProduct
 )
-// sarch for product for both admin and everyone 
-// Live product search
-router.get("/products/search", searchProducts);
+router.get(
+  "/products/:id",
+  authenticate,
+  requireRole("admin", "manager"),
+  getSingleProductId
+)
+// ✅ UPDATE PRODUCT
+router.put(
+  "/products/:id",
+  authenticate,
+  requireRole("admin", "manager"),
+  upload.array("images"), // allow multiple image replacement
+  updateProduct
+);
 
 
 
