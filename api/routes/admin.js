@@ -44,7 +44,7 @@ router.get(
 router.get(
   "/products/:productid",
   authenticate,
-  requireRole("admin", "manager"),
+  requireRole("admin", "manager",  "customer", "sale_agents"),
   getSingleProduct
 )
 router.get(
