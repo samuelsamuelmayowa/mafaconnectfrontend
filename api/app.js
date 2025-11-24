@@ -56,12 +56,14 @@ app.use((err, req, res, next) => {
 });
 
 // START SERVER
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 9000;
 
 (async () => {
   try {
     await sequelize.authenticate();
     await sequelize.sync();
+    // sequelize.sync({ force: true });
+
     //  await sequelize.sync({ alter: true });
     console.log("✅ Connected to MySQL");
 

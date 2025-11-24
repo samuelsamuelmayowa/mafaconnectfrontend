@@ -14,14 +14,19 @@ const {
   searchProducts,
   updateProduct,
   getSingleProductId,
+  createLocation,
+  addProductStock,
+  getManagers,
+  getLocationStats,
 } = require("../controllers/adminController");
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
+const { Location } = require("../models");
 
 // working api for admin side
 router.get('/allusers',authenticate, requireRole( "admin"), showAllUser)
 router.get("/auth/me", authenticate, requireRole("customer", "sales_person", "manager", "admin"), getCurrentUser);
-router.get('/users/{userId}/approval',authenticate, requireRole( "admin"), approveUser)
+router.get('/users/:userId/approval',authenticate, requireRole( "admin"), approveUser)
 router.post('/users/:userId/roles',authenticate, requireRole( "admin"),assignRole)
 router.post(
   "/products",
@@ -63,14 +68,52 @@ router.put(
 );
 
 
+// Create new depot
+router.post("/locations", 
+  authenticate, requireRole("admin","manager"), 
+  createLocation);
+
+// Add stock to depot
+router.post("/locations/stock", 
+  authenticate, requireRole("admin", "manager"),
+   addProductStock);
+
+router.get(
+  "/users/managers",
+  authenticate,
+  requireRole("admin", "manager"),
+  getManagers
+);
 
 
 
+router.get("/locations", authenticate,
+  requireRole("admin", "manager"),async (req, res) => {
+  try {
+    const locations = await Location.findAll({
+      order: [["createdAt", "DESC"]],
+    });
 
+    res.status(200).json({
+      success: true,
+      count: locations.length,
+      data: locations,
+    });
+  } catch (error) {
+    console.error("❌ Get locations error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch locations",
+    });
+  }
+});
 
-
-
-
+router.get(
+  "/locations/stats",
+  authenticate,
+  requireRole("admin", "manager"),
+  getLocationStats
+);
 
 
 

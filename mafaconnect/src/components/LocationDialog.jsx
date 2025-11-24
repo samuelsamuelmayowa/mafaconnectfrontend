@@ -8,9 +8,10 @@ import { Switch } from "@/components/ui/switch";
 import { useLocations } from "@/hooks/useLocations";
 import { useQuery } from "@tanstack/react-query";
 
-const API_BASE = import.meta.env.VITE_HOME_OO || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_HOME_OO;
 
 export function LocationDialog({ open, onOpenChange, location }) {
+   const token = localStorage.getItem("ACCESS_TOKEN");
   const { createLocation, updateLocation } = useLocations();
 
   const [formData, setFormData] = React.useState({
@@ -24,17 +25,30 @@ export function LocationDialog({ open, onOpenChange, location }) {
     capacity_sqft: "",
     active: true,
     manager_id: "",
+   
+  bank_name: "",
+  account_name: "",
+  account_number: "",
+  sort_code: "",
   });
 
-  // ✅ Fetch managers from REST API instead of Supabase
-  const { data: managers } = useQuery({
-    queryKey: ["managers"],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/users/managers`);
-      if (!res.ok) throw new Error("Failed to fetch managers");
-      return res.json();
-    },
-  });
+  //  Fetch managers from REST API instead of Supabase
+ const { data: managers } = useQuery({
+  queryKey: ["managers"],
+  queryFn: async () => {
+    const res = await fetch(`${API_BASE}/users/managers`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch managers");
+
+    const data = await res.json();   // 
+
+    console.log(data.data);       
+
+    return data.data;              
+  },
+});
 
   // Load existing location into form
   React.useEffect(() => {
@@ -50,6 +64,11 @@ export function LocationDialog({ open, onOpenChange, location }) {
         capacity_sqft: location.capacity_sqft?.toString() || "",
         active: location.active ?? true,
         manager_id: location.manager_id || "",
+
+        bank_name: location.bank_name || "",
+  account_name: location.account_name || "",
+  account_number: location.account_number || "",
+  sort_code: location.sort_code || "",
       });
     } else {
       setFormData({
@@ -63,6 +82,10 @@ export function LocationDialog({ open, onOpenChange, location }) {
         capacity_sqft: "",
         active: true,
         manager_id: "",
+        bank_name: "",
+  account_name: "",
+  account_number: "",
+  sort_code: "",
       });
     }
   }, [location, open]);
@@ -254,14 +277,63 @@ export function LocationDialog({ open, onOpenChange, location }) {
                 <SelectValue placeholder="Select manager" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
+
+                {/* <SelectItem value="">None</SelectItem> */}
                 {managers?.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
-                    {m.full_name} ({m.email})
+                    {m.name} ({m.email})
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+             <div className="space-y-4">
+            <h3 className="font-semibold text-lg">Bank Account Details</h3>
+            <p className="text-sm text-muted-foreground">Add bank account information for invoices and payments</p>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="bank_name">Bank Name</Label>
+                <Input
+                  id="bank_name"
+                  value={formData.bank_name}
+                  onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+                  placeholder="e.g., First Bank of Nigeria"
+                />
+              </div>
+              <div>
+                <Label htmlFor="account_name">Account Name</Label>
+                <Input
+                  id="account_name"
+                  value={formData.account_name}
+                  onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
+                  placeholder="Account holder name"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="account_number">Account Number</Label>
+                <Input
+                  id="account_number"
+                  value={formData.account_number}
+                  onChange={(e) => setFormData({ ...formData, account_number: e.target.value })}
+                  placeholder="10-digit account number"
+                />
+              </div>
+              <div>
+                <Label htmlFor="sort_code">Sort Code (Optional)</Label>
+                <Input
+                  id="sort_code"
+                  value={formData.sort_code}
+                  onChange={(e) => setFormData({ ...formData, sort_code: e.target.value })}
+                  placeholder="Branch code if applicable"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Buttons */}

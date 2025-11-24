@@ -26,10 +26,7 @@ exports.authenticate = async (req, res, next) => {
   }
 };
 
-/**
- * ✅ Role-based authorization middleware
- * Example: requireRole("admin")
- */
+
 
 // middleware/requireRole.js
 exports.requireRole = (...allowedRoles) => {

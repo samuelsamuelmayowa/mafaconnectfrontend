@@ -42,14 +42,23 @@ import MobileBottomNav from "./MobileBottomNav";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Customer Orders", href: "/customer-order-management", icon: ShoppingCart },
+  {
+    name: "Customer Orders",
+    href: "/customer-order-management",
+    icon: ShoppingCart,
+  },
   { name: "Transactions", href: "/transactions", icon: Receipt },
   { name: "Products", href: "/products", icon: Package },
   { name: "Customers", href: "/customers", icon: Users },
   { name: "Messages", href: "/messages", icon: MessageSquare },
   { name: "Returns", href: "/returns", icon: PackageX },
   { name: "Purchase Orders", href: "/purchase-orders", icon: ShoppingBag },
-  { name: "Stock Transfers", href: "/stock-transfers", icon: ArrowRightLeft, managerOnly: true },
+  {
+    name: "Stock Transfers",
+    href: "/stock-transfers",
+    icon: ArrowRightLeft,
+    managerOnly: true,
+  },
   { name: "Suppliers", href: "/suppliers", icon: Truck, managerOnly: true },
   { name: "Locations", href: "/locations", icon: MapPin, managerOnly: true },
   { name: "Loyalty", href: "/loyalty", icon: Gift, managerOnly: true },
@@ -70,7 +79,8 @@ const customerNavigation = [
 export function DashboardLayout({ children }) {
   const location = useLocation();
   const [open, setOpen] = React.useState(false);
-  const { user, loading, signOut, roles, isManager, isAdmin, isStaff,role } = useAuth();
+  const { user, loading, signOut, roles, isManager, isAdmin, isStaff, role } =
+    useAuth();
   const { isOnline } = useOfflineSync();
   const { theme, toggleTheme } = useTheme();
   const { getUnreadCount } = useConversations();
@@ -83,13 +93,14 @@ export function DashboardLayout({ children }) {
         // Example: Simulated API response
         const fakeData = { account_number: "00000123" };
         // setAccountNumber(fakeData.account_number);
-        const accountNumber = user?.account_number || user?.accountNumber || user?.account;
-
+        const accountNumber =
+          user?.account_number || user?.accountNumber || user?.account;
       }
     };
     fetchAccountNumber();
   }, [user]);
-       const accountNumber = user?.account_number || user?.accountNumber || user?.account;
+  const accountNumber =
+    user?.account_number || user?.accountNumber || user?.account;
 
   if (loading) {
     return (
@@ -102,11 +113,22 @@ export function DashboardLayout({ children }) {
   if (!user) return null;
 
   const NavContent = () => {
-    const navItems = isStaff ? navigation : customerNavigation;
+    // const navItems = isStaff ? navigation : customerNavigation;
+const navItems = (isStaff || isAdmin) ? navigation : customerNavigation;
 
+    // const filteredNav = navItems.filter((item) => {
+    //   if (item.adminOnly) return isAdmin;
+    //   if (item.managerOnly) return isManager;
+    //   return true;
+    // });
     const filteredNav = navItems.filter((item) => {
-      if (item.adminOnly) return isAdmin;
-      if (item.managerOnly) return isManager;
+      const hasManagerAccess = item.managerOnly && isManager;
+      const hasAdminAccess = item.adminOnly && isAdmin;
+
+      if (item.managerOnly || item.adminOnly) {
+        return hasManagerAccess || hasAdminAccess;
+      }
+
       return true;
     });
 
@@ -189,15 +211,29 @@ export function DashboardLayout({ children }) {
             )}
             {!isStaff && <ShoppingCartSidebar />}
             {!isStaff && <NotificationBell />}
-            <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-9 w-9">
-              {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-9 w-9"
+            >
+              {theme === "light" ? (
+                <Moon className="h-4 w-4" />
+              ) : (
+                <Sun className="h-4 w-4" />
+              )}
             </Button>
             <Link to="/profile">
               <Button variant="ghost" size="icon" className="h-9 w-9">
                 <UserCircle className="h-4 w-4" />
               </Button>
             </Link>
-            <Button variant="ghost" size="icon" onClick={signOut} className="h-9 w-9">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={signOut}
+              className="h-9 w-9"
+            >
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -235,24 +271,24 @@ export function DashboardLayout({ children }) {
                 ))}
               </div> */}
               <div className="mb-3 flex flex-wrap gap-1">
-  {(Array.isArray(roles) && roles.length > 0
-    ? roles
-    : [role || user?.role || "guest"]
-  ).map((r) => (
-    <Badge
-      key={r}
-      variant={r === "admin" ? "secondary" : "destructive"}
-      className="text-xs capitalize"
-    >
-      {r}
-    </ Badge>
-  ))}
-</div>
+                {(Array.isArray(roles) && roles.length > 0
+                  ? roles
+                  : [role || user?.role || "guest"]
+                ).map((r) => (
+                  <Badge
+                    key={r}
+                    variant={r === "admin" ? "secondary" : "destructive"}
+                    className="text-xs capitalize"
+                  >
+                    {r}
+                  </Badge>
+                ))}
+              </div>
               {accountNumber && (
-  <div className="text-xs font-semibold text-primary mb-2 p-2 bg-primary/5 rounded">
-    MFC-{accountNumber}
-  </div>
-)}
+                <div className="text-xs font-semibold text-primary mb-2 p-2 bg-primary/5 rounded">
+                  MFC-{accountNumber}
+                </div>
+              )}
 
               {/* {accountNumber && (
                 <div className="text-xs font-semibold text-primary mb-2 p-2 bg-primary/5 rounded">
@@ -267,8 +303,17 @@ export function DashboardLayout({ children }) {
                 )}
                 {user.email}
               </div>
-              <Button variant="ghost" size="sm" onClick={toggleTheme} className="w-full gap-2 mb-2">
-                {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleTheme}
+                className="w-full gap-2 mb-2"
+              >
+                {theme === "light" ? (
+                  <Moon className="h-4 w-4" />
+                ) : (
+                  <Sun className="h-4 w-4" />
+                )}
                 {theme === "light" ? "Dark" : "Light"} Mode
               </Button>
               <Link to="/profile">
@@ -277,7 +322,12 @@ export function DashboardLayout({ children }) {
                   Profile
                 </Button>
               </Link>
-              <Button variant="outline" size="sm" onClick={signOut} className="w-full gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={signOut}
+                className="w-full gap-2"
+              >
                 <LogOut className="h-4 w-4" />
                 Logout
               </Button>

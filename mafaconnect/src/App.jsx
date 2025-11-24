@@ -358,6 +358,7 @@ function App() {
           <Route
             path="/locations"
             element={
+              ///requireManager
               <ProtectedRoute requireManager>
                 <DashboardLayout>
                   <Locations />
@@ -368,7 +369,8 @@ function App() {
           <Route
             path="/locations/:id"
             element={
-              <ProtectedRoute requireManager>
+              ///requireManager
+              <ProtectedRoute requireManager>        
                 <DashboardLayout>
                   <LocationDetail />
                 </DashboardLayout>

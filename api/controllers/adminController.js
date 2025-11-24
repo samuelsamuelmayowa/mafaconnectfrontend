@@ -4,7 +4,8 @@ const { Op } = require("sequelize");
 const { User } = require("../models/user");
 require("dotenv").config();
 const cloudinary = require("../cloudinary");
-const { Product, ProductImage } = require("../models");
+const { Product, ProductImage, Location } = require("../models");
+const { sequelize } = require("../db");
 /**
  * Helper to generate access token
  */
@@ -319,7 +320,7 @@ exports.searchProducts = async (req, res) => {
 
     const products = await Product.findAll({
       where: {
-        active: true, 
+        active: true,
         [Op.or]: [
           Sequelize.where(
             Sequelize.fn("LOWER", Sequelize.col("name")),
@@ -611,8 +612,244 @@ exports.updateProduct = async (req, res) => {
 
 
 
+exports.createLocation = async (req, res) => {
+  try {
+    const location = await Location.create({
+      name: req.body.name,
+      location_type: req.body.location_type,
+      address: req.body.address,
+      phone: req.body.phone,
+      email: req.body.email,
+      state: req.body.state,
+      zone: req.body.zone,
+      capacity_sqft: req.body.capacity_sqft,
+      active: req.body.active,
+      bank_name: req.body.bank_name,
+      account_name: req.body.account_name,
+      account_number: req.body.account_number,
+      sort_code: req.body.sort_code,
+
+      manager_id: req.body.manager_id || null,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Location created successfully",
+      data: location,
+    });
+
+  } catch (err) {
+    console.error("Create location error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
 
 
+exports.updateLocation = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const location = await Location.findByPk(id);
+    if (!location) {
+      return res.status(404).json({ success: false, message: "Location not found" });
+    }
+
+    await location.update({
+      name: req.body.name,
+      location_type: req.body.location_type,
+      address: req.body.address,
+      phone: req.body.phone,
+      email: req.body.email,
+      state: req.body.state,
+      zone: req.body.zone,
+      capacity_sqft: req.body.capacity_sqft,
+      active: req.body.active,
+      bank_name: req.body.bank_name,
+      account_name: req.body.account_name,
+      account_number: req.body.account_number,
+      sort_code: req.body.sort_code,
+      manager_id: req.body.manager_id || null,
+    });
+
+    res.json({
+      success: true,
+      message: "Location updated successfully",
+      data: location,
+    });
+
+  } catch (err) {
+    console.error("Update location error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.getManagers = async (req, res) => {
+  try {
+    const managers = await User.findAll({
+      where: { role: "manager" },
+      attributes: ["id", "name", "email", "phone"],
+      order: [["name", "ASC"]],
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Managers fetched successfully",
+      data: managers,
+    });
+
+  } catch (err) {
+    console.error("❌ Fetch managers error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error fetching managers",
+    });
+  }
+};
+exports.addProductStock = async (req, res) => {
+  try {
+    const { productId, locationId, stockQty, reorderLevel } = req.body;
+
+    const stock = await ProductLocationStock.create({
+      product_id: productId,
+      location_id: locationId,
+      stock_qty: stockQty || 0,
+      reorder_level: reorderLevel || 20,
+    });
+
+    return res.json({
+      success: true,
+      message: "Stock added to location successfully",
+      data: stock,
+    });
+
+  } catch (err) {
+    console.error("Stock error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+
+exports.getLocationStats = async (req, res) => {
+  try {
+    const stats = await sequelize.query(`
+      SELECT 
+        l.id AS location_id,
+        l.name AS location_name,
+
+        COALESCE(COUNT(DISTINCT ps.product_id), 0) AS total_products,
+        COALESCE(SUM(ps.stock_qty), 0) AS total_units,
+
+        COALESCE(SUM(ps.stock_qty * p.sale_price), 0) AS total_stock_value,
+
+        COALESCE(SUM(
+          CASE 
+            WHEN ps.stock_qty <= ps.reorder_level 
+            THEN 1 ELSE 0 
+          END
+        ), 0) AS low_stock_items
+
+      FROM locations l
+      LEFT JOIN location_product_stocks ps ON ps.location_id = l.id
+      LEFT JOIN products p ON ps.product_id = p.id
+      GROUP BY l.id
+    `, {
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    return res.json({
+      success: true,
+      message: "Location stats fetched",
+      data: stats
+    });
+
+  } catch (err) {
+    console.error("❌ Location stats error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching location stats",
+      error: err.message
+    });
+  }
+};
+
+// exports.getLocationStats = async (req, res) => {
+//   try {
+//     const stats = await sequelize.query(`
+//       SELECT 
+//         l.id AS location_id,
+//         l.name AS location_name,
+//         COUNT(DISTINCT ps.product_id) AS total_products,
+//         SUM(ps.stock_qty) AS total_units,
+//         SUM(ps.stock_qty * p.sale_price) AS total_stock_value,
+//         SUM(
+//           CASE 
+//             WHEN ps.stock_qty <= ps.reorder_level 
+//             THEN 1 ELSE 0 
+//           END
+//         ) AS low_stock_items
+//       FROM locations l
+//       LEFT JOIN location_product_stocks ps ON ps.location_id = l.id
+//       LEFT JOIN products p ON ps.product_id = p.id
+//       GROUP BY l.id
+//       ORDER BY l.createdAt DESC
+//     `, { type: sequelize.QueryTypes.SELECT });
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Location statistics fetched successfully",
+//       data: stats,
+//     });
+
+//   } catch (err) {
+//     console.error("❌ Location stats error:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error fetching location statistics",
+//     });
+//   }
+// };
+
+
+// exports.createLocation = async (req, res) => {
+//   try {
+//     const {
+//       name,
+//       address,
+//       city,
+//       bank_name,
+//       bank_account_name,
+//       bank_account_number,
+//       bank_code
+//     } = req.body;
+
+//     const location = await Location.create({
+//       name,
+//       address,
+//       city,
+//       bank_name,
+//       bank_account_name,
+//       bank_account_number,
+//       bank_code
+//     });
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Depot created successfully",
+//       data: location,
+//     });
+
+//   } catch (err) {
+//     console.error("Create depot error:", err);
+//     return res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+
+
+
+
+// const { ProductLocationStock } = require("../models/ProductLocationStock");
 
 
 

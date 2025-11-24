@@ -3,6 +3,8 @@ import axios from "axios";
 
 // 🧠 Base URL of your Node.js backend
 const API_BASE_URL = import.meta.env.VITE_HOME_OO
+
+ const token = localStorage.getItem("ACCESS_TOKEN");
 // "https://mafaconnectbackendapi.onrender.com/api/v1"
 // import.meta.env.VITE_HOME_OO
 
@@ -11,6 +13,7 @@ export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
+     Authorization: `Bearer ${token}` ,
   },
 });
 

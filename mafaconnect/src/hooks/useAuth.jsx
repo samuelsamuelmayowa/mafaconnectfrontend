@@ -69,6 +69,11 @@ export function useAuth() {
   const signOut = async () => {
     await logoutMutation.mutateAsync();
   };
+  const hasRole = (roleName) => {
+  if (!roleName) return false;
+  return roles.includes(roleName.toLowerCase());
+};
+
 
   // ✅ Normalize user data
   const user = userData?.user || userData || null;
@@ -91,6 +96,7 @@ export function useAuth() {
     user,
     role,
     roles,
+    hasRole,
     loading,
     signOut,
     isError,

@@ -76,7 +76,7 @@ export function ProductLocationStockDialog({ open, onOpenChange, product }) {
             <Package className="h-5 w-5" />
             {product?.name} - Location Stock
           </DialogTitle>
-        </DialogHeader>
+      </DialogHeader>
 
         <Tabs defaultValue="view" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
