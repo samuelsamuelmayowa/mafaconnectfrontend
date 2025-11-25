@@ -174,14 +174,14 @@ const totalSales = React.useMemo(() => {
           New Location
         </Button>
       </div>
-<div className="text-xs text-red-500 mb-2">
+{/* <div className="text-xs text-red-500 mb-2">
   Metrics status: 
   {overallMetrics ? "✅ Calculated" : "❌ Not workign  Calculated"}
-</div>
+</div> */}
 
-<pre className="text-xs bg-slate-100 p-2 rounded">
+{/* <pre className="text-xs bg-slate-100 p-2 rounded">
   {JSON.stringify(locationStats, null, 2)}
-</pre>
+</pre> */}
 
       {/* Overall Stats */}
    {overallMetrics && (

@@ -873,6 +873,39 @@ exports.getLocationStats = async (req, res) => {
   }
 };
 
+
+exports.getProductLocations = async (req, res) => {
+  try {
+    const stocks = await ProductLocationStock.findAll({
+      include: [
+        {
+          model: Location,
+          as: "location",
+          attributes: ["id", "name", "state"],
+        },
+        {
+          model: Product,
+          as: "product",
+          attributes: ["id", "name"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: stocks,
+    });
+  } catch (err) {
+    console.error("❌ Error fetching product locations:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch product locations",
+      error: err.message,
+    });
+  }
+};
 // exports.addProductStock = async (req, res) => {
 //   try {
 //     const { productId, locationId, stockQty, reorderLevel } = req.body;

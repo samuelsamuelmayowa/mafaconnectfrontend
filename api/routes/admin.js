@@ -19,6 +19,7 @@ const {
   getManagers,
   getLocationStats,
   getSingleLocationStats,
+  getProductLocations,
 } = require("../controllers/adminController");
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
@@ -118,7 +119,7 @@ router.get(
 );
 router.get("/locations/:locationId/stats", getSingleLocationStats);
 
-
+router.get("/product-locations", getProductLocations);
 
 
 

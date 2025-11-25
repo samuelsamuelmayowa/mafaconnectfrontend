@@ -76,7 +76,7 @@ function App() {
               </AuthProtectedRoute>
             }
           />
-           <Route
+          <Route
             path="/kyc-onboarding"
             element={
               <CustomerProtectedRoute>
@@ -87,12 +87,12 @@ function App() {
             }
           />
 
-           <Route
+          <Route
             path="/checkout"
             element={
               <CustomerProtectedRoute>
                 <DashboardLayout>
-                  <Checkout/>
+                  <Checkout />
                 </DashboardLayout>
               </CustomerProtectedRoute>
             }
@@ -370,7 +370,7 @@ function App() {
             path="/locations/:id"
             element={
               ///requireManager
-              <ProtectedRoute requireManager>        
+              <ProtectedRoute requireManager>
                 <DashboardLayout>
                   <LocationDetail />
                 </DashboardLayout>

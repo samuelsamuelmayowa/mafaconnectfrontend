@@ -22,8 +22,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Package, TrendingDown, TrendingUp } from "lucide-react";
+import { Toast } from "./ui/Toast";
+// import { toast } from "./ui/sonner";
 
 export function ProductLocationStockDialog({ open, onOpenChange, product }) {
+  // const toast = Toast()
   const { productLocations, updateProductLocationStock, adjustLocationStock } =
     useProductLocations();
 
@@ -40,6 +43,8 @@ export function ProductLocationStockDialog({ open, onOpenChange, product }) {
     }
   }, [open]);
 
+  // const { productLocations, updateProductLocationStock, adjustLocationStock } =
+  //   useProductLocations();
   const { locations } = useLocations();
 
   const [selectedLocationId, setSelectedLocationId] = useState("");
@@ -53,30 +58,11 @@ export function ProductLocationStockDialog({ open, onOpenChange, product }) {
   // const productLocationStock = useMemo(() => {
   //   return productLocations?.filter((pl) => pl.product_id === product?.id) || [];
   // }, [productLocations, product]);
-  // const productLocationStock = useMemo(() => {
-  //   return (
-  //     productLocations?.filter(
-  //       (pl) => Number(pl.product_id) === Number(product?.id)
-  //     ) || []
-
-  //   );
-
-  // }, [productLocations, product?.id]);
-  //   const productLocationStock = useMemo(() => {
-  //   const filtered =
-  //     productLocations?.filter(
-  //       (pl) => Number(pl.product_id) === Number(product?.id)
-  //     ) || [];
-
-  //   console.log("FILTERED productLocationStock:", filtered);
-
-  //   return filtered;
-  // }, [productLocations, product?.id]);
   const productLocationStock = useMemo(() => {
-    if (!Array.isArray(productLocations)) return [];
-
-    return productLocations.filter(
-      (pl) => Number(pl.product_id) === Number(product?.id)
+    return (
+      productLocations?.filter(
+        (pl) => Number(pl.product_id) === Number(product?.id)
+      ) || []
     );
   }, [productLocations, product?.id]);
 
@@ -170,16 +156,6 @@ export function ProductLocationStockDialog({ open, onOpenChange, product }) {
     setReorderLevel(10);
   };
 
-  console.log("RAW productLocations:", productLocations);
-  console.log("Product ID:", product?.id);
-
-  const totalStock = useMemo(() => {
-    return productLocationStock.reduce(
-      (sum, item) => sum + Number(item.stock_qty || 0),
-      0
-    );
-  }, [productLocationStock]);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -198,7 +174,7 @@ export function ProductLocationStockDialog({ open, onOpenChange, product }) {
           </TabsList>
 
           {/* View stock tab */}
-          {/* <TabsContent value="view" className="space-y-4">
+          <TabsContent value="view" className="space-y-4">
             {productLocationStock.length > 0 ? (
               <div className="grid gap-3">
                 {productLocationStock.map((pl) => (
@@ -225,50 +201,6 @@ export function ProductLocationStockDialog({ open, onOpenChange, product }) {
                         <p className="text-xs text-muted-foreground">
                           Reorder at: {pl.reorder_level}
                         </p>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No stock at any location yet.
-              </div>
-            )}
-          </TabsContent> */}
-          <TabsContent value="view" className="space-y-4">
-            {productLocationStock.length > 0 ? (
-              <div className="space-y-4">
-                {productLocationStock.map((pl) => (
-                  <Card
-                    key={pl.id}
-                    className="p-5 border rounded-lg shadow-sm bg-white"
-                  >
-                    <div className="flex justify-between items-start">
-                      {/* LEFT: Location Info */}
-                      <div>
-                        <h3 className="text-lg font-semibold">
-                          {pl.location?.name}
-                        </h3>
-
-                        <p className="text-sm text-muted-foreground">
-                          {pl.location?.state}
-                        </p>
-                      </div>
-
-                      {/* RIGHT: Stock Info */}
-                      <div className="text-right">
-                        <p className="text-3xl font-bold">{pl.stock_qty}</p>
-
-                        <p className="text-sm text-muted-foreground">
-                          Reorder at: {pl.reorder_level}
-                        </p>
-
-                        {pl.stock_qty <= pl.reorder_level && (
-                          <Badge variant="destructive" className="mt-2">
-                            Low Stock
-                          </Badge>
-                        )}
                       </div>
                     </div>
                   </Card>
