@@ -1,10 +1,21 @@
 import React, { useState, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useProductLocations } from "@/hooks/useProductLocations";
 import { useLocations } from "@/hooks/useLocations";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
@@ -13,7 +24,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Package, TrendingDown, TrendingUp } from "lucide-react";
 
 export function ProductLocationStockDialog({ open, onOpenChange, product }) {
-  const { productLocations, updateProductLocationStock, adjustLocationStock } = useProductLocations();
+  const { productLocations, updateProductLocationStock, adjustLocationStock } =
+    useProductLocations();
   const { locations } = useLocations();
 
   const [selectedLocationId, setSelectedLocationId] = useState("");
@@ -24,23 +36,41 @@ export function ProductLocationStockDialog({ open, onOpenChange, product }) {
   const [reorderLevel, setReorderLevel] = useState(10);
 
   // Filter stock entries for this product
+  // const productLocationStock = useMemo(() => {
+  //   return productLocations?.filter((pl) => pl.product_id === product?.id) || [];
+  // }, [productLocations, product]);
   const productLocationStock = useMemo(() => {
-    return productLocations?.filter((pl) => pl.product_id === product?.id) || [];
-  }, [productLocations, product]);
+    return (
+      productLocations?.filter(
+        (pl) => Number(pl.product_id) === Number(product?.id)
+      ) || []
+    );
+  }, [productLocations, product?.id]);
 
   // Find locations not yet assigned this product
+  // const availableLocations = useMemo(() => {
+  //   return (
+  //     locations?.filter(
+  //       (loc) => !productLocationStock?.some((stock) => stock.location?.id === loc.id)
+  //     ) || []
+  //   );
+  // }, [locations, productLocationStock]);
   const availableLocations = useMemo(() => {
-    return (
-      locations?.filter(
-        (loc) => !productLocationStock?.some((stock) => stock.location?.id === loc.id)
-      ) || []
+    if (!locations || !productLocationStock) return [];
+
+    return locations.filter(
+      (loc) =>
+        !productLocationStock.some(
+          (stock) => Number(stock.location_id) === Number(loc.id)
+        )
     );
   }, [locations, productLocationStock]);
 
   const handleAdjustment = (type) => {
     if (!selectedLocationId || !adjustment) return;
 
-    const adjustmentValue = type === "add" ? parseInt(adjustment) : -parseInt(adjustment);
+    const adjustmentValue =
+      type === "add" ? parseInt(adjustment) : -parseInt(adjustment);
     adjustLocationStock({
       productId: product.id,
       locationId: selectedLocationId,
@@ -58,7 +88,8 @@ export function ProductLocationStockDialog({ open, onOpenChange, product }) {
 
     updateProductLocationStock({
       productId: product.id,
-      locationId: newLocationId,
+      // locationId: newLocationId,
+      locationId: Number(newLocationId), // convert back to number
       stockQty: initialStock,
       reorderLevel,
     });
@@ -76,7 +107,7 @@ export function ProductLocationStockDialog({ open, onOpenChange, product }) {
             <Package className="h-5 w-5" />
             {product?.name} - Location Stock
           </DialogTitle>
-      </DialogHeader>
+        </DialogHeader>
 
         <Tabs defaultValue="view" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
@@ -95,13 +126,17 @@ export function ProductLocationStockDialog({ open, onOpenChange, product }) {
                       <div>
                         <h4 className="font-semibold">{pl.location?.name}</h4>
                         {pl.location?.state && (
-                          <p className="text-sm text-muted-foreground">{pl.location.state}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {pl.location.state}
+                          </p>
                         )}
                       </div>
 
                       <div className="text-right">
                         <div className="flex items-center gap-2">
-                          <span className="text-2xl font-bold">{pl.stock_qty}</span>
+                          <span className="text-2xl font-bold">
+                            {pl.stock_qty}
+                          </span>
                           {pl.stock_qty <= pl.reorder_level && (
                             <Badge variant="destructive">Low Stock</Badge>
                           )}
@@ -193,13 +228,20 @@ export function ProductLocationStockDialog({ open, onOpenChange, product }) {
               <>
                 <div className="space-y-2">
                   <Label htmlFor="new-location">Select Location</Label>
-                  <Select value={newLocationId} onValueChange={setNewLocationId}>
+                  <Select
+                    value={newLocationId}
+                    onValueChange={setNewLocationId}
+                  >
                     <SelectTrigger id="new-location">
                       <SelectValue placeholder="Choose a location" />
                     </SelectTrigger>
                     <SelectContent>
                       {availableLocations.map((location) => (
-                        <SelectItem key={location.id} value={location.id}>
+                        // <SelectItem key={location.id} value={location.id}>
+                        <SelectItem
+                          key={location.id}
+                          value={String(location.id)}
+                        >
                           {location.name} - {location.state}
                         </SelectItem>
                       ))}
@@ -214,7 +256,9 @@ export function ProductLocationStockDialog({ open, onOpenChange, product }) {
                     type="number"
                     min="0"
                     value={initialStock}
-                    onChange={(e) => setInitialStock(parseInt(e.target.value) || 0)}
+                    onChange={(e) =>
+                      setInitialStock(parseInt(e.target.value) || 0)
+                    }
                     placeholder="Enter initial stock quantity"
                   />
                 </div>
@@ -226,7 +270,9 @@ export function ProductLocationStockDialog({ open, onOpenChange, product }) {
                     type="number"
                     min="0"
                     value={reorderLevel}
-                    onChange={(e) => setReorderLevel(parseInt(e.target.value) || 10)}
+                    onChange={(e) =>
+                      setReorderLevel(parseInt(e.target.value) || 10)
+                    }
                     placeholder="Enter reorder level"
                   />
                   <p className="text-xs text-muted-foreground">

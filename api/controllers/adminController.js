@@ -4,7 +4,7 @@ const { Op } = require("sequelize");
 const { User } = require("../models/user");
 require("dotenv").config();
 const cloudinary = require("../cloudinary");
-const { Product, ProductImage, Location } = require("../models");
+const { Product, ProductImage, Location, ProductLocationStock } = require("../models");
 const { sequelize } = require("../db");
 /**
  * Helper to generate access token
@@ -609,9 +609,6 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-
-
-
 exports.createLocation = async (req, res) => {
   try {
     const location = await Location.create({
@@ -705,30 +702,133 @@ exports.getManagers = async (req, res) => {
     });
   }
 };
+
+
 exports.addProductStock = async (req, res) => {
   try {
-    const { productId, locationId, stockQty, reorderLevel } = req.body;
+    // const { productId, locationId, stockQty, reorderLevel, orders } = req.body;
 
+    // if (!productId || !locationId) {
+     const { product_id, location_id, stock_qty, reorder_level } = req.body;
+
+    if (!product_id || !location_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID and Location ID are required",
+      });
+    }
+
+    // 1. Check if product is already assigned to this location
+    const existingStock = await ProductLocationStock.findOne({
+      where: {
+        product_id: product_id,
+        location_id:location_id,
+      },
+    });
+
+    if (existingStock) {
+      return res.status(400).json({
+        success: false,
+        message: "This product is already assigned to this location",
+      });
+    }
+
+    // 2. Create new assignment
     const stock = await ProductLocationStock.create({
-      product_id: productId,
-      location_id: locationId,
-      stock_qty: stockQty || 0,
-      reorder_level: reorderLevel || 20,
+      product_id: product_id,
+      location_id: location_id,
+      stock_qty: stock_qty || 0,
+      orders: 0 ,
+      reorder_level: reorder_level || 20,
     });
 
     return res.json({
       success: true,
-      message: "Stock added to location successfully",
+      message: "Product successfully assigned to location",
       data: stock,
     });
 
   } catch (err) {
     console.error("Stock error:", err);
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({
+      success: false,
+      message: "Server error while assigning product to location",
+    });
   }
 };
 
 
+
+exports.getSingleLocationStats = async (req, res) => {
+  try {
+    const { locationId } = req.params;
+
+    const [stats] = await sequelize.query(`
+      SELECT 
+        l.id AS location_id,
+        l.name AS location_name,
+
+        -- Total assigned product types
+        COALESCE(COUNT(DISTINCT pls.product_id), 0) AS total_products,
+
+        -- Total units in this location
+        COALESCE(SUM(pls.stock_qty), 0) AS total_units,
+
+        -- Total stock value
+        COALESCE(SUM(pls.stock_qty * p.sale_price), 0) AS total_stock_value,
+
+        -- Low stock count
+        COALESCE(SUM(
+          CASE 
+            WHEN pls.stock_qty <= pls.reorder_level 
+            THEN 1 
+            ELSE 0 
+          END
+        ), 0) AS low_stock_items
+
+      FROM locations l
+      LEFT JOIN product_location_stocks pls 
+        ON pls.location_id = l.id
+      LEFT JOIN products p 
+        ON pls.product_id = p.id
+      WHERE l.id = :locationId
+      GROUP BY l.id
+    `, {
+      replacements: { locationId },
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    // Orders for this location
+    const [orders] = await sequelize.query(`
+      SELECT 
+        COUNT(*) AS total_orders,
+        COALESCE(SUM(total_amount), 0) AS total_sales
+      FROM orders
+      WHERE location_id = :locationId
+    `, {
+      replacements: { locationId },
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    return res.json({
+      success: true,
+      message: "Location stats fetched successfully",
+      data: {
+        ...stats,
+        total_orders: orders.total_orders,
+        total_sales: orders.total_sales,
+      },
+    });
+
+  } catch (err) {
+    console.error("❌ Location stats error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching location stats",
+      error: err.message,
+    });
+  }
+};
 
 exports.getLocationStats = async (req, res) => {
   try {
@@ -737,21 +837,22 @@ exports.getLocationStats = async (req, res) => {
         l.id AS location_id,
         l.name AS location_name,
 
-        COALESCE(COUNT(DISTINCT ps.product_id), 0) AS total_products,
-        COALESCE(SUM(ps.stock_qty), 0) AS total_units,
-
-        COALESCE(SUM(ps.stock_qty * p.sale_price), 0) AS total_stock_value,
+        COUNT(DISTINCT pls.product_id) AS total_products,
+        COALESCE(SUM(pls.stock_qty), 0) AS total_units,
+        COALESCE(SUM(pls.stock_qty * p.sale_price), 0) AS total_stock_value,
 
         COALESCE(SUM(
           CASE 
-            WHEN ps.stock_qty <= ps.reorder_level 
+            WHEN pls.stock_qty <= pls.reorder_level 
             THEN 1 ELSE 0 
           END
         ), 0) AS low_stock_items
 
       FROM locations l
-      LEFT JOIN location_product_stocks ps ON ps.location_id = l.id
-      LEFT JOIN products p ON ps.product_id = p.id
+      LEFT JOIN product_location_stocks pls 
+        ON pls.location_id = l.id
+      LEFT JOIN products p 
+        ON pls.product_id = p.id
       GROUP BY l.id
     `, {
       type: sequelize.QueryTypes.SELECT
@@ -759,7 +860,6 @@ exports.getLocationStats = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Location stats fetched",
       data: stats
     });
 
@@ -772,6 +872,75 @@ exports.getLocationStats = async (req, res) => {
     });
   }
 };
+
+// exports.addProductStock = async (req, res) => {
+//   try {
+//     const { productId, locationId, stockQty, reorderLevel } = req.body;
+
+//     const stock = await ProductLocationStock.create({
+      
+//       product_id: productId,
+//       location_id: locationId,
+//       stock_qty: stockQty || 0,
+//       reorder_level: reorderLevel || 20,
+//     });
+
+//     return res.json({
+//       success: true,
+//       message: "Stock added to location successfully",
+//       data: stock,
+//     });
+
+//   } catch (err) {
+//     console.error("Stock error:", err);
+//     return res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+
+
+// exports.getLocationStats = async (req, res) => {
+//   try {
+//     const stats = await sequelize.query(`
+//       SELECT 
+//         l.id AS location_id,
+//         l.name AS location_name,
+
+//         COALESCE(COUNT(DISTINCT ps.product_id), 0) AS total_products,
+//         COALESCE(SUM(ps.stock_qty), 0) AS total_units,
+
+//         COALESCE(SUM(ps.stock_qty * p.sale_price), 0) AS total_stock_value,
+
+//         COALESCE(SUM(
+//           CASE 
+//             WHEN ps.stock_qty <= ps.reorder_level 
+//             THEN 1 ELSE 0 
+//           END
+//         ), 0) AS low_stock_items
+
+//       FROM locations l
+//       LEFT JOIN location_product_stocks ps ON ps.location_id = l.id
+//       LEFT JOIN products p ON ps.product_id = p.id
+//       GROUP BY l.id
+//     `, {
+//       type: sequelize.QueryTypes.SELECT
+//     });
+
+//     return res.json({
+//       success: true,
+//       message: "Location stats fetched",
+//       data: stats
+//     });
+
+//   } catch (err) {
+//     console.error("❌ Location stats error:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Error fetching location stats",
+//       error: err.message
+//     });
+//   }
+// };
 
 // exports.getLocationStats = async (req, res) => {
 //   try {

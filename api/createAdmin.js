@@ -24,6 +24,7 @@ require("dotenv").config();
          email: "adminew@mafaconnect.com", 
         account_number,
         password: hashedPassword,
+        customer_type:"admin",
         role: "admin",
         kyc_status: "approved",
         is_active: true,

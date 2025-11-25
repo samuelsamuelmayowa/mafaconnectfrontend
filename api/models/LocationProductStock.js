@@ -22,7 +22,8 @@ const LocationProductStock = sequelize.define("LocationProductStock", {
     type: DataTypes.INTEGER,
     defaultValue: 0,
   },
-
+  
+ 
   reorder_level: {
     type: DataTypes.INTEGER,
     defaultValue: 10,

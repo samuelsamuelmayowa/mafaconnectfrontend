@@ -18,6 +18,7 @@ const {
   addProductStock,
   getManagers,
   getLocationStats,
+  getSingleLocationStats,
 } = require("../controllers/adminController");
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
@@ -75,7 +76,8 @@ router.post("/locations",
 
 // Add stock to depot
 router.post("/locations/stock", 
-  authenticate, requireRole("admin", "manager"),
+  authenticate, 
+  requireRole("admin", "manager"),
    addProductStock);
 
 router.get(
@@ -114,6 +116,7 @@ router.get(
   requireRole("admin", "manager"),
   getLocationStats
 );
+router.get("/locations/:locationId/stats", getSingleLocationStats);
 
 
 

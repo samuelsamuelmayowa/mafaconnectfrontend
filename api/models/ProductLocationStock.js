@@ -7,6 +7,10 @@ const ProductLocationStock = sequelize.define("ProductLocationStock", {
     autoIncrement: true,
     primaryKey: true,
   },
+  orders: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
 
   product_id: {
     type: DataTypes.INTEGER,

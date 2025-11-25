@@ -119,11 +119,18 @@ console.log("PROFILE KYC STATUS:", profile?.kyc_status);
   customerType={user?.customer_type || "individual"}
   kycNotes={user?.kyc_notes || ""}
 /> */}
-<KYCStatusCard
+{/* <KYCStatusCard
   kycStatus={user?.kyc_status}
   customerType={profile?.customer_type || "individual"}
   kycNotes={profile?.kyc_notes || ""}
-/>
+/> */}
+   {/* {kycStatus && (
+        <KYCStatusCard
+          kycStatus={kycStatus.kyc_status}
+          customerType={kycStatus.customer_type}
+          kycNotes={kycStatus.kyc_notes}
+        />
+      )} */}
 
       {/* ✅ Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

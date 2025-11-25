@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-
+const API_URL = import.meta.env.VITE_HOME_OO;
+const token = localStorage.getItem("ACCESS_TOKEN");
 // ✅ Base API helper
 async function fetchAPI(url, options = {}) {
   const res = await fetch(url, {
@@ -23,7 +24,12 @@ export function useProductLocations() {
   const { data: productLocations, isLoading } = useQuery({
     queryKey: ["product-locations"],
     queryFn: async () => {
-      const data = await fetchAPI("/api/product-locations");
+      const data = await fetchAPI("/api/product-locations", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
       return data; // Expect: [{ id, product_id, location_id, stock_qty, reorder_level, ... }]
     },
   });
@@ -32,7 +38,12 @@ export function useProductLocations() {
   const getProductLocationStock = useQuery({
     queryKey: ["product-location-stock"],
     queryFn: async () => {
-      const data = await fetchAPI("/api/product-locations/stock");
+      const data = await fetchAPI("/api/product-locations/stock", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
       return data; // Expect: [{ id, product: { name }, location: { name, state }, stock_qty }]
     },
   });
@@ -46,7 +57,11 @@ export function useProductLocations() {
         ...(stockQty !== undefined ? { stock_qty: stockQty } : {}),
         ...(reorderLevel !== undefined ? { reorder_level: reorderLevel } : {}),
       };
-      await fetchAPI("/api/product-locations/update", {
+      await fetchAPI(`${API_URL}/locations/stock`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
         method: "POST",
         body: JSON.stringify(payload),
       });
