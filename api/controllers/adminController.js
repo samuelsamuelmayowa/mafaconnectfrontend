@@ -950,6 +950,36 @@ exports.getProductLocations = async (req, res) => {
     });
   }
 }
+
+
+
+// GET /locations/:id
+exports.getSingleLocation = async (req, res) => {
+  const { id } = req.params;
+
+  const location = await Location.findByPk(id);
+
+  if (!location) {
+    return res.status(404).json({
+      success: false,
+      message: "Location not found",
+    });
+  }
+
+  res.json({
+    success: true,
+    data: {
+      ...location.toJSON(),
+      bank_details: {
+        bank_name: location.bank_name,
+        account_name: location.account_name,
+        account_number: location.account_number,
+        sort_code: location.sort_code,
+      },
+    },
+  });
+};
+
 // exports.addProductStock = async (req, res) => {
 //   try {
 //     const { productId, locationId, stockQty, reorderLevel } = req.body;

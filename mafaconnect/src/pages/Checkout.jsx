@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -120,6 +120,8 @@ const checkoutSchema = z
   }, { message: "Required fields missing for selected delivery type" });
 
 export default function Checkout() {
+    const token = localStorage.getItem("ACCESS_TOKEN");
+    const API_URL = import.meta.env.VITE_HOME_OO;
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -132,6 +134,8 @@ export default function Checkout() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
+
+ 
 
   const isKYCApproved = kycStatus?.kyc_status === "approved";
 
@@ -152,7 +156,27 @@ export default function Checkout() {
   const deliveryType = form.watch("delivery_type");
   const paymentMethod = form.watch("payment_method");
   const pickupLocationId = form.watch("pickup_location_id");
+   const { data: selectedLocationDetails } = useQuery({
+  queryKey: ["location-bank-details", pickupLocationId],
+  queryFn: async () => {
+    if (!pickupLocationId) return null;
 
+    const res = await fetch(`${API_URL}/locations/${pickupLocationId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch location details");
+    }
+
+    const data = await res.json();
+    return data.data;
+  },
+  enabled: !!pickupLocationId,
+});
+  
   const shippingCost =
     deliveryType === "pickup"
       ? 0
@@ -257,6 +281,7 @@ export default function Checkout() {
     }
   };
 
+  
   if (!cart || !cart.items || cart.items.length === 0) {
     return (
       <div className="text-center py-12">
@@ -270,6 +295,7 @@ export default function Checkout() {
     );
   }
 
+  
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6 pb-[220px] lg:pb-6">
       {/* Header */}
@@ -432,7 +458,7 @@ export default function Checkout() {
                     )}
                   />
 
-                  {selectedLocation && (
+                  {/* {selectedLocation && (
                     <div className="p-3 bg-accent rounded-lg text-sm space-y-1">
                       <p>
                         <strong>{selectedLocation.name}</strong>
@@ -440,7 +466,15 @@ export default function Checkout() {
                       <p>{selectedLocation.address}</p>
                       <p>{selectedLocation.phone}</p>
                     </div>
-                  )}
+                  )} */}
+                  {selectedLocationDetails && (
+  <div className="p-3 bg-accent rounded-lg text-sm space-y-1">
+    <p><strong>{selectedLocationDetails.name}</strong></p>
+    <p>{selectedLocationDetails.address}</p>
+    <p>{selectedLocationDetails.phone}</p>
+    <p>{selectedLocationDetails.state}</p>
+  </div>
+)}
                 </CardContent>
               </Card>
             )}
@@ -680,13 +714,21 @@ export default function Checkout() {
                   </Alert>
                 )}
 
-                {paymentMethod === "bank_transfer" &&
+                {/* {paymentMethod === "bank_transfer" &&
                   selectedLocation?.bank_details && (
                     <BankDetailsCard
                       bankDetails={selectedLocation.bank_details}
                       orderNumber="Will be provided after order"
                     />
-                  )}
+                  )} */}
+                  {paymentMethod === "bank_transfer" &&
+ selectedLocationDetails?.bank_details && (
+  <BankDetailsCard
+    bankDetails={selectedLocationDetails.bank_details}
+    orderNumber="Will be provided after order"
+  />
+)}
+
               </CardContent>
             </Card>
           </div>

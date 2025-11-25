@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
-const API_URL = import.meta.env.VITE_HOME_OO 
+const API_URL = import.meta.env.VITE_HOME_OO;
 
 export function useLocations() {
   const token = localStorage.getItem("ACCESS_TOKEN");
@@ -17,10 +17,10 @@ export function useLocations() {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to fetch locations");
-       const data = await res.json();   // 
-       console.log(data.data);       
-       return data.data;  
-    
+      const data = await res.json(); //
+      console.log(data.data);
+      return data.data;
+
       // return data.locations || data; // handle flexible response format
     },
   });
@@ -32,10 +32,10 @@ export function useLocations() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         credentials: "include",
-      
+
         body: JSON.stringify(locationData),
       });
 
@@ -98,7 +98,7 @@ export function useLocations() {
     mutationFn: async ({ id, data }) => {
       const res = await fetch(`${API_URL}/locations/${id}`, {
         method: "PUT",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`,
         },
@@ -123,8 +123,7 @@ export function useLocations() {
     },
   });
 
-
-
+  
   return {
     locations,
     isLoading,
