@@ -2,6 +2,45 @@ const bcrypt = require("bcrypt");
 const { User } = require("../models/user");
 
 
+exports.getSingleUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findOne({
+      where: { id },
+      attributes: [
+        "id",
+        "name",
+        "email",
+        "phone",
+        "role",
+        "is_active",
+      ],
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: user,
+    });
+
+  } catch (error) {
+    console.error("❌ Get user error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error fetching user",
+    });
+  }
+};
+
+
 
 exports.getKYCStatus = async (req, res) => {
   try {

@@ -673,6 +673,7 @@ exports.updateLocation = async (req, res) => {
       message: "Location updated successfully",
       data: location,
     });
+    console.log('updated well')
 
   } catch (err) {
     console.error("Update location error:", err);
@@ -703,6 +704,49 @@ exports.getManagers = async (req, res) => {
   }
 };
 
+
+exports.getLocationBankDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const location = await Location.findByPk(id, {
+      attributes: [
+        "id",
+        "name",
+        "bank_name",
+        "account_name",
+        "account_number",
+        "sort_code"
+      ],
+    });
+
+    if (!location) {
+      return res.status(404).json({
+        success: false,
+        message: "Location not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        location_id: location.id,
+        location_name: location.name,
+        bank_name: location.bank_name,
+        account_name: location.account_name,
+        account_number: location.account_number,
+        sort_code: location.sort_code,
+      },
+    });
+
+  } catch (error) {
+    console.error("❌ Bank details error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching bank details",
+    });
+  }
+};
 
 exports.addProductStock = async (req, res) => {
   try {
@@ -905,7 +949,7 @@ exports.getProductLocations = async (req, res) => {
       error: err.message,
     });
   }
-};
+}
 // exports.addProductStock = async (req, res) => {
 //   try {
 //     const { productId, locationId, stockQty, reorderLevel } = req.body;

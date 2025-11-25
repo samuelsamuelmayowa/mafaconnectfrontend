@@ -7,7 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { useLocations } from "@/hooks/useLocations";
 import { useQuery } from "@tanstack/react-query";
 import {
+  //  useLocationBankDetails
   ArrowLeft,
+   CreditCard,
   Edit,
   MapPin,
   Warehouse,
@@ -20,20 +22,25 @@ import {
 import { LocationDialog } from "@/components/LocationDialog";
 import { BulkAddProductsDialog } from "@/components/BulkAddProductsDialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocationBankDetails } from "@/hooks/useLocationBankDetails";
 
-const API_BASE = import.meta.env.VITE_HOME_OO || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_HOME_OO;
 
 export default function LocationDetail() {
+
+
+  const token = localStorage.getItem("ACCESS_TOKEN");
   const { id } = useParams();
   const navigate = useNavigate();
   const { locations } = useLocations();
   const { hasRole } = useAuth();
 
   const [showEditDialog, setShowEditDialog] = React.useState(false);
-  const [showAddProductsDialog, setShowAddProductsDialog] = React.useState(false);
+  const [showAddProductsDialog, setShowAddProductsDialog] =
+    React.useState(false);
 
   const location = locations?.find((loc) => String(loc.id) === String(id));
-
+      const { data: bankDetails, isLoading } = useLocationBankDetails(location?.id);
   // 📊 Location stats
   const { data: locationStats } = useQuery({
     queryKey: ["location-detail-stats", id],
@@ -79,16 +86,32 @@ export default function LocationDetail() {
   });
 
   // 👤 Location manager
-  const { data: manager } = useQuery({
-    queryKey: ["location-manager", location?.manager_id],
-    queryFn: async () => {
-      if (!location?.manager_id) return null;
-      const res = await fetch(`${API_BASE}/users/${location.manager_id}`);
-      if (!res.ok) throw new Error("Failed to fetch manager");
-      return res.json();
-    },
-    enabled: !!location?.manager_id,
-  });
+const { data: manager } = useQuery({
+  queryKey: ["location-manager", location?.manager_id],
+
+  queryFn: async () => {
+    if (!location?.manager_id) return null;
+
+    const res = await fetch(
+      `${API_BASE}/users/${location.manager_id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch location manager");
+    }
+
+    const result = await res.json();
+    return result.data;   // <- IMPORTANT ✅
+  },
+
+  enabled: !!location?.manager_id,
+});
+
 
   if (!location) {
     return (
@@ -123,7 +146,9 @@ export default function LocationDetail() {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-foreground">{location.name}</h1>
+              <h1 className="text-3xl font-bold text-foreground">
+                {location.name}
+              </h1>
               {location.is_primary && (
                 <Badge variant="default">Main Location</Badge>
               )}
@@ -178,7 +203,9 @@ export default function LocationDetail() {
               <div className="text-right">
                 <p className="text-2xl font-bold">
                   ₦
-                  {Number(locationStats?.total_stock_value || 0).toLocaleString()}
+                  {Number(
+                    locationStats?.total_stock_value || 0
+                  ).toLocaleString()}
                 </p>
                 <p className="text-xs text-muted-foreground">Stock Value</p>
               </div>
@@ -206,7 +233,9 @@ export default function LocationDetail() {
                 <p className="text-2xl font-bold">
                   {activeTransfers?.length || 0}
                 </p>
-                <p className="text-xs text-muted-foreground">Active Transfers</p>
+                <p className="text-xs text-muted-foreground">
+                  Active Transfers
+                </p>
               </div>
             </div>
           </CardContent>
@@ -246,7 +275,9 @@ export default function LocationDetail() {
                   <p className="text-sm text-muted-foreground">Capacity</p>
                   <p className="font-medium">
                     {location.capacity_sqft
-                      ? `${Number(location.capacity_sqft).toLocaleString()} sq ft`
+                      ? `${Number(
+                          location.capacity_sqft
+                        ).toLocaleString()} sq ft`
                       : "N/A"}
                   </p>
                 </div>
@@ -264,25 +295,71 @@ export default function LocationDetail() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <p className="font-medium">{manager.full_name}</p>
-                  <p className="text-sm text-muted-foreground">{manager.email}</p>
+                  <p className="font-medium">{manager.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {manager.email}
+                  </p>
                   {manager.phone && (
-                    <p className="text-sm text-muted-foreground">{manager.phone}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {manager.phone}
+                    </p>
                   )}
                 </div>
               </CardContent>
             </Card>
           )}
 
+
+{location?.account_number && (
+  <Card>
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <CreditCard className="h-5 w-5" />
+        Bank Account Details
+      </CardTitle>
+    </CardHeader>
+
+    <CardContent>
+      <div className="space-y-3">
+        <div>
+          <p className="text-sm text-muted-foreground">Bank Name</p>
+          <p className="font-medium">{location.bank_name || "N/A"}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-muted-foreground">Account Name</p>
+          <p className="font-medium">{location.account_name || "N/A"}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-muted-foreground">Account Number</p>
+          <p className="font-medium font-mono text-lg">
+            {location.account_number}
+          </p>
+        </div>
+
+        {location.sort_code && (
+          <div>
+            <p className="text-sm text-muted-foreground">Sort Code</p>
+            <p className="font-medium">{location.sort_code}</p>
+          </div>
+        )}
+      </div>
+    </CardContent>
+  </Card>
+)}
+
           {locationStats && locationStats.low_stock_items > 0 && (
             <Card className="border-destructive">
               <CardHeader>
-                <CardTitle className="text-destructive">Low Stock Alert</CardTitle>
+                <CardTitle className="text-destructive">
+                  Low Stock Alert
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p>
-                  {locationStats.low_stock_items} products are below reorder level
-                  at this location
+                  {locationStats.low_stock_items} products are below reorder
+                  level at this location
                 </p>
               </CardContent>
             </Card>
@@ -337,9 +414,7 @@ export default function LocationDetail() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">
-                          {item.stock_qty} units
-                        </p>
+                        <p className="font-semibold">{item.stock_qty} units</p>
                         {item.stock_qty <= item.reorder_level && (
                           <Badge variant="destructive" className="text-xs">
                             Low Stock

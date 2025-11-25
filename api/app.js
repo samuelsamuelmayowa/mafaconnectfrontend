@@ -61,7 +61,9 @@ const PORT = process.env.PORT || 9000;
 (async () => {
   try {
     await sequelize.authenticate();
-    await sequelize.sync();
+    // await sequelize.sync();  sequelize.sync({ alter: false, force: false });
+
+    sequelize.sync({ alter: false, force: false });
 
     // ✅ TEMPORARY: Auto-create missing tables on first production run
     // await sequelize.sync({ alter: true });

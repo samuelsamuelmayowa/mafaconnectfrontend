@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
@@ -101,34 +100,34 @@ export default function Locations() {
   //     }
   //   );
   // }, [locationStats]);
-const overallMetrics = React.useMemo(() => {
-  console.log("Location stats received:", locationStats);
+  const overallMetrics = React.useMemo(() => {
+    console.log("Location stats received:", locationStats);
 
-  if (!locationStats || locationStats.length === 0) {
-    return {
-      totalProducts: 0,
-      totalUnits: 0,
-      totalValue: 0,
-      lowStockItems: 0,
-    };
-  }
-
-  return locationStats.reduce(
-    (acc, stat) => {
-      acc.totalProducts += Number(stat.total_products) || 0;
-      acc.totalUnits += Number(stat.total_units) || 0;
-      acc.totalValue += Number(stat.total_stock_value) || 0;
-      acc.lowStockItems += Number(stat.low_stock_items) || 0;
-      return acc;
-    },
-    {
-      totalProducts: 0,
-      totalUnits: 0,
-      totalValue: 0,
-      lowStockItems: 0,
+    if (!locationStats || locationStats.length === 0) {
+      return {
+        totalProducts: 0,
+        totalUnits: 0,
+        totalValue: 0,
+        lowStockItems: 0,
+      };
     }
-  );
-}, [locationStats]);
+
+    return locationStats.reduce(
+      (acc, stat) => {
+        acc.totalProducts += Number(stat.total_products) || 0;
+        acc.totalUnits += Number(stat.total_units) || 0;
+        acc.totalValue += Number(stat.total_stock_value) || 0;
+        acc.lowStockItems += Number(stat.low_stock_items) || 0;
+        return acc;
+      },
+      {
+        totalProducts: 0,
+        totalUnits: 0,
+        totalValue: 0,
+        lowStockItems: 0,
+      }
+    );
+  }, [locationStats]);
 
   // const totalSales = React.useMemo(() => {
   //   if (!locationSales) return { count: 0, total: 0 };
@@ -142,20 +141,20 @@ const overallMetrics = React.useMemo(() => {
   //     { count: 0, total: 0 }
   //   );
   // }, [locationSales]);
-const totalSales = React.useMemo(() => {
-  if (!locationSales || Object.keys(locationSales).length === 0) {
-    return { count: 0, total: 0 };
-  }
+  const totalSales = React.useMemo(() => {
+    if (!locationSales || Object.keys(locationSales).length === 0) {
+      return { count: 0, total: 0 };
+    }
 
-  return Object.values(locationSales).reduce(
-    (acc, sale) => {
-      acc.count += Number(sale.count || 0);
-      acc.total += Number(sale.total || 0);
-      return acc;
-    },
-    { count: 0, total: 0 }
-  );
-}, [locationSales]);
+    return Object.values(locationSales).reduce(
+      (acc, sale) => {
+        acc.count += Number(sale.count || 0);
+        acc.total += Number(sale.total || 0);
+        return acc;
+      },
+      { count: 0, total: 0 }
+    );
+  }, [locationSales]);
 
   return (
     <div className="space-y-6">
@@ -174,42 +173,33 @@ const totalSales = React.useMemo(() => {
           New Location
         </Button>
       </div>
-{/* <div className="text-xs text-red-500 mb-2">
-  Metrics status: 
-  {overallMetrics ? "✅ Calculated" : "❌ Not workign  Calculated"}
-</div> */}
-
-{/* <pre className="text-xs bg-slate-100 p-2 rounded">
-  {JSON.stringify(locationStats, null, 2)}
-</pre> */}
 
       {/* Overall Stats */}
-   {overallMetrics && (
-  <div className="grid gap-4 md:grid-cols-4">
-    <MetricCard
-      icon={Boxes}
-      label="Products"
-      value={overallMetrics.totalProducts || 0}
-    />
-    <MetricCard
-      icon={Package}
-      label="Units"
-      value={overallMetrics.totalUnits || 0}
-    />
-    <MetricCard
-      icon={TrendingUp}
-      label="Stock Value"
-      value={`₦${(overallMetrics.totalValue || 0).toLocaleString()}`}
-    />
-    <MetricCard
-      icon={ShoppingCart}
-      label="Sales (30d)"
-      value={`${totalSales.count || 0} orders`}
-      extra={`₦${(totalSales.total || 0).toLocaleString()}`}
-    />
-  </div>
-)}
-
+      {overallMetrics && (
+        <div className="grid gap-4 md:grid-cols-4">
+          <MetricCard
+            icon={Boxes}
+            label="Products"
+            value={overallMetrics.totalProducts || 0}
+          />
+          <MetricCard
+            icon={Package}
+            label="Units"
+            value={overallMetrics.totalUnits || 0}
+          />
+          <MetricCard
+            icon={TrendingUp}
+            label="Stock Value"
+            value={`₦${(overallMetrics.totalValue || 0).toLocaleString()}`}
+          />
+          <MetricCard
+            icon={ShoppingCart}
+            label="Sales (30d)"
+            value={`${totalSales.count || 0} orders`}
+            extra={`₦${(totalSales.total || 0).toLocaleString()}`}
+          />
+        </div>
+      )}
 
       {/* Low Stock Alert */}
       {overallMetrics?.lowStockItems > 0 && (
@@ -359,50 +349,67 @@ const totalSales = React.useMemo(() => {
                               )}
 
                               {/* Stats */}
-                        
+
                               {stats && (
                                 <div className="space-y-3 mt-4 pt-4 border-t">
                                   <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                      <p className="text-xs text-muted-foreground">Products</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        Products
+                                      </p>
                                       <p className="text-lg font-semibold flex items-center gap-1">
                                         <Package className="h-4 w-4 text-primary" />
                                         {stats.total_products || 0}
                                       </p>
                                     </div>
                                     <div>
-                                      <p className="text-xs text-muted-foreground">Units</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        Units
+                                      </p>
                                       <p className="text-lg font-semibold flex items-center gap-1">
                                         <Boxes className="h-4 w-4 text-blue-500" />
-                                        {Number(stats.total_units || 0).toLocaleString()}
+                                        {Number(
+                                          stats.total_units || 0
+                                        ).toLocaleString()}
                                       </p>
                                     </div>
                                   </div>
-                                  
+
                                   <div>
-                                    <p className="text-xs text-muted-foreground">Stock Value</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Stock Value
+                                    </p>
                                     <p className="text-xl font-bold text-green-600">
-                                      ₦{Number(stats.total_stock_value || 0).toLocaleString()}
+                                      ₦
+                                      {Number(
+                                        stats.total_stock_value || 0
+                                      ).toLocaleString()}
                                     </p>
                                   </div>
 
                                   {sales.count > 0 && (
                                     <div className="bg-primary/5 p-2 rounded">
-                                      <p className="text-xs text-muted-foreground">Sales (30d)</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        Sales (30d)
+                                      </p>
                                       <div className="flex items-center justify-between mt-1">
                                         <p className="text-sm font-semibold flex items-center gap-1">
                                           <ShoppingCart className="h-3 w-3" />
                                           {sales.count} orders
                                         </p>
                                         <p className="text-sm font-bold text-primary">
-                                          ₦{Number(sales.total).toLocaleString()}
+                                          ₦
+                                          {Number(sales.total).toLocaleString()}
                                         </p>
                                       </div>
                                     </div>
                                   )}
-                                  
+
                                   {stats.low_stock_items > 0 && (
-                                    <Badge variant="destructive" className="w-full justify-center">
+                                    <Badge
+                                      variant="destructive"
+                                      className="w-full justify-center"
+                                    >
                                       <AlertTriangle className="h-3 w-3 mr-1" />
                                       {stats.low_stock_items} Low Stock
                                     </Badge>
@@ -422,8 +429,6 @@ const totalSales = React.useMemo(() => {
                       );
                     })}
                   </div>
-
-               
                 </div>
               ))}
             </div>
@@ -721,11 +726,6 @@ function MetricCard({ icon: Icon, label, value, extra }) {
 // //     </div>
 // //   );
 // // }
-
-
-
-
-
 
 //    {/* <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 //                     {locs.map((location) => {

@@ -20,6 +20,8 @@ const {
   getLocationStats,
   getSingleLocationStats,
   getProductLocations,
+  updateLocation,
+  getLocationBankDetails,
 } = require("../controllers/adminController");
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
@@ -75,6 +77,12 @@ router.post("/locations",
   authenticate, requireRole("admin","manager"), 
   createLocation);
 
+router.put("/locations/:id",
+  authenticate,
+  requireRole("admin", "manager"),
+  updateLocation
+);
+
 // Add stock to depot
 router.post("/locations/stock", 
   authenticate, 
@@ -87,9 +95,6 @@ router.get(
   requireRole("admin", "manager"),
   getManagers
 );
-
-
-
 router.get("/locations", authenticate,
   requireRole("admin", "manager"),async (req, res) => {
   try {
@@ -117,11 +122,20 @@ router.get(
   requireRole("admin", "manager"),
   getLocationStats
 );
-router.get("/locations/:locationId/stats", getSingleLocationStats);
+/// location infomation 
+router.get("/locations/:locationId/stats",  authenticate,
+  requireRole("admin", "manager"), getSingleLocationStats);
+// view stock
+router.get("/product-locations", authenticate,
+  requireRole("admin", "manager"), getProductLocations);
 
-router.get("/product-locations", getProductLocations);
 
-
+  router.get(
+  "/locations/:id/bank-details",
+  authenticate,
+  requireRole("admin", "manager"),
+  getLocationBankDetails
+);
 
 
 

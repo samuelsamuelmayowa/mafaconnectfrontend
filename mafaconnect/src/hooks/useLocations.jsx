@@ -62,38 +62,68 @@ export function useLocations() {
   });
 
   // 🔹 Update an existing location
+  // const updateLocation = useMutation({
+  //   mutationFn: async ({ id, ...data }) => {
+  //     const res = await fetch(`${API_URL}/locations/${id}`, {
+  //       method: "PUT",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       credentials: "include",
+  //       body: JSON.stringify(data),
+  //     });
+
+  //     if (!res.ok) {
+  //       const errData = await res.json().catch(() => ({}));
+  //       throw new Error(errData.message || "Failed to update location");
+  //     }
+  //     return res.json();
+  //   },
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries(["locations"]);
+  //     toast({
+  //       title: "✅ Success",
+  //       description: "Location updated successfully",
+  //     });
+  //   },
+  //   onError: (error) => {
+  //     toast({
+  //       title: "❌ Error updating location",
+  //       description: error.message,
+  //       variant: "destructive",
+  //     });
+  //   },
+  // });
   const updateLocation = useMutation({
-    mutationFn: async ({ id, ...data }) => {
+    mutationFn: async ({ id, data }) => {
       const res = await fetch(`${API_URL}/locations/${id}`, {
         method: "PUT",
-        headers: {
+        headers: { 
           "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`,
         },
-        credentials: "include",
         body: JSON.stringify(data),
       });
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || "Failed to update location");
-      }
-      return res.json();
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Update failed");
+
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["locations"]);
-      toast({
-        title: "✅ Success",
-        description: "Location updated successfully",
-      });
+      toast({ title: "Location updated ✅" });
     },
-    onError: (error) => {
+    onError: (err) => {
       toast({
-        title: "❌ Error updating location",
-        description: error.message,
+        title: "Error updating location",
+        description: err.message,
         variant: "destructive",
       });
     },
   });
+
+
 
   return {
     locations,
