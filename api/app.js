@@ -61,17 +61,35 @@ const PORT = process.env.PORT || 9000;
 (async () => {
   try {
     await sequelize.authenticate();
-    await sequelize.sync();
-    // sequelize.sync({ force: true });
 
-    //  await sequelize.sync({ alter: true });
-    console.log("✅ Connected to MySQL");
+    // ✅ TEMPORARY: Auto-create missing tables on first production run
+    await sequelize.sync({ alter: true });
 
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    console.log("✅ Connected to MySQL & Tables Synced");
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+
   } catch (err) {
-    console.error(" Failed to start server:", err);
+    console.error("❌ Failed to start server:", err);
   }
 })();
+
+// (async () => {
+//   try {
+//     await sequelize.authenticate();
+//     await sequelize.sync();
+//     // sequelize.sync({ force: true });
+
+//      await sequelize.sync({ alter: true });
+//     console.log("✅ Connected to MySQL");
+
+//     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+//   } catch (err) {
+//     console.error(" Failed to start server:", err);
+//   }
+// })();
 
 
 // const express = require("express");
