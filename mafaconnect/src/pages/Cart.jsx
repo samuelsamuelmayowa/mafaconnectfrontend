@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
-import { Button } from "@/components/uimain/button";
-import { Card, CardContent } from "@/components/uimain/card";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
 import { useCart } from "@/hooks/useCart";
 import { formatCurrency } from "@/lib/transactionUtils";
 import { ShoppingCart, Minus, Plus, Trash2, ArrowRight } from "lucide-react";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
-import { SwipeToDelete } from "@/components/uimain/swipe-to-delete";
+import { SwipeToDelete } from "@/components/ui/swipe-to-delete";
 
 export default function Cart() {
   const { cart, cartTotal, updateQuantity, removeFromCart } = useCart();

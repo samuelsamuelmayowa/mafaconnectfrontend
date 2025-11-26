@@ -87,7 +87,11 @@ export function ProductCard({ product }) {
       </CardContent>
 
       <CardFooter className="p-3 sm:p-4 pt-0">
-        <AddToCartButton product={product} stockQty={product.stock_qty} />
+        <AddToCartButton product={product} stockQty={product.stock_qty}   defaultQuantity={1}
+  size="sm"
+  variant="default"
+  className="w-full"
+ />
       </CardFooter>
     </Card>
   );

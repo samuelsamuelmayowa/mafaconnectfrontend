@@ -33,6 +33,7 @@ import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import KYCOnboarding from "./pages/KYCOnboarding";
 import Checkout from "./pages/Checkout";
+import Cart from "./pages/Cart";
 
 const queryClient = new QueryClient();
 
@@ -93,6 +94,17 @@ function App() {
               <CustomerProtectedRoute>
                 <DashboardLayout>
                   <Checkout />
+                </DashboardLayout>
+              </CustomerProtectedRoute>
+            }
+          />
+
+            <Route
+            path="/cart"
+            element={
+              <CustomerProtectedRoute>
+                <DashboardLayout>
+                  <Cart />
                 </DashboardLayout>
               </CustomerProtectedRoute>
             }
