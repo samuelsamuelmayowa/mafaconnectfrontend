@@ -212,7 +212,7 @@ const formatSafeDate = (date) => {
                         )}
 
                         {/* ✅ Track Order Button */}
-                        <div className="pt-2 border-t">
+                        {/* <div className="pt-2 border-t">
                           <Button
                             size="sm"
                             className="w-full"
@@ -222,7 +222,7 @@ const formatSafeDate = (date) => {
                           >
                             Track Order
                           </Button>
-                        </div>
+                        </div> */}
 
                       </div>
                     </CardContent>
