@@ -7,7 +7,7 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
@@ -67,18 +67,18 @@ export default function CustomerOrders() {
     queryFn: fetchCustomerInvoices,
     enabled: !!user?.id,
   });
-const formatSafeDate = (date) => {
-  if (!date) return "N/A";
+  const formatSafeDate = (date) => {
+    if (!date) return "N/A";
 
-  const parsed = new Date(date);
+    const parsed = new Date(date);
 
-  if (isNaN(parsed.getTime())) {
-    console.warn("Invalid date received:", date);
-    return "N/A";
-  }
+    if (isNaN(parsed.getTime())) {
+      console.warn("Invalid date received:", date);
+      return "N/A";
+    }
 
-  return format(parsed, "MMM d, yyyy 'at' h:mm a");
-};
+    return format(parsed, "MMM d, yyyy 'at' h:mm a");
+  };
 
   // 🔎 Filter Orders
   const filteredOrders = React.useMemo(() => {
@@ -87,18 +87,24 @@ const formatSafeDate = (date) => {
 
     const lower = searchQuery.toLowerCase();
 
-    return orders.filter((order) =>
-      order.order_number?.toLowerCase().includes(lower) ||
-      order.payment_method?.toLowerCase().includes(lower) ||
-      order.status?.toLowerCase().includes(lower)
+    return orders.filter(
+      (order) =>
+        order.order_number?.toLowerCase().includes(lower) ||
+        order.payment_method?.toLowerCase().includes(lower) ||
+        order.status?.toLowerCase().includes(lower)
     );
   }, [orders, searchQuery]);
 
   // 🔗 Match Invoice to Order
-  const getInvoiceForOrder = (orderNumber) => {
-    if (!invoices) return null;
-    return invoices.find(inv => inv.order_number === orderNumber);
-  };
+  // const getInvoiceForOrder = (orderNumber) => {
+  //   if (!invoices) return null;
+  //   return invoices.find((inv) => inv.order_number === orderNumber);
+  // };
+  const getInvoiceForOrder = (orderId) => {
+  if (!invoices) return null;
+
+  return invoices.find((inv) => inv.order_id === orderId);
+};
 
   // 🔄 Loading
   if (isLoading) {
@@ -152,16 +158,27 @@ const formatSafeDate = (date) => {
                             )}
                           </CardDescription> */}
                           <CardDescription className="text-xs sm:text-sm">
-  {formatSafeDate(order.created_at)}
-</CardDescription>
-
+                            {formatSafeDate(order.created_at)}
+                          </CardDescription>
                         </div>
 
                         <div className="flex gap-2 flex-wrap">
-                          <Badge variant={order.payment_status === "paid" ? "default" : "secondary"}>
+                          <Badge
+                            variant={
+                              order.payment_status === "paid"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
                             {order.payment_status}
                           </Badge>
-                          <Badge variant={order.status === "delivered" ? "default" : "secondary"}>
+                          <Badge
+                            variant={
+                              order.status === "delivered"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
                             {order.status}
                           </Badge>
                         </div>
@@ -171,7 +188,10 @@ const formatSafeDate = (date) => {
                     <CardContent>
                       <div className="space-y-2">
                         {order.items?.map((item) => (
-                          <div key={item.id} className="flex justify-between text-sm">
+                          <div
+                            key={item.id}
+                            className="flex justify-between text-sm"
+                          >
                             <span>
                               {item.product_name} (x{item.quantity})
                             </span>
@@ -195,21 +215,40 @@ const formatSafeDate = (date) => {
                           </span>
                         </div>
 
-                        {orderInvoice && order.payment_status === "paid" && (
+                        {/* {orderInvoice && order.payment_status === "paid" && (
                           <div className="pt-2 border-t">
                             <Button
                               variant="outline"
                               size="sm"
                               className="w-full"
                               onClick={() =>
-                                navigate(`/customer-invoices/${order.order_number}`)
+                                navigate(
+                                  `/customer-invoices/${order.order_number}`
+                                )
                               }
                             >
                               <FileText className="h-4 w-4 mr-2" />
                               View Invoice ({orderInvoice.invoice_number})
                             </Button>
                           </div>
-                        )}
+                        )} */}
+                        {orderInvoice && order.payment_status === "paid" && (
+  <Button
+    variant="outline"
+    size="sm"
+    className="w-full"
+    onClick={() =>
+      window.open(
+        `${API_BASE}/customer/invoice/${orderInvoice.invoice_number}/download`,
+        "_blank"
+      )
+    }
+  >
+    <FileText className="h-4 w-4 mr-2" />
+    Download Invoice
+  </Button>
+)}
+
 
                         {/* ✅ Track Order Button */}
                         {/* <div className="pt-2 border-t">
@@ -223,7 +262,6 @@ const formatSafeDate = (date) => {
                             Track Order
                           </Button>
                         </div> */}
-
                       </div>
                     </CardContent>
                   </Card>
@@ -242,8 +280,6 @@ const formatSafeDate = (date) => {
     </div>
   );
 }
-
-
 
 // import React from "react";
 // import { useAuth } from "@/hookss/useAuth";
@@ -310,7 +346,7 @@ const formatSafeDate = (date) => {
 //   }, [orders, searchQuery]);
 
 //   const getInvoiceForOrder = (orderId) => {
-//     return invoices?.find(inv => 
+//     return invoices?.find(inv =>
 //       inv.sales?.customer_orders?.some((co) => co.id === orderId)
 //     );
 //   };
@@ -391,9 +427,9 @@ const formatSafeDate = (date) => {
 //                         </div>
 //                         {orderInvoice && order.payment_status === "paid" && (
 //                           <div className="pt-2 border-t">
-//                             <Button 
-//                               variant="outline" 
-//                               size="sm" 
+//                             <Button
+//                               variant="outline"
+//                               size="sm"
 //                               className="w-full"
 //                               onClick={() => navigate("/customer-invoices")}
 //                             >

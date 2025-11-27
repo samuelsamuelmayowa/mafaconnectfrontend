@@ -13,6 +13,10 @@ const { Order, Notification } = require("../models/Order");
 // const { } = require("../models/Order"); // if you need it too
 const { LocationProductStock } = require("../models/LocationProductStock");
 const crypto = require("crypto");
+const Invoice = require("../models/Invoice");
+const PDFDocument = require("pdfkit");
+const fs = require("fs");
+const path = require("path");
 // exports.createOrder = async (req, res) => {
 //   const t = await sequelize.transaction();
 
@@ -264,7 +268,8 @@ exports.confirmOrderPayment = async (req, res) => {
       message: "Failed to confirm payment",
     });
   }
-};exports.updateOrderStatus = async (req, res) => {
+};
+exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { new_status, notes } = req.body;
@@ -303,7 +308,6 @@ exports.confirmOrderPayment = async (req, res) => {
     });
   }
 };
-
 
 exports.getAdminOrders = async (req, res) => {
   try {
@@ -373,6 +377,137 @@ exports.getAdminOrders = async (req, res) => {
     });
   }
 };
+
+exports.confirmPayment = async (req, res) => {
+  const t = await sequelize.transaction();
+
+  try {
+    const orderId = req.params.id;
+    const { payment_reference } = req.body;
+
+    const order = await Order.findByPk(orderId, { transaction: t });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    // Update order
+    order.payment_status = "paid";
+    order.order_status = "confirmed";
+    await order.save({ transaction: t });
+
+    // ✅ Create Invoice
+    const invoiceNumber = "INV-" + crypto.randomBytes(3).toString("hex").toUpperCase();
+
+    const invoice = await Invoice.create({
+      invoice_number: invoiceNumber,
+      order_id: order.id,
+      customer_id: order.customer_id,
+      total_amount: order.total_amount,
+    }, { transaction: t });
+
+    await t.commit();
+
+    return res.json({
+      success: true,
+      message: "Payment confirmed & invoice generated",
+      invoice
+    });
+
+  } catch (err) {
+    await t.rollback();
+    console.error("Confirm payment error:", err);
+    res.status(500).json({ success: false, message: "Confirm payment failed" });
+  }
+};
+
+exports.getCustomerInvoices = async (req, res) => {
+  try {
+    const customer_id = req.user.id;
+
+    const invoices = await Invoice.findAll({
+      where: { customer_id },
+      include: [
+        { model: Order, as: "order" }
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    res.json({
+      success: true,
+      data: invoices
+    });
+
+  } catch (err) {
+    console.error("Invoice fetch error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to load invoices"
+    });
+  }
+};
+
+
+
+exports.downloadInvoice = async (req, res) => {
+  try {
+    const orderNumber = req.params.order_number;
+
+    const invoice = await Invoice.findOne({
+      include: [
+        {
+          model: Order,
+          as: "order",
+          include: [{
+            model: OrderItem,
+            as: "items",
+            include: [{ model: Product, as: "product" }]
+          }]
+        }
+      ],
+      where: { invoice_number: req.params.invoice_number }
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ message: "Invoice not found" });
+    }
+
+    const doc = new PDFDocument();
+    const fileName = `invoice-${invoice.invoice_number}.pdf`;
+    const filePath = path.join(__dirname, `../invoices/${fileName}`);
+
+    const stream = fs.createWriteStream(filePath);
+    doc.pipe(stream);
+
+    doc.fontSize(20).text("MAFACONNECT INVOICE", { align: "center" });
+
+    doc.moveDown();
+    doc.text(`Invoice: ${invoice.invoice_number}`);
+    doc.text(`Order: ${invoice.order.order_number}`);
+    doc.text(`Date: ${invoice.createdAt}`);
+
+    doc.moveDown();
+
+    doc.text("Items:");
+    invoice.order.items.forEach(item => {
+      doc.text(`${item.product.name} x ${item.quantity} - ₦${item.total_price}`);
+    });
+
+    doc.moveDown();
+    doc.text(`Total: ₦${invoice.total_amount}`);
+
+    doc.end();
+
+    stream.on("finish", () => {
+      res.download(filePath);
+    });
+
+  } catch (err) {
+    console.error("Invoice PDF error:", err);
+    res.status(500).json({ message: "Failed to generate invoice" });
+  }
+};
+
 
 // exports.createOrder = async (req, res) => {
 //   const {

@@ -25,7 +25,9 @@ const {
   getSingleLocation,
   createOrder,
   getOrderById,
-  getAdminOrders,confirmOrderPayment, updateOrderStatus
+  getAdminOrders,confirmOrderPayment, updateOrderStatus,
+  getCustomerInvoices,
+  downloadInvoice
 } = require("../controllers/adminController");
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
@@ -47,6 +49,12 @@ router.post(
 router.get("/orders", getAdminOrders);
 router.put("/orders/:id/confirm-payment", confirmOrderPayment);
 router.put("/orders/:id/status", updateOrderStatus);
+
+
+
+/// invoice 
+router.get("/customer/invoices", authenticate, getCustomerInvoices);
+router.get("/customer/invoice/:invoice_number/download", authenticate, downloadInvoice);
 
 // sarch for product for both admin and everyone 
 // Live product search

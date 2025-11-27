@@ -5,6 +5,7 @@ const { ProductLocationStock } = require("./ProductLocationStock");
 const { Location } = require("./Location");
 const { Order, Notification } = require("./Order");
 const OrderItem = require("./OrderItem");
+const Invoice = require("./Invoice");
 
 /* ================================
    PRODUCT ↔ LOCATION (via ProductLocationStock)
@@ -18,7 +19,16 @@ Order.belongsTo(User, {
   foreignKey: "customer_id",
   as: "customer",
 });
+Invoice.belongsTo(Order, {
+  foreignKey: "order_id",
+  as: "order",
+});
 
+// ✅ Order has one Invoice
+Order.hasOne(Invoice, {
+  foreignKey: "order_id",
+  as: "invoice",
+});
 Location.hasMany(Order, {
   foreignKey: "location_id",
   as: "orders",
