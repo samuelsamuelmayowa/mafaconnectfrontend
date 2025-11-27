@@ -9,6 +9,20 @@ const OrderItem = require("./OrderItem");
 /* ================================
    PRODUCT ↔ LOCATION (via ProductLocationStock)
 ================================ */
+// ORDER → LOCATION
+Order.belongsTo(Location, {
+  foreignKey: "location_id",
+  as: "location",
+});
+Order.belongsTo(User, {
+  foreignKey: "customer_id",
+  as: "customer",
+});
+
+Location.hasMany(Order, {
+  foreignKey: "location_id",
+  as: "orders",
+});
 
 Product.belongsToMany(Location, {
   through: ProductLocationStock,

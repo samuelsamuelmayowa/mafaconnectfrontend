@@ -209,7 +209,170 @@ function calculateExpiry(payment_method) {
 
   return now;
 }
+exports.confirmOrderPayment = async (req, res) => {
+  const t = await sequelize.transaction();
 
+  try {
+    const { id } = req.params;
+    const { payment_reference } = req.body;
+
+    const order = await Order.findByPk(id, { transaction: t });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (order.payment_status === "paid") {
+      return res.status(400).json({
+        success: false,
+        message: "Order already marked as paid",
+      });
+    }
+
+    order.payment_status = "paid";
+    order.order_status = "confirmed";
+
+    if (payment_reference) {
+      order.payment_reference = payment_reference;
+    }
+
+    await order.save({ transaction: t });
+
+    // 🔔 Create notification for customer
+    await Notification.create({
+      user_id: order.customer_id,
+      title: "Payment Confirmed ✅",
+      message: `Your payment for order ${order.order_number} has been confirmed.`,
+      order_id: order.id,
+    }, { transaction: t });
+
+    await t.commit();
+
+    res.json({
+      success: true,
+      message: "Payment confirmed successfully",
+    });
+
+  } catch (err) {
+    await t.rollback();
+    console.error("Confirm payment error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to confirm payment",
+    });
+  }
+};exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { new_status, notes } = req.body;
+
+    const order = await Order.findByPk(id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    order.order_status = new_status;
+
+    await order.save();
+
+    // 🔔 Send notification to customer
+    await Notification.create({
+      user_id: order.customer_id,
+      title: "Order Status Updated 🔄",
+      message: `Your order ${order.order_number} status is now "${new_status}". ${notes || ""}`,
+      order_id: order.id,
+    });
+
+    res.json({
+      success: true,
+      message: "Order status updated successfully",
+    });
+
+  } catch (err) {
+    console.error("Update order status error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update order status",
+    });
+  }
+};
+
+
+exports.getAdminOrders = async (req, res) => {
+  try {
+    const { status } = req.query;
+
+    const where = {};
+
+    if (status && status !== "all") {
+      where.order_status = status;
+    }
+
+    const orders = await Order.findAll({
+      where,
+      order: [["createdAt", "DESC"]],
+      // include: [
+      //   {
+      //     model: OrderItem,
+      //     as: "items",
+      //     include: [
+      //       {
+      //         model: Product,
+      //         as: "product",
+      //         attributes: ["id", "name", "sale_price"],
+      //       },
+      //     ],
+      //   },
+      //   {
+      //     model: Location,
+      //     as: "location",
+      //     attributes: ["id", "name", "state"],
+      //   },
+      // ],
+      include: [
+    {
+      model: User,
+      as: "customer",
+      attributes: ["id", "name", "email", "phone"]
+    },
+    {
+      model: Location,
+      as: "location",
+      attributes: ["id", "name", "state"]
+    },
+    {
+      model: OrderItem,
+      as: "items",
+      include: [
+        {
+          model: Product,
+          as: "product",
+          attributes: ["id", "name", "sku", "sale_price"]
+        }
+      ]
+    }
+  ],
+    });
+
+    res.json({
+      success: true,
+      orders,
+    });
+  } catch (err) {
+    console.error("Admin fetch orders error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch orders",
+    });
+  }
+};
 
 // exports.createOrder = async (req, res) => {
 //   const {
@@ -538,7 +701,6 @@ exports.getOrderById = async (req, res) => {
     });
   }
 };
-
 
 const generateAccessToken = (user) => {
   if (!process.env.JWT_ACCESS_SECRET) throw new Error("Missing JWT_ACCESS_SECRET");

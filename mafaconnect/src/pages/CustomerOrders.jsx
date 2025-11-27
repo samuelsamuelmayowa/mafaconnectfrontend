@@ -176,7 +176,7 @@ const formatSafeDate = (date) => {
                               {item.product_name} (x{item.quantity})
                             </span>
                             <span className="font-medium">
-                              ₦{Number(item.line_total).toLocaleString()}
+                              ₦{Number(item.total_price).toLocaleString()}
                             </span>
                           </div>
                         ))}

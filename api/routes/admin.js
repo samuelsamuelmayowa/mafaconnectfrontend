@@ -25,6 +25,7 @@ const {
   getSingleLocation,
   createOrder,
   getOrderById,
+  getAdminOrders,confirmOrderPayment, updateOrderStatus
 } = require("../controllers/adminController");
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
@@ -43,6 +44,9 @@ router.post(
   createProduct
 );
 
+router.get("/orders", getAdminOrders);
+router.put("/orders/:id/confirm-payment", confirmOrderPayment);
+router.put("/orders/:id/status", updateOrderStatus);
 
 // sarch for product for both admin and everyone 
 // Live product search

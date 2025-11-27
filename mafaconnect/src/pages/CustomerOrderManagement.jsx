@@ -32,8 +32,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/Label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-
-const API_URL = import.meta.env.VITE_HOME_OO || "http://localhost:8000/api";
+// import { format } from "date-fns";
+const API_URL = import.meta.env.VITE_HOME_OO;
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All Statuses" },
@@ -70,8 +70,26 @@ export default function CustomerOrderManagement() {
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const [paymentReference, setPaymentReference] = useState("");
 
+  const formatSafeDate = (date) => {
+    if (!date) return "N/A";
+
+    const parsed = new Date(date);
+
+    // check if it's a valid date
+    if (isNaN(parsed.getTime())) {
+      console.warn("❌ Invalid date received:", date);
+      return "N/A";
+    }
+
+    return format(parsed, "MMM d, yyyy 'at' h:mm a");
+  };
+
   // 🔹 Fetch orders
-  const { data: orders, isLoading, refetch } = useQuery({
+  const {
+    data: orders,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["customer-orders-management", statusFilter],
     queryFn: async () => {
       const res = await fetch(`${API_URL}/orders?status=${statusFilter}`, {
@@ -83,9 +101,10 @@ export default function CustomerOrderManagement() {
     },
   });
 
-  const filteredOrders = orders?.filter((order) =>
-    order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.contact_phone?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredOrders = orders?.filter(
+    (order) =>
+      order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.contact_phone?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // 🔹 Confirm payment
@@ -93,14 +112,17 @@ export default function CustomerOrderManagement() {
     if (!selectedOrder) return;
     setIsConfirmingPayment(true);
     try {
-      const res = await fetch(`${API_URL}/orders/${selectedOrder.id}/confirm-payment`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          payment_reference: paymentReference || undefined,
-        }),
-      });
+      const res = await fetch(
+        `${API_URL}/orders/${selectedOrder.id}/confirm-payment`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            payment_reference: paymentReference || undefined,
+          }),
+        }
+      );
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || "Failed to confirm payment");
@@ -164,7 +186,9 @@ export default function CustomerOrderManagement() {
   const needsPaymentConfirmation = (order) => {
     return (
       order.payment_status === "pending" &&
-      ["bank_transfer", "cash_on_delivery", "pay_on_pickup"].includes(order.payment_method)
+      ["bank_transfer", "cash_on_delivery", "pay_on_pickup"].includes(
+        order.payment_method
+      )
     );
   };
 
@@ -180,27 +204,83 @@ export default function CustomerOrderManagement() {
 
       {/* Analytics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card><CardHeader><CardTitle>Total Orders</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold">{orders?.length || 0}</div></CardContent></Card>
-        <Card><CardHeader><CardTitle>Pending</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold">{orders?.filter(o => o.status === "pending").length || 0}</div></CardContent></Card>
-        <Card><CardHeader><CardTitle>To Ship</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold">{orders?.filter(o => ["confirmed", "processing", "packed"].includes(o.status)).length || 0}</div></CardContent></Card>
-        <Card><CardHeader><CardTitle>Delivered Today</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold">{orders?.filter(o => o.status === "delivered" && format(new Date(o.updated_at), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")).length || 0}</div></CardContent></Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Orders</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{orders?.length || 0}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Pending</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {orders?.filter((o) => o.order_status === "pending")?.length || 0}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>To Ship</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {orders?.filter((o) =>
+                ["confirmed", "processing", "packed"].includes(o.status)
+              )?.length || 0}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Delivered Today</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {orders?.filter((o) => {
+                if (o.status !== "delivered") return false;
+                if (!o.updated_at) return false;
+
+                const orderDate = new Date(o.updated_at);
+
+                if (isNaN(orderDate.getTime())) return false;
+
+                return (
+                  format(orderDate, "yyyy-MM-dd") ===
+                  format(new Date(), "yyyy-MM-dd")
+                );
+              })?.length || 0}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by order number or customer..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
+          <Input
+            placeholder="Search by order number or customer..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
           <SelectContent>
             {STATUS_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -227,29 +307,63 @@ export default function CustomerOrderManagement() {
               </TableHeader>
               <TableBody>
                 {filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.order_number}</TableCell>
-                    <TableCell>{order.contact_phone}</TableCell>
-                    <TableCell>{format(new Date(order.created_at), "PP")}</TableCell>
-                    <TableCell>{order.items?.length || 0}</TableCell>
-                    <TableCell>{formatCurrency(order.total_amount)}</TableCell>
-                    <TableCell>
-                      {needsPaymentConfirmation(order)
-                        ? <Badge variant="outline" className="border-warning text-warning"><AlertCircle className="h-3 w-3 mr-1" />Pending</Badge>
-                        : <Badge variant="default" className="bg-success">Paid</Badge>}
+                  <TableRow key={order.order_number}>
+                    <TableCell className="font-medium">
+                      {order.order_number}
                     </TableCell>
+
+                    <TableCell>{order.contact_phone}</TableCell>
+
+                    {/* ✅ Safe Date Rendering */}
                     <TableCell>
-                      <Badge variant={STATUS_BADGE_VARIANT[order.status] || "secondary"}>
-                        {order.status.replace("_", " ")}
+                      {formatSafeDate(order.createdAt, "PP")}
+                    </TableCell>
+
+                    <TableCell>{order.items?.length || 0}</TableCell>
+
+                    <TableCell>{formatCurrency(order.total_amount)}</TableCell>
+
+                    {/* ✅ Payment Status */}
+                    <TableCell>
+                      {needsPaymentConfirmation(order) ? (
+                        <Badge
+                          variant="outline"
+                          className="border-warning text-warning"
+                        >
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Pending
+                        </Badge>
+                      ) : (
+                        <Badge variant="default" className="bg-success">
+                          Paid
+                        </Badge>
+                      )}
+                    </TableCell>
+
+                    {/* ✅ Order Status */}
+                    <TableCell>
+                      <Badge
+                        variant={
+                          STATUS_BADGE_VARIANT[order.status] || "secondary"
+                        }
+                      >
+                        {order.payment_status.replace("_", " ") || "Unknown"}
                       </Badge>
                     </TableCell>
+
+                    {/* ✅ Action Button */}
                     <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => {
-                        setSelectedOrder(order);
-                        setNewStatus(order.status);
-                        setIsDialogOpen(true);
-                      }}>
-                        <Eye className="h-4 w-4 mr-2" />Manage
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setNewStatus(order.status);
+                          setIsDialogOpen(true);
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Manage
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -273,14 +387,27 @@ export default function CustomerOrderManagement() {
       {/* Order Management Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Order {selectedOrder?.order_number}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Order {selectedOrder?.order_number}</DialogTitle>
+          </DialogHeader>
           {selectedOrder && (
             <div className="space-y-6">
               {needsPaymentConfirmation(selectedOrder) && (
                 <Alert className="border-warning bg-warning/10">
                   <AlertCircle className="h-4 w-4 text-warning" />
                   <AlertDescription>
-                    <p>Payment confirmation required for {selectedOrder.payment_method}</p>
+                    <p>
+                      Payment confirmation required for{" "}
+                      {selectedOrder.payment_method}
+                    </p>
+                    <br></br>
+                    <p>For bank transfer orders:</p>
+
+                    <p>⏳ Stock is currently RESERVED</p>
+                    <p>💰 Confirm payment below to DEDUCT stock</p>
+                    <p>📦 Then update status to deliverd</p>
+
+
                   </AlertDescription>
                 </Alert>
               )}
@@ -288,31 +415,105 @@ export default function CustomerOrderManagement() {
               {needsPaymentConfirmation(selectedOrder) && (
                 <div className="p-4 border rounded-lg bg-muted/50 space-y-3">
                   <Label>Payment Reference (Optional)</Label>
-                  <Input placeholder="Enter payment reference..." value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} />
-                  <Button onClick={handleConfirmPayment} disabled={isConfirmingPayment} className="w-full">
-                    {isConfirmingPayment ? "Processing..." : "Confirm Payment Received"}
+                  <Input
+                    placeholder="Enter payment reference..."
+                    value={paymentReference}
+                    onChange={(e) => setPaymentReference(e.target.value)}
+                  />
+                  <Button
+                    onClick={handleConfirmPayment}
+                    disabled={isConfirmingPayment}
+                    className="w-full"
+                  >
+                    {isConfirmingPayment
+                      ? "Processing..."
+                      : "Confirm Payment Received"}
                   </Button>
                 </div>
               )}
 
+<p className="text-sm">
+    <span className="font-medium">Phone:</span> {selectedOrder.contact_phone || selectedOrder.customer?.phone || "N/A"}
+  </p>
+
+  <p className="text-sm">
+    <span className="font-medium">Email:</span> {selectedOrder.contact_email || selectedOrder.customer?.email || "N/A"}
+  </p>
+
+  <p className="text-sm">
+    <span className="font-medium">Payment Method:</span>{" "}
+    {selectedOrder.payment_method?.replace("_", " ")}
+  </p>
+
+  <p className="text-sm">
+    <span className="font-medium">Payment Status:</span>{" "}
+    {selectedOrder.payment_status}
+  </p>
+
+  <div className="border rounded-lg p-4 bg-muted/40 space-y-2">
+  <h3 className="font-semibold text-sm">Delivery Information</h3>
+
+  {selectedOrder.location && (
+    <p className="text-sm">
+      <span className="font-medium">Pickup Location:</span>{" "}
+      {selectedOrder.location?.name}, {selectedOrder.location?.state}
+    </p>
+  )}
+
+  {selectedOrder.shipping_address && (
+    <>
+      <p className="text-sm">
+        <span className="font-medium">Delivery Address:</span>{" "}
+        {selectedOrder.shipping_address}
+      </p>
+
+      <p className="text-sm">
+        {selectedOrder.shipping_city}, {selectedOrder.shipping_state}
+      </p>
+    </>
+  )}
+
+  {selectedOrder.delivery_notes && (
+    <p className="text-sm italic">
+      <span className="font-medium">Notes:</span>{" "}
+      {selectedOrder.delivery_notes}
+    </p>
+  )}
+</div>
+
               <div>
                 <Label htmlFor="status">Update Status</Label>
                 <Select value={newStatus} onValueChange={setNewStatus}>
-                  <SelectTrigger id="status"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="status">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.filter((opt) => opt.value !== "all").map((option) => (
-                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                    ))}
+                    {STATUS_OPTIONS.filter((opt) => opt.value !== "all").map(
+                      (option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <Label htmlFor="notes">Notes (Optional)</Label>
-                <Textarea id="notes" placeholder="Add notes..." value={statusNotes} onChange={(e) => setStatusNotes(e.target.value)} />
+                <Textarea
+                  id="notes"
+                  placeholder="Add notes..."
+                  value={statusNotes}
+                  onChange={(e) => setStatusNotes(e.target.value)}
+                />
               </div>
 
-              <Button onClick={handleUpdateStatus} disabled={isUpdating || newStatus === selectedOrder.status} className="w-full">
+              <Button
+                onClick={handleUpdateStatus}
+                disabled={isUpdating || newStatus === selectedOrder.status}
+                className="w-full"
+              >
                 {isUpdating ? "Updating..." : "Update Status"}
               </Button>
             </div>
