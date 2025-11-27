@@ -205,10 +205,13 @@ export default function Checkout() {
       });
       toast({
         title: "Order placed successfully!",
-        description: `Order ${data.order_number} has been created`,
+        description: `Order ${data.order_id} has been created`,
       });
+      // alert(data.data.order_id);
+
+      // alert(data.id)
       setTimeout(() => {
-        navigate(`/order-confirmation/${data.order_number}`);
+        navigate(`/order-confirmation/${data.data.order_number}`);
       }, 2500); // wait 2 seconds
 
       // If your backend returns order id differently, adjust here

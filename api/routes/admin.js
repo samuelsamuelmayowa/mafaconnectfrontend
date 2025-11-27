@@ -57,10 +57,11 @@ router.get(
 
 
 /// order api 
-router.post("/orders/create", authenticate, requireRole("admin", "manager", "customer"), createOrder);
-router.get("/orders/:order_number",
+router.get("/orders/:orderId",
   //  authenticate, requireRole("admin", "manager", "customer"), 
    getOrderById);
+router.post("/orders/create", authenticate, requireRole("admin", "manager", "customer"), createOrder);
+
 
 // admin and manager and all   logged-in can view products
 router.get(

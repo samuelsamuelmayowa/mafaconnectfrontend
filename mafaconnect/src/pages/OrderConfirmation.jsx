@@ -17,14 +17,13 @@ const getToken = () => {
 // ✅ Fetch single order
 const fetchOrderById = async (orderId) => {
   const token = getToken();
-
   const res = await axios.get(
     `${API_BASE}/orders/${orderId}`,
     {
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-
+  console.log(res)
   return res.data?.data;
 };
 

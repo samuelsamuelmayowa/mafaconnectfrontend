@@ -482,7 +482,7 @@ exports.createOrder = async (req, res) => {
       success: true,
       message: "Order created successfully",
       order_id: order.id,
-      order_number,
+      order_number:order.order_number,
       reservation_expires_at: reservationExpires,
     });
 
@@ -508,7 +508,7 @@ exports.getOrderById = async (req, res) => {
     //   include: [OrderItem], // optional
     // });
     const order = await Order.findOne({
-  where: { order_number: req.params.order_number},
+  where: { order_number: req.params.orderId},
   include: [
     {
       model: OrderItem,
