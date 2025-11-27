@@ -3,6 +3,8 @@ const { ProductImage } = require("./productimages");
 const { User } = require("./user");
 const { ProductLocationStock } = require("./ProductLocationStock");
 const { Location } = require("./Location");
+const { Order, Notification } = require("./Order");
+const OrderItem = require("./OrderItem");
 
 /* ================================
    PRODUCT ↔ LOCATION (via ProductLocationStock)
@@ -81,6 +83,18 @@ User.belongsTo(Location, {
 Location.hasMany(User, {
   foreignKey: "location_id",
   as: "staff",
+});
+Order.hasMany(Notification, { foreignKey: "order_id" });
+Notification.belongsTo(Order, { foreignKey: "order_id" });
+Order.hasMany(OrderItem, {
+  foreignKey: "order_id",
+  as: "items"
+});
+
+// Each OrderItem belongs to an Order
+OrderItem.belongsTo(Order, {
+  foreignKey: "order_id",
+  as: "order"
 });
 
 

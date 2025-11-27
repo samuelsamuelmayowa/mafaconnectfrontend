@@ -23,6 +23,8 @@ const {
   updateLocation,
   getLocationBankDetails,
   getSingleLocation,
+  createOrder,
+  getOrderById,
 } = require("../controllers/adminController");
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
@@ -40,6 +42,8 @@ router.post(
   upload.array("images"),
   createProduct
 );
+
+
 // sarch for product for both admin and everyone 
 // Live product search
 router.get("/products/search", searchProducts);
@@ -50,6 +54,14 @@ router.get(
   requireRole("admin", "manager","customer","sales_agent"),
   getAllProducts
 );
+
+
+/// order api 
+router.post("/orders/create", authenticate, requireRole("admin", "manager", "customer"), createOrder);
+router.get("/orders/:order_number",
+  //  authenticate, requireRole("admin", "manager", "customer"), 
+   getOrderById);
+
 // admin and manager and all   logged-in can view products
 router.get(
   "/products/:productid",
@@ -77,14 +89,19 @@ router.put(
 router.post("/locations", 
   authenticate, requireRole("admin","manager"), 
   createLocation);
-
+router.get(
+  "/locations/stats",
+  authenticate,
+  requireRole("admin", "manager"),
+  getLocationStats
+);
 router.put("/locations/:id",
   authenticate,
   requireRole("admin", "manager"),
   updateLocation
 );
 
-router.get("/locations/:id", authenticate, requireRole("customer"), getSingleLocation);
+router.get("/locations/:id", authenticate, requireRole("customer", "manager","admin"), getSingleLocation);
 
 // Add stock to depot
 router.post("/locations/stock", 
@@ -119,12 +136,7 @@ router.get("/locations", authenticate,
   }
 });
 
-router.get(
-  "/locations/stats",
-  authenticate,
-  requireRole("admin", "manager"),
-  getLocationStats
-);
+
 /// location infomation 
 router.get("/locations/:locationId/stats",  authenticate,
   requireRole("admin", "manager"), getSingleLocationStats);
@@ -143,10 +155,7 @@ router.get("/product-locations", authenticate,
 
 
 
-
-
 router.post("/login", adminLogin);
-
 // router.get("/auth/me", authenticate, requireRole("user"), getCurrentUser);
 router.post("/refresh", refreshToken);
 router.post("/logout", logout);

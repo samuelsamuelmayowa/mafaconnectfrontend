@@ -6,9 +6,540 @@ require("dotenv").config();
 const cloudinary = require("../cloudinary");
 const { Product, ProductImage, Location, ProductLocationStock } = require("../models");
 const { sequelize } = require("../db");
-/**
- * Helper to generate access token
- */
+const sendOrderEmail = require("../utils/sendOrderEmail");
+const OrderItem = require("../models/OrderItem");
+// const Order = require("../models/Order");
+const { Order, Notification } = require("../models/Order");
+// const { } = require("../models/Order"); // if you need it too
+const { LocationProductStock } = require("../models/LocationProductStock");
+const crypto = require("crypto");
+// exports.createOrder = async (req, res) => {
+//   const t = await sequelize.transaction();
+
+//   try {
+//     const {
+//       user_id,
+//       items,
+//       pickup_location_id,
+//       delivery_type,
+//       payment_method,
+//       total_amount,
+//       contact_email,
+//     } = req.body;
+
+//     if (!items || items.length === 0) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Cart is empty",
+//       });
+//     }
+
+//     // ✅ Generate Order Number
+//     const orderNumber = `MF-${Date.now()}`;
+
+//     // ✅ Create Order First
+//     const order = await Order.create({
+//       order_number: orderNumber,
+//       user_id,
+//       pickup_location_id,
+//       delivery_type,
+//       payment_method,
+//       total_amount,
+//       payment_status: "pending",
+//       order_status: "reserved",
+//     }, { transaction: t });
+
+//     // ✅ STOCK VALIDATION LOOP
+//     for (const item of items) {
+//       const { product_id, quantity } = item;
+
+//       // Check location stock
+//       const locationStock = await LocationProductStock.findOne({
+//         where: {
+//           product_id,
+//           location_id: pickup_location_id,
+//         },
+//         transaction: t,
+//       });
+
+//       if (!locationStock) {
+//         throw new Error(`Product not available at this location`);
+//       }
+
+//       if (locationStock.stock_qty < quantity) {
+//         throw new Error(`Not enough stock for product ID ${product_id}`);
+//       }
+
+//       // ✅ Deduct location stock
+//       locationStock.stock_qty -= quantity;
+//       await locationStock.save({ transaction: t });
+
+//       // ✅ Deduct global stock
+//       const product = await Product.findByPk(product_id, { transaction: t });
+
+//       if (product.stock_quantity < quantity) {
+//         throw new Error(`Global stock too low for product`);
+//       }
+
+//       product.stock_quantity -= quantity;
+//       await product.save({ transaction: t });
+//     }
+
+//     await t.commit();
+
+//     // ✅ Send Email
+//     if (contact_email) {
+//       sendOrderEmail(contact_email, order);
+//     }
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Order successfully created",
+//       order_id: order.id,
+//       order_number: order.order_number,
+//     });
+
+//   } catch (error) {
+//     await t.rollback();
+
+//     console.error("❌ Order error:", error.message);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: error.message
+//     });
+//   }
+// };
+
+// exports.createOrder = async (req, res) => {
+//   const { 
+//     customer_id,
+//     sales_agent_id,
+//     location_id,
+//     items,
+//     payment_method,
+//     total_amount 
+//   } = req.body;
+
+//   const t = await sequelize.transaction();
+
+//   try {
+
+//     // Generate order number
+//     const orderNumber = `ORD-${Date.now()}`;
+
+//     // 1️⃣ Check stock
+//     for (let item of items) {
+//       const locationStock = await LocationProductStock.findOne({
+//         where: {
+//           product_id: item.product_id,
+//           location_id: location_id,
+//         },
+//         transaction: t
+//       });
+
+//       if (!locationStock || locationStock.quantity < item.quantity) {
+//         throw new Error(
+//           `Insufficient stock for product ID ${item.product_id} at this location`
+//         );
+//       }
+//     }
+
+//     // 2️⃣ Create order
+//     const order = await Order.create({
+//       order_number: orderNumber,
+//       customer_id,
+//       sales_agent_id: sales_agent_id || null,
+//       location_id,
+//       total_amount,
+//       payment_method,
+//       reservation_expires_at: getExpiryTime(payment_method),
+//     }, { transaction: t });
+
+//     // 3️⃣ Create order items + Deduct stock
+//     for (let item of items) {
+//       const locationStock = await LocationProductStock.findOne({
+//         where: { product_id: item.product_id, location_id },
+//         transaction: t
+//       });
+
+//       await OrderItem.create({
+//         order_id: order.id,
+//         product_id: item.product_id,
+//         quantity: item.quantity,
+//         unit_price: item.price,
+//         total_price: item.quantity * item.price,
+//       }, { transaction: t });
+
+//       // Deduct stock
+//       locationStock.quantity -= item.quantity;
+//       await locationStock.save({ transaction: t });
+//     }
+
+//     await t.commit();
+
+//     res.json({
+//       success: true,
+//       id: order.id,
+//       order_number: orderNumber,
+//       message: "Order created successfully"
+//     });
+
+//   } catch (error) {
+//     await t.rollback();
+//     res.status(400).json({
+//       success: false,
+//       message: error.message
+//     });
+//   }
+// };
+
+function calculateExpiry(payment_method) {
+  const now = new Date();
+
+  if (payment_method === "pay_on_pickup") {
+    now.setHours(now.getHours() + 24);
+  }
+  else if (payment_method === "cash_on_delivery") {
+    now.setHours(now.getHours() + 48);
+  }
+  else if (payment_method === "bank_transfer") {
+    now.setHours(now.getHours() + 72);
+  }
+
+  return now;
+}
+
+
+// exports.createOrder = async (req, res) => {
+//   const {
+//     customer_id,
+//     sales_agent_id,
+//     location_id,
+//     items,
+//     payment_method,
+//     total_amount
+//   } = req.body;
+
+//   const t = await sequelize.transaction();
+
+//   try {
+//     const orderNumber = `ORD-${Date.now()}`;
+
+//     // 🔍 STEP 1: STOCK VALIDATION
+//     for (let item of items) {
+
+//       const locationStock = await LocationProductStock.findOne({
+//         where: {
+//           location_id,
+//           product_id: item.product_id,
+//         },
+//         transaction: t,
+//         lock: t.LOCK.UPDATE
+//       });
+
+//       const product = await Product.findOne({
+//         where: { id: item.product_id },
+//         transaction: t,
+//         lock: t.LOCK.UPDATE
+//       });
+
+//       if (!locationStock) {
+//         throw new Error(`Product not available in this location`);
+//       }
+
+//       if (locationStock.stock_qty < item.quantity) {
+//         throw new Error(
+//           `Not enough stock for ${item.product_name} at selected location`
+//         );
+//       }
+
+//       if (product.stock_qty < item.quantity) {
+//         throw new Error(
+//           `Global stock for ${item.product_name} is insufficient`
+//         );
+//       }
+//     }
+
+//     // 📦 STEP 2: CREATE ORDER
+//     const order = await Order.create({
+//       order_number: orderNumber,
+//       customer_id,
+//       sales_agent_id: sales_agent_id || null,
+//       location_id,
+//       payment_method,
+//       total_amount,
+//       order_status: "pending",
+//       payment_status: "pending",
+//       reservation_expires_at: calculateExpiry(payment_method),
+//     }, { transaction: t });
+
+//     // 📦 STEP 3: CREATE ORDER ITEMS + UPDATE STOCK
+//     for (let item of items) {
+
+//       const locationStock = await LocationProductStock.findOne({
+//         where: {
+//           location_id,
+//           product_id: item.product_id
+//         },
+//         transaction: t
+//       });
+
+//       const product = await Product.findOne({
+//         where: { id: item.product_id },
+//         transaction: t
+//       });
+
+//       // Deduct location stock
+//       locationStock.stock_qty -= item.quantity;
+//       await locationStock.save({ transaction: t });
+
+//       // Deduct global stock
+//       product.stock_qty -= item.quantity;
+//       await product.save({ transaction: t });
+
+//       // Save order item
+//       await OrderItem.create({
+//         order_id: order.id,
+//         product_id: item.product_id,
+//         quantity: item.quantity,
+//         unit_price: item.unit_price,
+//         total_price: item.quantity * item.unit_price,
+//       }, { transaction: t });
+//     }
+
+//     await t.commit();
+
+//     res.status(200).json({
+//       success: true,
+//       order_id: order.id,
+//       order_number: orderNumber,
+//       message: "Order placed successfully"
+//     });
+
+//   } catch (error) {
+//     await t.rollback();
+
+//     res.status(400).json({
+//       success: false,
+//       message: error.message
+//     });
+//   }
+// };
+
+exports.createOrder = async (req, res) => {
+  const t = await sequelize.transaction();
+
+  try {
+    const {
+      customer_id,
+      location_id,
+      delivery_type,
+      items,
+      total_amount,
+      shipping_fee,
+      payment_method,
+    } = req.body;
+
+    // 🔴 BASIC VALIDATIONS
+    if (!customer_id) {
+      return res.status(400).json({
+        success: false,
+        message: "customer_id is required",
+      });
+    }
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cart is empty or items missing",
+      });
+    }
+
+    // Only require location if pickup
+    if (delivery_type === "pickup" && !location_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Pickup location is required",
+      });
+    }
+
+    // 🔎 CHECK ITEMS STRUCTURE
+    for (let item of items) {
+      if (!item.product_id) {
+        return res.status(400).json({
+          success: false,
+          message: "product_id missing from item",
+        });
+      }
+
+      if (!item.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: "quantity missing for product",
+        });
+      }
+    }
+
+    // ✅ Generate order number
+    const order_number =
+      "ORD-" + crypto.randomBytes(4).toString("hex").toUpperCase();
+
+    // ✅ Reservation expiry logic
+    const reservationExpires = new Date();
+
+    if (payment_method === "bank_transfer") {
+      reservationExpires.setHours(reservationExpires.getHours() + 72);
+    } else if (payment_method === "pay_on_pickup") {
+      reservationExpires.setHours(reservationExpires.getHours() + 24);
+    } else {
+      reservationExpires.setHours(reservationExpires.getHours() + 48);
+    }
+
+    // ✅ IF PICKUP: Check stock availability
+    if (delivery_type === "pickup") {
+      for (let item of items) {
+        const stock = await ProductLocationStock.findOne({
+          where: {
+            location_id,
+            product_id: item.product_id,
+          },
+          transaction: t,
+          lock: t.LOCK.UPDATE,
+        });
+
+        if (!stock) {
+          await t.rollback();
+          return res.status(400).json({
+            success: false,
+            message: `Product ${item.product_id} not available at this location`,
+          });
+        }
+
+        if (stock.stock_qty < item.quantity) {
+          await t.rollback();
+          return res.status(400).json({
+            success: false,
+            message: `Not enough stock for product ${item.product_id}. Available: ${stock.stock_qty}`,
+          });
+        }
+      }
+    }
+
+    // ✅ CREATE ORDER
+    const order = await Order.create(
+      {
+        order_number,
+        customer_id,
+        location_id: delivery_type === "pickup" ? location_id : null,
+        payment_method,
+        total_amount,
+        shipping_fee,
+        reservation_expires_at: reservationExpires,
+        payment_status: "pending",
+        order_status: "pending",
+      },
+      { transaction: t }
+    );
+    await Notification.create({
+      user_id: customer_id,
+      title: "Order Placed ✅",
+      message: `Your order ${order_number} has been placed successfully.`,
+      order_id: order.id,
+    }, { transaction: t });
+
+
+    // ✅ CREATE ORDER ITEMS + DEDUCT STOCK
+    for (let item of items) {
+      if (delivery_type === "pickup") {
+        await ProductLocationStock.decrement(   // i chnage this part
+          { stock_qty: item.quantity },
+          {
+            where: {
+              location_id,
+              product_id: item.product_id,
+            },
+            transaction: t,
+          }
+        );
+      }
+
+      await OrderItem.create(
+        {
+          order_id: order.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.price,
+          total_price: item.price * item.quantity,
+        },
+        { transaction: t }
+      );
+    }
+
+    await t.commit();
+
+    return res.json({
+      success: true,
+      message: "Order created successfully",
+      order_id: order.id,
+      order_number,
+      reservation_expires_at: reservationExpires,
+    });
+
+  } catch (err) {
+    await t.rollback();
+
+    console.error("Order creation error:", err);
+
+    res.status(500).json({
+      success: false,
+      message: "Order processing failed",
+    });
+  }
+};
+
+
+exports.getOrderById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // const order = await Order.findOne({
+    //   where: { id },
+    //   include: [OrderItem], // optional
+    // });
+    const order = await Order.findOne({
+  where: { order_number: req.params.order_number},
+  include: [
+    {
+      model: OrderItem,
+      as: "items"
+    }
+  ]
+});
+
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: order,
+    });
+
+  } catch (err) {
+    console.error("Get order error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch order",
+    });
+  }
+};
+
+
 const generateAccessToken = (user) => {
   if (!process.env.JWT_ACCESS_SECRET) throw new Error("Missing JWT_ACCESS_SECRET");
   return jwt.sign(
@@ -753,7 +1284,7 @@ exports.addProductStock = async (req, res) => {
     // const { productId, locationId, stockQty, reorderLevel, orders } = req.body;
 
     // if (!productId || !locationId) {
-     const { product_id, location_id, stock_qty, reorder_level } = req.body;
+    const { product_id, location_id, stock_qty, reorder_level } = req.body;
 
     if (!product_id || !location_id) {
       return res.status(400).json({
@@ -766,7 +1297,7 @@ exports.addProductStock = async (req, res) => {
     const existingStock = await ProductLocationStock.findOne({
       where: {
         product_id: product_id,
-        location_id:location_id,
+        location_id: location_id,
       },
     });
 
@@ -782,7 +1313,7 @@ exports.addProductStock = async (req, res) => {
       product_id: product_id,
       location_id: location_id,
       stock_qty: stock_qty || 0,
-      orders: 0 ,
+      orders: 0,
       reorder_level: reorder_level || 20,
     });
 
@@ -985,7 +1516,7 @@ exports.getSingleLocation = async (req, res) => {
 //     const { productId, locationId, stockQty, reorderLevel } = req.body;
 
 //     const stock = await ProductLocationStock.create({
-      
+
 //       product_id: productId,
 //       location_id: locationId,
 //       stock_qty: stockQty || 0,

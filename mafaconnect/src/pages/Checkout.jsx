@@ -36,13 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/transactionUtils";
 import { apiPost } from "@/lib/api";
 
-import {
-  Loader2,
-  ArrowLeft,
-  Package,
-  Truck,
-  AlertCircle,
-} from "lucide-react";
+import { Loader2, ArrowLeft, Package, Truck, AlertCircle } from "lucide-react";
 import { BankDetailsCard } from "@/components/BankDetailsCard";
 
 const NIGERIAN_STATES = [
@@ -93,9 +87,7 @@ const checkoutSchema = z
     shipping_city: z.string().optional(),
     shipping_state: z.string().optional(),
     shipping_postal_code: z.string().optional(),
-    contact_phone: z
-      .string()
-      .min(10, "Valid phone number is required"),
+    contact_phone: z.string().min(10, "Valid phone number is required"),
     contact_email: z.string().email().optional().or(z.literal("")),
     delivery_notes: z.string().optional(),
     payment_method: z.enum([
@@ -105,23 +97,24 @@ const checkoutSchema = z
       "stripe",
     ]),
   })
-  .refine((data) => {
-    if (data.delivery_type === "delivery") {
-      return (
-        data.shipping_address &&
-        data.shipping_city &&
-        data.shipping_state
-      );
-    }
-    if (data.delivery_type === "pickup") {
-      return data.pickup_location_id;
-    }
-    return true;
-  }, { message: "Required fields missing for selected delivery type" });
+  .refine(
+    (data) => {
+      if (data.delivery_type === "delivery") {
+        return (
+          data.shipping_address && data.shipping_city && data.shipping_state
+        );
+      }
+      if (data.delivery_type === "pickup") {
+        return data.pickup_location_id;
+      }
+      return true;
+    },
+    { message: "Required fields missing for selected delivery type" }
+  );
 
 export default function Checkout() {
-    const token = localStorage.getItem("ACCESS_TOKEN");
-    const API_URL = import.meta.env.VITE_HOME_OO;
+  const token = localStorage.getItem("ACCESS_TOKEN");
+  const API_URL = import.meta.env.VITE_HOME_OO;
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -131,19 +124,18 @@ export default function Checkout() {
   const { getSetting } = useStoreSettings();
   const { locations } = useLocations();
   const { data: kycStatus } = useKYCStatus();
+  const [orderSuccess, setOrderSuccess] = useState(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
-
- 
+  const [checkoutError, setCheckoutError] = useState(null);
 
   const isKYCApproved = kycStatus?.kyc_status === "approved";
 
   // 🧮 Store settings (shipping only, like your TS version)
   const shippingFeeSetting = getSetting("shipping_fee");
   const shippingFeeValue = shippingFeeSetting?.value || 0;
-  const freeShippingThreshold =
-    shippingFeeSetting?.free_threshold || 50000;
+  const freeShippingThreshold = shippingFeeSetting?.free_threshold || 50000;
 
   const form = useForm({
     resolver: zodResolver(checkoutSchema),
@@ -156,27 +148,27 @@ export default function Checkout() {
   const deliveryType = form.watch("delivery_type");
   const paymentMethod = form.watch("payment_method");
   const pickupLocationId = form.watch("pickup_location_id");
-   const { data: selectedLocationDetails } = useQuery({
-  queryKey: ["location-bank-details", pickupLocationId],
-  queryFn: async () => {
-    if (!pickupLocationId) return null;
+  const { data: selectedLocationDetails } = useQuery({
+    queryKey: ["location-bank-details", pickupLocationId],
+    queryFn: async () => {
+      if (!pickupLocationId) return null;
 
-    const res = await fetch(`${API_URL}/locations/${pickupLocationId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+      const res = await fetch(`${API_URL}/locations/${pickupLocationId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    if (!res.ok) {
-      throw new Error("Failed to fetch location details");
-    }
+      if (!res.ok) {
+        throw new Error("Failed to fetch location details");
+      }
 
-    const data = await res.json();
-    return data.data;
-  },
-  enabled: !!pickupLocationId,
-});
-  
+      const data = await res.json();
+      return data.data;
+    },
+    enabled: !!pickupLocationId,
+  });
+
   const shippingCost =
     deliveryType === "pickup"
       ? 0
@@ -199,47 +191,92 @@ export default function Checkout() {
   const createOrder = useMutation({
     mutationFn: async (payload) => {
       // You can adjust this URL to match your Node backend
-      const res = await apiPost("/api/orders/create", payload);
+      const res = await apiPost("/orders/create", payload);
       return res;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
       clearCart();
-
+      setOrderSuccess({
+        id: data.order_id,
+        number: data.order_number,
+      });
       toast({
         title: "Order placed successfully!",
         description: `Order ${data.order_number} has been created`,
       });
+      setTimeout(() => {
+        navigate(`/order-confirmation/${data.order_number}`);
+      }, 2500); // wait 2 seconds
 
       // If your backend returns order id differently, adjust here
-      navigate(`/order-confirmation/${data.id}`);
+      // navigate(`/order-confirmation/${data.id}`);
     },
+    // onError: (error) => {
+    //   let errorTitle = "Order failed";
+    //   let errorDescription = error?.message || "Could not place order";
+
+    //   const msg = error?.message || "";
+
+    //   if (msg.includes("stock")) {
+    //     errorTitle = "Stock Issue";
+    //     errorDescription = msg;
+    //   } else if (msg.includes("Cart is empty")) {
+    //     errorTitle = "Cart Empty";
+    //     errorDescription =
+    //       "Your cart is empty. Please add items before checkout.";
+    //   } else if (msg.includes("Product not found")) {
+    //     errorTitle = "Product Unavailable";
+    //     errorDescription =
+    //       "Some products in your cart are no longer available.";
+    //   }
+
+    //   toast({
+    //     title: errorTitle,
+    //     description: errorDescription,
+    //     variant: "destructive",
+    //   });
+    // },
     onError: (error) => {
-      let errorTitle = "Order failed";
-      let errorDescription =
-        error?.message || "Could not place order";
+      let title = "Order Failed";
+      let description = "Something went wrong while placing your order.";
 
-      const msg = error?.message || "";
+      const serverMessage =
+        error?.response?.data?.message || error?.message || "";
 
-      if (msg.includes("stock")) {
-        errorTitle = "Stock Issue";
-        errorDescription = msg;
-      } else if (msg.includes("Cart is empty")) {
-        errorTitle = "Cart Empty";
-        errorDescription =
-          "Your cart is empty. Please add items before checkout.";
-      } else if (msg.includes("Product not found")) {
-        errorTitle = "Product Unavailable";
-        errorDescription =
-          "Some products in your cart are no longer available.";
+      // Handle specific backend errors
+      if (serverMessage.includes("not available at this location")) {
+        title = "Product Not Available";
+        description =
+          "One or more items in your cart are not available at the selected location. Please change location or update your cart.";
+      } else if (serverMessage.includes("Not enough stock")) {
+        title = "Insufficient Stock";
+        description =
+          "One or more products do not have enough stock at this location. Please reduce the quantity or choose another location.";
+      } else if (serverMessage.includes("Location is required")) {
+        title = "Pickup Location Missing";
+        description =
+          "Please select a pickup location before placing your order.";
+      } else if (serverMessage.includes("product_id missing")) {
+        title = "Invalid Cart";
+        description =
+          "Your cart contains an invalid product. Please clear your cart and try again.";
+      } else if (serverMessage.includes("Cart is empty")) {
+        title = "Empty Cart";
+        description =
+          "Your cart is empty. Please add some products before checking out.";
       }
 
       toast({
-        title: errorTitle,
-        description: errorDescription,
+        title,
+        description,
         variant: "destructive",
       });
+      setCheckoutError(description);
+
+      console.error("Checkout error:", serverMessage);
     },
   });
 
@@ -264,15 +301,48 @@ export default function Checkout() {
 
     setIsSubmitting(true);
 
+    // const payload = {
+    //   user_id: user?.id,
+    //   items: cart.items,
+    //   cart_total: cartTotal,
+    //   shipping_fee: shippingCost,
+    //   total_amount: total,
+    //   location_id: data.pickup_location_id || null,  // ✅ THIS FIX
+    //   ...data,
+    // };
+    if (!user?.id) {
+      // toast({
+      //   title: "Login Required",
+      //   description: "You must be logged in to place an order",
+      //   variant: "destructive",
+      // });
+      alert("HELLOW LOGIN IN");
+      return;
+    }
     const payload = {
-      user_id: user?.id,
-      items: cart.items,
+      customer_id: user?.id,
+      location_id:
+        deliveryType === "pickup" ? Number(data.pickup_location_id) : null,
+      delivery_type: data.delivery_type,
+      payment_method: data.payment_method,
+      contact_phone: data.contact_phone,
+      contact_email: data.contact_email,
+      shipping_address: data.shipping_address || null,
+      shipping_city: data.shipping_city || null,
+      shipping_state: data.shipping_state || null,
+      delivery_notes: data.delivery_notes || null,
+
+      items: cart.items.map((item) => ({
+        product_id: item.product.id, // ✅ this is the real DB ID
+
+        quantity: item.quantity,
+        price: item.product.sale_price, // optional but useful
+      })),
+
       cart_total: cartTotal,
       shipping_fee: shippingCost,
       total_amount: total,
-      ...data,
     };
-
     try {
       // use mutateAsync so we can await it properly
       await createOrder.mutateAsync(payload);
@@ -281,13 +351,10 @@ export default function Checkout() {
     }
   };
 
-  
   if (!cart || !cart.items || cart.items.length === 0) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-bold mb-4">
-          Your cart is empty
-        </h2>
+        <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
         <Button asChild>
           <Link to="/shop">Browse Products</Link>
         </Button>
@@ -295,25 +362,37 @@ export default function Checkout() {
     );
   }
 
-  
+  if (orderSuccess) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-4 space-y-4">
+        <h2 className="text-2xl font-bold text-green-600">
+          Order Placed Successfully ✅
+        </h2>
+
+        <p className="text-muted-foreground">
+          Your order <strong>{orderSuccess.number}</strong> has been created.
+        </p>
+
+        <Button
+          onClick={() => navigate(`/order-confirmation/${orderSuccess.id}`)}
+        >
+          View Order
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6 pb-[220px] lg:pb-6">
       {/* Header */}
       <div className="flex items-center gap-3 sm:gap-4">
-        <Button
-          variant="ghost"
-          asChild
-          size="sm"
-          className="h-9"
-        >
+        <Button variant="ghost" asChild size="sm" className="h-9">
           <Link to="/cart">
             <ArrowLeft className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Back to Cart</span>
           </Link>
         </Button>
-        <h1 className="text-2xl sm:text-3xl font-bold">
-          Checkout
-        </h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Checkout</h1>
       </div>
 
       {/* KYC Alert */}
@@ -322,12 +401,9 @@ export default function Checkout() {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>KYC Verification Required</AlertTitle>
           <AlertDescription className="mt-2">
-            You must complete and get your KYC documents approved
-            before placing orders.
-            <Link
-              to="/kyc-onboarding"
-              className="block mt-2"
-            >
+            You must complete and get your KYC documents approved before placing
+            orders.
+            <Link to="/kyc-onboarding" className="block mt-2">
               <Button variant="outline" size="sm">
                 Complete KYC Verification
               </Button>
@@ -365,10 +441,7 @@ export default function Checkout() {
                             className="flex items-center space-x-3 border rounded-lg p-3 sm:p-4 cursor-pointer hover:bg-accent"
                             onClick={() => field.onChange("delivery")}
                           >
-                            <RadioGroupItem
-                              value="delivery"
-                              id="delivery"
-                            />
+                            <RadioGroupItem value="delivery" id="delivery" />
                             <label
                               htmlFor="delivery"
                               className="flex-1 cursor-pointer"
@@ -390,10 +463,7 @@ export default function Checkout() {
                             className="flex items-center space-x-3 border rounded-lg p-3 sm:p-4 cursor-pointer hover:bg-accent"
                             onClick={() => field.onChange("pickup")}
                           >
-                            <RadioGroupItem
-                              value="pickup"
-                              id="pickup"
-                            />
+                            <RadioGroupItem value="pickup" id="pickup" />
                             <label
                               htmlFor="pickup"
                               className="flex-1 cursor-pointer"
@@ -468,13 +538,15 @@ export default function Checkout() {
                     </div>
                   )} */}
                   {selectedLocationDetails && (
-  <div className="p-3 bg-accent rounded-lg text-sm space-y-1">
-    <p><strong>{selectedLocationDetails.name}</strong></p>
-    <p>{selectedLocationDetails.address}</p>
-    <p>{selectedLocationDetails.phone}</p>
-    <p>{selectedLocationDetails.state}</p>
-  </div>
-)}
+                    <div className="p-3 bg-accent rounded-lg text-sm space-y-1">
+                      <p>
+                        <strong>{selectedLocationDetails.name}</strong>
+                      </p>
+                      <p>{selectedLocationDetails.address}</p>
+                      <p>{selectedLocationDetails.phone}</p>
+                      <p>{selectedLocationDetails.state}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -539,10 +611,7 @@ export default function Checkout() {
                             </FormControl>
                             <SelectContent>
                               {NIGERIAN_STATES.map((state) => (
-                                <SelectItem
-                                  key={state}
-                                  value={state}
-                                >
+                                <SelectItem key={state} value={state}>
                                   {state}
                                 </SelectItem>
                               ))}
@@ -668,9 +737,7 @@ export default function Checkout() {
                               htmlFor="transfer"
                               className="flex-1 cursor-pointer"
                             >
-                              <div className="font-semibold">
-                                Bank Transfer
-                              </div>
+                              <div className="font-semibold">Bank Transfer</div>
                               <div className="text-sm text-muted-foreground">
                                 Bank details shown after order (72hr
                                 reservation)
@@ -707,9 +774,8 @@ export default function Checkout() {
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                      Your order will be reserved. Please complete
-                      payment within the timeframe to avoid
-                      auto-cancellation.
+                      Your order will be reserved. Please complete payment
+                      within the timeframe to avoid auto-cancellation.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -721,14 +787,13 @@ export default function Checkout() {
                       orderNumber="Will be provided after order"
                     />
                   )} */}
-                  {paymentMethod === "bank_transfer" &&
- selectedLocationDetails?.bank_details && (
-  <BankDetailsCard
-    bankDetails={selectedLocationDetails.bank_details}
-    orderNumber="Will be provided after order"
-  />
-)}
-
+                {paymentMethod === "bank_transfer" &&
+                  selectedLocationDetails?.bank_details && (
+                    <BankDetailsCard
+                      bankDetails={selectedLocationDetails.bank_details}
+                      orderNumber="Will be provided after order"
+                    />
+                  )}
               </CardContent>
             </Card>
           </div>
@@ -750,9 +815,7 @@ export default function Checkout() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      Shipping
-                    </span>
+                    <span className="text-muted-foreground">Shipping</span>
                     <span className="font-medium">
                       {shippingCost === 0 ? (
                         <span className="text-primary">Free</span>
@@ -769,6 +832,11 @@ export default function Checkout() {
                     <span>{formatCurrency(total)}</span>
                   </div>
                 </div>
+                {checkoutError && (
+                  <div className="bg-red-100 text-red-600 p-3 rounded-md text-sm">
+                    {checkoutError}
+                  </div>
+                )}
 
                 <Button
                   type="submit"
@@ -789,8 +857,7 @@ export default function Checkout() {
                 </Button>
 
                 <p className="text-xs text-muted-foreground text-center">
-                  By placing your order, you agree to our terms and
-                  conditions
+                  By placing your order, you agree to our terms and conditions
                 </p>
               </CardContent>
             </Card>
@@ -839,8 +906,6 @@ export default function Checkout() {
     </div>
   );
 }
-
-
 
 // import { useState, useEffect } from "react";
 // import { useNavigate, Link } from "react-router-dom";

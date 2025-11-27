@@ -34,6 +34,8 @@ import ProductDetail from "./pages/ProductDetail";
 import KYCOnboarding from "./pages/KYCOnboarding";
 import Checkout from "./pages/Checkout";
 import Cart from "./pages/Cart";
+import OrderConfirmation from "./pages/OrderConfirmation";
+import CustomerOrders from "./pages/CustomerOrders";
 
 const queryClient = new QueryClient();
 
@@ -105,6 +107,28 @@ function App() {
               <CustomerProtectedRoute>
                 <DashboardLayout>
                   <Cart />
+                </DashboardLayout>
+              </CustomerProtectedRoute>
+            }
+          />
+
+            <Route
+            path="/order-confirmation/:orderId"
+            element={
+              <CustomerProtectedRoute>
+                <DashboardLayout>
+                  <OrderConfirmation/>
+                </DashboardLayout>
+              </CustomerProtectedRoute>
+            }
+          />
+
+            <Route
+            path="/customer-orders"
+            element={
+              <CustomerProtectedRoute>
+                <DashboardLayout>
+                  <CustomerOrders />
                 </DashboardLayout>
               </CustomerProtectedRoute>
             }
