@@ -2,7 +2,13 @@ import React from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -12,39 +18,33 @@ import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_HOME_OO;
 
-// ✅ Token helper
+// ✅ Token Helper
 const getToken = () => {
   return localStorage.getItem("ACCESS_TOKEN");
 };
 
-// ✅ Fetch all customer orders
+// ✅ Fetch orders
 const fetchCustomerOrders = async () => {
   const token = getToken();
 
-  const res = await axios.get(
-    `${API_BASE}/customer/orders`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const res = await axios.get(`${API_BASE}/customer/orders`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   return res.data?.data || [];
 };
 
-// ✅ Fetch customer invoices
+// ✅ Fetch invoices
 const fetchCustomerInvoices = async () => {
   const token = getToken();
 
-  const res = await axios.get(
-    `${API_BASE}/customer/invoices`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const res = await axios.get(`${API_BASE}/customer/invoices`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   return res.data?.data || [];
 };
@@ -54,44 +54,53 @@ export default function CustomerOrders() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  // ==================== 🟢 FETCH ORDERS ====================
+  // 🟢 Orders Query
   const { data: orders, isLoading } = useQuery({
     queryKey: ["customer-orders", user?.id],
     queryFn: fetchCustomerOrders,
     enabled: !!user?.id,
   });
 
-  // ==================== 🟢 FETCH INVOICES ====================
+  // 🟢 Invoices Query
   const { data: invoices } = useQuery({
-    queryKey: ["order-invoices", user?.id],
+    queryKey: ["customer-invoices", user?.id],
     queryFn: fetchCustomerInvoices,
     enabled: !!user?.id,
   });
+const formatSafeDate = (date) => {
+  if (!date) return "N/A";
 
-  // ==================== 🔍 FILTER SEARCH ====================
+  const parsed = new Date(date);
+
+  if (isNaN(parsed.getTime())) {
+    console.warn("Invalid date received:", date);
+    return "N/A";
+  }
+
+  return format(parsed, "MMM d, yyyy 'at' h:mm a");
+};
+
+  // 🔎 Filter Orders
   const filteredOrders = React.useMemo(() => {
     if (!orders) return [];
     if (!searchQuery) return orders;
 
-    const searchLower = searchQuery.toLowerCase();
+    const lower = searchQuery.toLowerCase();
 
-    return orders.filter((order) => (
-      order.order_number?.toLowerCase().includes(searchLower) ||
-      order.payment_method?.toLowerCase().includes(searchLower) ||
-      order.status?.toLowerCase().includes(searchLower)
-    ));
+    return orders.filter((order) =>
+      order.order_number?.toLowerCase().includes(lower) ||
+      order.payment_method?.toLowerCase().includes(lower) ||
+      order.status?.toLowerCase().includes(lower)
+    );
   }, [orders, searchQuery]);
 
-  // ==================== 📄 FIND INVOICE FOR ORDER ====================
-  const getInvoiceForOrder = (orderId) => {
+  // 🔗 Match Invoice to Order
+  const getInvoiceForOrder = (orderNumber) => {
     if (!invoices) return null;
-
-    return invoices.find(inv =>
-      inv.order_id === orderId
-    );
+    return invoices.find(inv => inv.order_number === orderNumber);
   };
 
-  // ==================== 🔄 LOADING STATE ====================
+  // 🔄 Loading
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -126,22 +135,26 @@ export default function CustomerOrders() {
           {filteredOrders.length > 0 ? (
             <div className="space-y-4">
               {filteredOrders.map((order) => {
-                const orderInvoice = getInvoiceForOrder(order.id);
+                const orderInvoice = getInvoiceForOrder(order.order_number);
 
                 return (
-                  <Card key={order.id}>
+                  <Card key={order.order_number}>
                     <CardHeader>
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                         <div>
                           <CardTitle className="text-base sm:text-lg">
                             Order #{order.order_number}
                           </CardTitle>
-                          <CardDescription className="text-xs sm:text-sm">
+                          {/* <CardDescription className="text-xs sm:text-sm">
                             {format(
                               new Date(order.created_at),
                               "MMM d, yyyy 'at' h:mm a"
                             )}
-                          </CardDescription>
+                          </CardDescription> */}
+                          <CardDescription className="text-xs sm:text-sm">
+  {formatSafeDate(order.created_at)}
+</CardDescription>
+
                         </div>
 
                         <div className="flex gap-2 flex-wrap">
@@ -188,13 +201,29 @@ export default function CustomerOrders() {
                               variant="outline"
                               size="sm"
                               className="w-full"
-                              onClick={() => navigate("/customer-invoices")}
+                              onClick={() =>
+                                navigate(`/customer-invoices/${order.order_number}`)
+                              }
                             >
                               <FileText className="h-4 w-4 mr-2" />
                               View Invoice ({orderInvoice.invoice_number})
                             </Button>
                           </div>
                         )}
+
+                        {/* ✅ Track Order Button */}
+                        <div className="pt-2 border-t">
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            onClick={() =>
+                              navigate(`/orders/${order.order_number}`)
+                            }
+                          >
+                            Track Order
+                          </Button>
+                        </div>
+
                       </div>
                     </CardContent>
                   </Card>
@@ -213,6 +242,7 @@ export default function CustomerOrders() {
     </div>
   );
 }
+
 
 
 // import React from "react";

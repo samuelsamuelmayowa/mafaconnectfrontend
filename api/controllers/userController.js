@@ -1,5 +1,61 @@
 const bcrypt = require("bcrypt");
 const { User } = require("../models/user");
+const { Order } = require("../models/Order");
+const OrderItem = require("../models/OrderItem");
+const { Product } = require("../models");
+
+
+exports.getCustomerOrders = async (req, res) => {
+
+  try {
+    const userId = req.user.id; // or req.params.id
+
+    // const orders = await Order.findAll({
+    //   where: { customer_id: userId },
+    //   order: [["createdAt", "DESC"]],
+    //   include: [
+    //     {
+    //       model: OrderItem,
+    //       as: "items",
+    //       include: [
+    //         {
+    //           model: Product,
+    //           as: "product",
+    //         },
+    //       ],
+    //     },
+    //   ],
+    // });
+    const orders = await Order.findAll({
+      where: { customer_id: userId },
+      order: [["createdAt", "DESC"]],
+      include: [
+        {
+          model: OrderItem,
+          as: "items",
+          include: [
+            {
+              model: Product,
+              as: "product",
+            },
+          ],
+        },
+      ],
+    });
+
+    res.json({
+      success: true,
+      count: orders.length,
+      data: orders,
+    });
+  } catch (error) {
+    console.error("Customer orders error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch customer orders",
+    });
+  }
+};
 
 
 exports.getSingleUser = async (req, res) => {
@@ -45,9 +101,9 @@ exports.getSingleUser = async (req, res) => {
 exports.getKYCStatus = async (req, res) => {
   try {
     const userId = req.user.id; // from JWT
-       console.log("REQ.USER ->", req.user); // ADD THIS
+    console.log("REQ.USER ->", req.user); // ADD THIS
     const user = await User.findByPk(userId, {
-      attributes: ["id", "name", "email", "kyc_status", "account_number","customer_type"],
+      attributes: ["id", "name", "email", "kyc_status", "account_number", "customer_type"],
     });
 
     if (!user) {
@@ -127,9 +183,9 @@ exports.register = async (req, res) => {
     return res.status(201).json({
       message: "Account created successfully. Waiting for admin approval.",
       user: {
-      id: user.id,
+        id: user.id,
         name: user.name,
-        customer_type:user.individual,
+        customer_type: user.individual,
         email: user.email,
         account_number: user.account_number,
         role: user.role,
