@@ -69,36 +69,34 @@ const safeMessages = Array.isArray(messages)
       )}
 
       {/* MESSAGE AREA */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {/* {messages.length === 0 ? ( */}
-        {/* {messages.length === 0 ? ( */}
-        {safeMessages.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">
-            No messages yet. Start the conversation!
-          </div>
-        ) : (
-          <>
-            {/* {messages.map((message) => ( */}
-            {/* {messages.map((message) => ( */}
-          {safeMessages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                content={message.content}
-                senderType={message.sender_type || "customer"}
-                senderName={
-                  message.sender?.name ||
-                  message.sender?.email ||
-                  "Unknown"
-                }
-                createdAt={message.createdAt}   // ✅ FIXED FIELD
-                isOwn={message.sender_id === user?.id}
-              />
-            ))}
+    {/* MESSAGE AREA */}
+<div className="flex-1 overflow-y-auto p-4 space-y-3">
+  {safeMessages.length === 0 ? (
+    <div className="text-center text-muted-foreground py-8">
+      No messages yet. Start the conversation!
+    </div>
+  ) : (
+    <>
+      {safeMessages.map((message) => (
+        <MessageBubble
+          key={message.id}
+          content={message.content}
+          senderType={message.sender_type || "customer"}
+          senderName={
+            message.sender?.name ||
+            message.sender?.email ||
+            "Unknown"
+          }
+          createdAt={message.createdAt}
+          isOwn={message.sender_id === user?.id}
+        />
+      ))}
 
-            <div ref={messagesEndRef} />
-          </>
-        )}
-      </div>
+      <div ref={messagesEndRef} />
+    </>
+  )}
+</div>
+
 
       {/* INPUT BOX */}
       <form onSubmit={handleSend} className="border-t p-3 sm:p-4">
