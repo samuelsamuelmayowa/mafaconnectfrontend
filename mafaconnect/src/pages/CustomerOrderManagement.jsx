@@ -412,10 +412,12 @@ export default function CustomerOrderManagement() {
 
               {needsPaymentConfirmation(selectedOrder) && (
                 <div className="p-4 border rounded-lg bg-muted/50 space-y-3">
-                  <Label>Payment Reference (Optional)</Label>
+                  <Label>Payment Reference </Label>
                   <Input
+                
                     placeholder="Enter payment reference..."
                     value={paymentReference}
+                    required
                     onChange={(e) => setPaymentReference(e.target.value)}
                   />
                   <Button
