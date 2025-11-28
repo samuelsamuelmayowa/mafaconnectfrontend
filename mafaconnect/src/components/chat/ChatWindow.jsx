@@ -70,15 +70,17 @@ const safeMessages = Array.isArray(messages)
 
       {/* MESSAGE AREA */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {messages.length === 0 ? (
+        {/* {messages.length === 0 ? ( */}
+        {/* {messages.length === 0 ? ( */}
+        {safeMessages.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
             No messages yet. Start the conversation!
           </div>
         ) : (
           <>
             {/* {messages.map((message) => ( */}
-            {messages.map((message) => (
-          
+            {/* {messages.map((message) => ( */}
+          {safeMessages.map((message) => (
               <MessageBubble
                 key={message.id}
                 content={message.content}
