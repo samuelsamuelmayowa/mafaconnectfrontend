@@ -17,6 +17,12 @@ const Order = sequelize.define("Order", {
     allowNull: false, // customer placing order
   },
 
+  payment_reference: {
+  type: DataTypes.STRING,
+  allowNull: true,
+},
+
+
   sales_agent_id: {
     type: DataTypes.INTEGER,
     allowNull: true, // NULL if customer created it

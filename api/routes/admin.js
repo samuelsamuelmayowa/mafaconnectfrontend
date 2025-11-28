@@ -27,7 +27,8 @@ const {
   getOrderById,
   getAdminOrders,confirmOrderPayment, updateOrderStatus,
   getCustomerInvoices,
-  downloadInvoice
+  downloadInvoice,
+  confirmPayment
 } = require("../controllers/adminController");
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
@@ -47,10 +48,8 @@ router.post(
 );
 
 router.get("/orders", getAdminOrders);
-router.put("/orders/:id/confirm-payment", confirmOrderPayment);
+router.put("/orders/:id/confirm-payment", confirmPayment);
 router.put("/orders/:id/status", updateOrderStatus);
-
-
 
 /// invoice 
 router.get("/customer/invoices", authenticate, getCustomerInvoices);

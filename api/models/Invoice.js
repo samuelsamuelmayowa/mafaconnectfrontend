@@ -30,6 +30,10 @@ const Invoice = sequelize.define("Invoice", {
   file_url: {
     type: DataTypes.STRING, // For PDF download link
   },
+   payment_reference: {               // ✅ ADD THIS
+    type: DataTypes.STRING,
+    allowNull: true
+  },
 
 }, { timestamps: true });
 

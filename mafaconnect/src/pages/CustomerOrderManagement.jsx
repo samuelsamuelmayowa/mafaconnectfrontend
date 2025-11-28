@@ -406,8 +406,6 @@ export default function CustomerOrderManagement() {
                     <p>⏳ Stock is currently RESERVED</p>
                     <p>💰 Confirm payment below to DEDUCT stock</p>
                     <p>📦 Then update status to deliverd</p>
-
-
                   </AlertDescription>
                 </Alert>
               )}
@@ -432,54 +430,62 @@ export default function CustomerOrderManagement() {
                 </div>
               )}
 
-<p className="text-sm">
-    <span className="font-medium">Phone:</span> {selectedOrder.contact_phone || selectedOrder.customer?.phone || "N/A"}
-  </p>
+              <p className="text-sm">
+                <span className="font-medium">Phone:</span>{" "}
+                {selectedOrder.contact_phone ||
+                  selectedOrder.customer?.phone ||
+                  "N/A"}
+              </p>
 
-  <p className="text-sm">
-    <span className="font-medium">Email:</span> {selectedOrder.contact_email || selectedOrder.customer?.email || "N/A"}
-  </p>
+              <p className="text-sm">
+                <span className="font-medium">Email:</span>{" "}
+                {selectedOrder.contact_email ||
+                  selectedOrder.customer?.email ||
+                  "N/A"}
+              </p>
 
-  <p className="text-sm">
-    <span className="font-medium">Payment Method:</span>{" "}
-    {selectedOrder.payment_method?.replace("_", " ")}
-  </p>
+              <p className="text-sm">
+                <span className="font-medium">Payment Method:</span>{" "}
+                {selectedOrder.payment_method?.replace("_", " ")}
+              </p>
 
-  <p className="text-sm">
-    <span className="font-medium">Payment Status:</span>{" "}
-    {selectedOrder.payment_status}
-  </p>
+              <p className="text-sm">
+                <span className="font-medium">Payment Status:</span>{" "}
+                {selectedOrder.payment_status}
+              </p>
 
-  <div className="border rounded-lg p-4 bg-muted/40 space-y-2">
-  <h3 className="font-semibold text-sm">Delivery Information</h3>
+              <div className="border rounded-lg p-4 bg-muted/40 space-y-2">
+                <h3 className="font-semibold text-sm">Delivery Information</h3>
 
-  {selectedOrder.location && (
-    <p className="text-sm">
-      <span className="font-medium">Pickup Location:</span>{" "}
-      {selectedOrder.location?.name}, {selectedOrder.location?.state}
-    </p>
-  )}
+                {selectedOrder.location && (
+                  <p className="text-sm">
+                    <span className="font-medium">Pickup Location:</span>{" "}
+                    {selectedOrder.location?.name},{" "}
+                    {selectedOrder.location?.state}
+                  </p>
+                )}
 
-  {selectedOrder.shipping_address && (
-    <>
-      <p className="text-sm">
-        <span className="font-medium">Delivery Address:</span>{" "}
-        {selectedOrder.shipping_address}
-      </p>
+                {selectedOrder.shipping_address && (
+                  <>
+                    <p className="text-sm">
+                      <span className="font-medium">Delivery Address:</span>{" "}
+                      {selectedOrder.shipping_address}
+                    </p>
 
-      <p className="text-sm">
-        {selectedOrder.shipping_city}, {selectedOrder.shipping_state}
-      </p>
-    </>
-  )}
+                    <p className="text-sm">
+                      {selectedOrder.shipping_city},{" "}
+                      {selectedOrder.shipping_state}
+                    </p>
+                  </>
+                )}
 
-  {selectedOrder.delivery_notes && (
-    <p className="text-sm italic">
-      <span className="font-medium">Notes:</span>{" "}
-      {selectedOrder.delivery_notes}
-    </p>
-  )}
-</div>
+                {selectedOrder.delivery_notes && (
+                  <p className="text-sm italic">
+                    <span className="font-medium">Notes:</span>{" "}
+                    {selectedOrder.delivery_notes}
+                  </p>
+                )}
+              </div>
 
               <div>
                 <Label htmlFor="status">Update Status</Label>

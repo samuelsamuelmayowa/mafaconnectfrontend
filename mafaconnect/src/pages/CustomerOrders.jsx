@@ -96,15 +96,15 @@ export default function CustomerOrders() {
   }, [orders, searchQuery]);
 
   // 🔗 Match Invoice to Order
-  // const getInvoiceForOrder = (orderNumber) => {
-  //   if (!invoices) return null;
-  //   return invoices.find((inv) => inv.order_number === orderNumber);
-  // };
-  const getInvoiceForOrder = (orderId) => {
-  if (!invoices) return null;
+  const getInvoiceForOrder = (orderNumber) => {
+    if (!invoices) return null;
+    return invoices.find((inv) => inv.order_number === orderNumber);
+  };
+//   const getInvoiceForOrder = (orderId) => {
+//   if (!invoices) return null;
 
-  return invoices.find((inv) => inv.order_id === orderId);
-};
+//   return invoices.find((inv) => inv.order_id === orderId);
+// };
 
   // 🔄 Loading
   if (isLoading) {

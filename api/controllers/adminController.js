@@ -378,48 +378,92 @@ exports.getAdminOrders = async (req, res) => {
   }
 };
 
+// exports.confirmPayment = async (req, res) => {
+//   const t = await sequelize.transaction();
+
+//   try {
+//     const orderId = req.params.id;
+//     const { payment_reference } = req.body;
+
+//     const order = await Order.findByPk(orderId, { transaction: t });
+
+//     if (!order) {
+//       return res.status(404).json({ success: false, message: "Order not found" });
+//     }
+
+//     // Update order
+//     order.payment_status = "paid";
+//     order.order_status = "confirmed";
+//     await order.save({ transaction: t });
+
+//     // ✅ Create Invoice
+//     const invoiceNumber = "INV-" + crypto.randomBytes(3).toString("hex").toUpperCase();
+
+//     const invoice = await Invoice.create({
+//       invoice_number: invoiceNumber,
+//       order_id: order.id,
+//       customer_id: order.customer_id,
+//       total_amount: order.total_amount,
+//     }, { transaction: t });
+
+//     await t.commit();
+
+//     return res.json({
+//       success: true,
+//       message: "Payment confirmed & invoice generated",
+//       invoice
+//     });
+
+//   } catch (err) {
+//     await t.rollback();
+//     console.error("Confirm payment error:", err);
+//     res.status(500).json({ success: false, message: "Confirm payment failed" });
+//   }
+// };
 exports.confirmPayment = async (req, res) => {
-  const t = await sequelize.transaction();
+  const { id } = req.params;
+  const { payment_reference } = req.body;
 
   try {
-    const orderId = req.params.id;
-    const { payment_reference } = req.body;
-
-    const order = await Order.findByPk(orderId, { transaction: t });
+    const order = await Order.findByPk(id);
 
     if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found" });
+      return res.status(404).json({ message: "Order not found" });
     }
 
-    // Update order
+    // ✅ Save reference on order
+    order.payment_reference = payment_reference;
     order.payment_status = "paid";
-    order.order_status = "confirmed";
-    await order.save({ transaction: t });
+    await order.save();
 
-    // ✅ Create Invoice
-    const invoiceNumber = "INV-" + crypto.randomBytes(3).toString("hex").toUpperCase();
+    const existingInvoice = await Invoice.findOne({
+      where: { order_id: order.id }
+    });
 
-    const invoice = await Invoice.create({
-      invoice_number: invoiceNumber,
-      order_id: order.id,
-      customer_id: order.customer_id,
-      total_amount: order.total_amount,
-    }, { transaction: t });
-
-    await t.commit();
+    // ✅ Automatically generate invoice
+    if (!existingInvoice) {
+      await Invoice.create({
+        invoice_number: `INV-${Date.now()}`,
+        order_id: order.id,
+        customer_id: order.customer_id,
+        total_amount: order.total_amount,
+        payment_method: order.payment_method,
+        payment_reference: payment_reference,   // ✅ IMPORTANT
+        issued_at: new Date(),
+      });
+    }
 
     return res.json({
       success: true,
-      message: "Payment confirmed & invoice generated",
-      invoice
+      message: "Payment confirmed and invoice generated"
     });
 
-  } catch (err) {
-    await t.rollback();
-    console.error("Confirm payment error:", err);
-    res.status(500).json({ success: false, message: "Confirm payment failed" });
+  } catch (error) {
+    console.error("Confirm payment error:", error);
+    res.status(500).json({ message: "Payment confirmation failed" });
   }
 };
+
 
 exports.getCustomerInvoices = async (req, res) => {
   try {

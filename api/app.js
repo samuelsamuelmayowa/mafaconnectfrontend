@@ -61,7 +61,8 @@ const PORT = process.env.PORT || 9000;
 (async () => {
   try {
     await sequelize.authenticate();
-    // await sequelize.sync();  sequelize.sync({ alter: false, force: false });
+    // await sequelize.sync();  
+    // sequelize.sync({ alter: false, force: false });
 
     sequelize.sync({ alter: false, force: false });
 
