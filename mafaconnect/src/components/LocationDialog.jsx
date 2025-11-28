@@ -352,7 +352,7 @@ export function LocationDialog({ open, onOpenChange, location }) {
           {/* Manager */}
           <div>
             <Label>Location Manager</Label>
-          <Select
+          <Select required
   value={formData.manager_id ? String(formData.manager_id) : "none"}
   onValueChange={(value) => {
     setFormData({
@@ -362,7 +362,7 @@ export function LocationDialog({ open, onOpenChange, location }) {
   }}
 >
   <SelectTrigger>
-    <SelectValue placeholder="Select manager" />
+    <SelectValue placeholder="Select manager"  />
   </SelectTrigger>
 
   <SelectContent>

@@ -8,24 +8,37 @@ import { useAuth } from "@/hooks/useAuth";
 
 export function ChatWindow({ conversationId, conversationSubject, showHeader = true }) {
   const { user } = useAuth();
-  const { messages, isLoading, sendMessage, isSending } = useMessages(conversationId);
+  // const { messages = [], isLoading, sendMessage, isSending } = useMessages(conversationId);
+const { messages, isLoading, sendMessage, isSending } = useMessages(conversationId);
+
+const safeMessages = Array.isArray(messages)
+  ? messages
+  : messages?.data || [];
 
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef(null);
 
-  // Scroll to bottom when new messages arrive
+  // ✅ Scroll to bottom on new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   const handleSend = (e) => {
     e.preventDefault();
+
     if (!newMessage.trim() || !conversationId) return;
 
-    sendMessage({ content: newMessage });
+    sendMessage({
+      conversationId,
+      content: newMessage,
+    });
+
     setNewMessage("");
   };
 
+  // 🚫 No conversation selected
   if (!conversationId) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -34,6 +47,7 @@ export function ChatWindow({ conversationId, conversationSubject, showHeader = t
     );
   }
 
+  // ⏳ Loading
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -44,7 +58,8 @@ export function ChatWindow({ conversationId, conversationSubject, showHeader = t
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+
+      {/* HEADER */}
       {showHeader && (
         <div className="border-b p-3 sm:p-4">
           <h2 className="font-semibold text-base sm:text-lg">
@@ -53,36 +68,37 @@ export function ChatWindow({ conversationId, conversationSubject, showHeader = t
         </div>
       )}
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* MESSAGE AREA */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
             No messages yet. Start the conversation!
           </div>
         ) : (
           <>
+            {/* {messages.map((message) => ( */}
             {messages.map((message) => (
+          
               <MessageBubble
                 key={message.id}
                 content={message.content}
-                senderType={message.sender_type}
+                senderType={message.sender_type || "customer"}
                 senderName={
-                  message.sender?.full_name ||
+                  message.sender?.name ||
                   message.sender?.email ||
                   "Unknown"
                 }
-                createdAt={message.created_at}
+                createdAt={message.createdAt}   // ✅ FIXED FIELD
                 isOwn={message.sender_id === user?.id}
               />
             ))}
 
-            {/* Auto-scroll anchor */}
             <div ref={messagesEndRef} />
           </>
         )}
       </div>
 
-      {/* Input */}
+      {/* INPUT BOX */}
       <form onSubmit={handleSend} className="border-t p-3 sm:p-4">
         <div className="flex gap-2">
           <Textarea

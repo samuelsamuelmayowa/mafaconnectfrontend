@@ -212,7 +212,7 @@ export default function Checkout() {
       // alert(data.id)
       setTimeout(() => {
         navigate(`/order-confirmation/${data.data.order_number}`);
-      }, 2500); // wait 2 seconds
+      }, 1500); // wait 2 seconds
 
       // If your backend returns order id differently, adjust here
       // navigate(`/order-confirmation/${data.id}`);

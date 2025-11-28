@@ -20,7 +20,12 @@ export function useMessages(conversationId) {
       if (!conversationId) return [];
 
       const res = await apiGet(`/messages/${conversationId}`);
-      return res.data; // backend returns array of messages
+      // return res.data; // backend returns array of messages
+      // return res.data || [];
+      const json = await res.json();
+
+// MAKE SURE we only return the array
+return json.data || [];
     },
     enabled: !!conversationId && !!user,
   });
@@ -60,6 +65,7 @@ export function useMessages(conversationId) {
 
   return {
     messages: messages || [],
+      // messages: Array.isArray(data) ? data : [],
     isLoading,
     sendMessage: sendMessage.mutate,
     isSending: sendMessage.isPending,

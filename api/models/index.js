@@ -6,6 +6,8 @@ const { Location } = require("./Location");
 const { Order, Notification } = require("./Order");
 const OrderItem = require("./OrderItem");
 const Invoice = require("./Invoice");
+const { Message } = require("./message");
+const { Conversation } = require("./Conversation");
 
 /* ================================
    PRODUCT ↔ LOCATION (via ProductLocationStock)
@@ -140,7 +142,74 @@ Notification.belongsTo(Order, {
   as: "order",
 });
 
+
+
+Conversation.hasMany(Message, {
+  foreignKey: "conversation_id",
+  as: "messages",
+  onDelete: "CASCADE",
+});
+
+// A Message belongs to a Conversation
+Message.belongsTo(Conversation, {
+  foreignKey: "conversation_id",
+  as: "conversation",
+});
+
+/* ==============================
+   USER ↔ MESSAGE
+================================ */
+
+// Sender relationship
+User.hasMany(Message, {
+  foreignKey: "sender_id",
+  as: "sentMessages"
+});
+
+Message.belongsTo(User, {
+  foreignKey: "sender_id",
+  as: "sender"
+});
+
+// Receiver relationship
+User.hasMany(Message, {
+  foreignKey: "receiver_id",
+  as: "receivedMessages"
+});
+
+Message.belongsTo(User, {
+  foreignKey: "receiver_id",
+  as: "receiver"
+});
+
+/* ==============================
+   USER ↔ CONVERSATION
+================================ */
+
+// User creates conversations
+User.hasMany(Conversation, {
+  foreignKey: "created_by",
+  as: "createdConversations"
+});
+
+Conversation.belongsTo(User, {
+  foreignKey: "created_by",
+  as: "creator"
+});
+
+// Staff assigned to conversation
+User.hasMany(Conversation, {
+  foreignKey: "assigned_to",
+  as: "assignedConversations"
+});
+
+Conversation.belongsTo(User, {
+  foreignKey: "assigned_to",
+  as: "assignee"
+});
 module.exports = {
+  Conversation,
+  Message,
   Product,
   ProductImage,
   Location,

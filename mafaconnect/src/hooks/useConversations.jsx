@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 
 export function useConversations() {
   const { user, isStaff } = useAuth();
   const queryClient = useQueryClient();
-  const API_BASE = import.meta.env.VITE_HOME_OO || "http://localhost:8000/api";
+  const API_BASE = import.meta.env.VITE_HOME_OO;
 
   // ✅ Fetch conversations
   const { data: conversations, isLoading } = useQuery({
@@ -14,9 +14,8 @@ export function useConversations() {
     queryFn: async () => {
       if (!user) return [];
 
-      const endpoint = isStaff
-        ? `${API_BASE}/conversations`
-        : `${API_BASE}/conversations/customer/${user.id}`;
+      // Use your REAL backend route
+      const endpoint = `${API_BASE}/conversations`;
 
       const res = await fetch(endpoint, {
         headers: {
@@ -25,37 +24,34 @@ export function useConversations() {
       });
 
       if (!res.ok) throw new Error("Failed to fetch conversations");
-      return await res.json();
+
+      const result = await res.json();
+      return result.data; // ✅ important
     },
     enabled: !!user,
   });
 
-  // ✅ Poll for real-time updates every 10 seconds
+  // ✅ Poll every 10 seconds (OK)
   useEffect(() => {
     if (!user) return;
 
     const interval = setInterval(() => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
-    }, 10000); // 10 seconds
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [user, queryClient]);
 
-  // ✅ Create new conversation
+  // ✅ Create conversation
   const createConversation = useMutation({
     mutationFn: async ({ subject, initialMessage }) => {
-      const res = await fetch(`${API_BASE}/api/conversations`, {
+      const res = await fetch(`${API_BASE}/conversations`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`,
         },
-        body: JSON.stringify({
-          customer_id: user?.id,
-          subject,
-          initialMessage,
-          sender_type: isStaff ? "staff" : "customer",
-        }),
+        body: JSON.stringify({ subject, initialMessage }),
       });
 
       if (!res.ok) throw new Error("Failed to create conversation");
@@ -65,16 +61,12 @@ export function useConversations() {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
       toast.success("Conversation created");
     },
-    onError: (error) => {
-      console.error("Error creating conversation:", error);
-      toast.error("Failed to create conversation");
-    },
   });
 
-  // ✅ Update conversation status
+  // ✅ Update status
   const updateConversationStatus = useMutation({
     mutationFn: async ({ conversationId, status }) => {
-      const res = await fetch(`${API_BASE}/api/conversations/${conversationId}`, {
+      const res = await fetch(`${API_BASE}/conversations/${conversationId}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -83,30 +75,22 @@ export function useConversations() {
         body: JSON.stringify({ status }),
       });
 
-      if (!res.ok) throw new Error("Failed to update conversation status");
+      if (!res.ok) throw new Error("Failed to update status");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
       toast.success("Status updated");
     },
-    onError: (error) => {
-      console.error("Error updating status:", error);
-      toast.error("Failed to update status");
-    },
   });
 
-  // ✅ Mark conversation as read
+  // ✅ Mark as read
   const markAsRead = useMutation({
     mutationFn: async (conversationId) => {
-      const res = await fetch(`${API_BASE}/api/conversations/${conversationId}/read`, {
+      const res = await fetch(`${API_BASE}/messages/read/${conversationId}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`,
         },
-        body: JSON.stringify({
-          by: isStaff ? "staff" : "customer",
-        }),
       });
 
       if (!res.ok) throw new Error("Failed to mark conversation as read");
@@ -116,11 +100,9 @@ export function useConversations() {
     },
   });
 
-  // ✅ Get unread count
   const getUnreadCount = () => {
     if (!conversations) return 0;
-    const unreadField = isStaff ? "unread_by_staff" : "unread_by_customer";
-    return conversations.filter((c) => c[unreadField]).length;
+    return conversations.filter(c => !c.last_read_at).length;
   };
 
   return {
@@ -132,6 +114,143 @@ export function useConversations() {
     getUnreadCount,
   };
 }
+
+
+
+// import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+// import { useAuth } from "./useAuth";
+// import { toast } from "sonner";
+// import React, { useEffect } from "react";
+
+// export function useConversations() {
+//   const { user, isStaff } = useAuth();
+//   const queryClient = useQueryClient();
+//   const API_BASE = import.meta.env.VITE_HOME_OO;
+
+//   // ✅ Fetch conversations
+//   const { data: conversations, isLoading } = useQuery({
+//     queryKey: ["conversations", user?.id],
+//     queryFn: async () => {
+//       if (!user) return [];
+
+//       const endpoint = isStaff
+//         ? `${API_BASE}/conversations`
+//         : `${API_BASE}/conversations/customer/${user.id}`;
+
+//       const res = await fetch(endpoint, {
+//         headers: {
+//           Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`,
+//         },
+//       });
+
+//       if (!res.ok) throw new Error("Failed to fetch conversations");
+//       return await res.json();
+//     },
+//     enabled: !!user,
+//   });
+
+//   // ✅ Poll for real-time updates every 10 seconds
+//   useEffect(() => {
+//     if (!user) return;
+
+//     const interval = setInterval(() => {
+//       queryClient.invalidateQueries({ queryKey: ["conversations"] });
+//     }, 10000); // 10 seconds
+
+//     return () => clearInterval(interval);
+//   }, [user, queryClient]);
+
+//   // ✅ Create new conversation
+//   const createConversation = useMutation({
+//     mutationFn: async ({ subject, initialMessage }) => {
+//       const res = await fetch(`${API_BASE}/api/conversations`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`,
+//         },
+//         body: JSON.stringify({
+//           customer_id: user?.id,
+//           subject,
+//           initialMessage,
+//           sender_type: isStaff ? "staff" : "customer",
+//         }),
+//       });
+
+//       if (!res.ok) throw new Error("Failed to create conversation");
+//       return await res.json();
+//     },
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: ["conversations"] });
+//       toast.success("Conversation created");
+//     },
+//     onError: (error) => {
+//       console.error("Error creating conversation:", error);
+//       toast.error("Failed to create conversation");
+//     },
+//   });
+
+//   // ✅ Update conversation status
+//   const updateConversationStatus = useMutation({
+//     mutationFn: async ({ conversationId, status }) => {
+//       const res = await fetch(`${API_BASE}/api/conversations/${conversationId}`, {
+//         method: "PUT",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`,
+//         },
+//         body: JSON.stringify({ status }),
+//       });
+
+//       if (!res.ok) throw new Error("Failed to update conversation status");
+//     },
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: ["conversations"] });
+//       toast.success("Status updated");
+//     },
+//     onError: (error) => {
+//       console.error("Error updating status:", error);
+//       toast.error("Failed to update status");
+//     },
+//   });
+
+//   // ✅ Mark conversation as read
+//   const markAsRead = useMutation({
+//     mutationFn: async (conversationId) => {
+//       const res = await fetch(`${API_BASE}/api/conversations/${conversationId}/read`, {
+//         method: "PUT",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`,
+//         },
+//         body: JSON.stringify({
+//           by: isStaff ? "staff" : "customer",
+//         }),
+//       });
+
+//       if (!res.ok) throw new Error("Failed to mark conversation as read");
+//     },
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: ["conversations"] });
+//     },
+//   });
+
+//   // ✅ Get unread count
+//   const getUnreadCount = () => {
+//     if (!conversations) return 0;
+//     const unreadField = isStaff ? "unread_by_staff" : "unread_by_customer";
+//     return conversations.filter((c) => c[unreadField]).length;
+//   };
+
+//   return {
+//     conversations: conversations || [],
+//     isLoading,
+//     createConversation: createConversation.mutate,
+//     updateConversationStatus: updateConversationStatus.mutate,
+//     markAsRead: markAsRead.mutate,
+//     getUnreadCount,
+//   };
+// }
 
 // import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // import { supabase } from "@/integrations/supabase/client";

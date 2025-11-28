@@ -47,6 +47,11 @@ router.post(
   createProduct
 );
 
+
+// GET /api/v1/messages/latest/:userId
+
+
+
 router.get("/orders", getAdminOrders);
 router.put("/orders/:id/confirm-payment", confirmPayment);
 router.put("/orders/:id/status", updateOrderStatus);

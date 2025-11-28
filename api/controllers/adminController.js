@@ -6,7 +6,7 @@ require("dotenv").config();
 const cloudinary = require("../cloudinary");
 const { Product, ProductImage, Location, ProductLocationStock } = require("../models");
 const { sequelize } = require("../db");
-const sendOrderEmail = require("../utils/sendOrderEmail");
+// const sendEmail = require("../utils/sendEmail");
 const OrderItem = require("../models/OrderItem");
 // const Order = require("../models/Order");
 const { Order, Notification } = require("../models/Order");
@@ -17,6 +17,8 @@ const Invoice = require("../models/Invoice");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+const { sendEmail } = require("../utils/sendEmail");
+// const { default: sendEmail } = require("../utils/sendEmail");
 // exports.createOrder = async (req, res) => {
 //   const t = await sequelize.transaction();
 
@@ -341,28 +343,28 @@ exports.getAdminOrders = async (req, res) => {
       //   },
       // ],
       include: [
-    {
-      model: User,
-      as: "customer",
-      attributes: ["id", "name", "email", "phone"]
-    },
-    {
-      model: Location,
-      as: "location",
-      attributes: ["id", "name", "state"]
-    },
-    {
-      model: OrderItem,
-      as: "items",
-      include: [
         {
-          model: Product,
-          as: "product",
-          attributes: ["id", "name", "sku", "sale_price"]
+          model: User,
+          as: "customer",
+          attributes: ["id", "name", "email", "phone"]
+        },
+        {
+          model: Location,
+          as: "location",
+          attributes: ["id", "name", "state"]
+        },
+        {
+          model: OrderItem,
+          as: "items",
+          include: [
+            {
+              model: Product,
+              as: "product",
+              attributes: ["id", "name", "sku", "sale_price"]
+            }
+          ]
         }
-      ]
-    }
-  ],
+      ],
     });
 
     res.json({
@@ -819,12 +821,41 @@ exports.createOrder = async (req, res) => {
     }
 
     await t.commit();
+    // const customer = await User.findByPk(customer_id);
+    // if (customer?.email || customer && customer.email) {
+    //   try {
+    //     await sendEmail({
+    //       to: customer.email,
+    //       subject: "Your Order Was Placed Successfully",
+    //       html: `
+    //     <div style="font-family: Arial, sans-serif;">
+    //       <h2>Thank you for your order!</h2>
+    //       <p>Your order has been successfully created.</p>
 
+    //       <h3>Order Details</h3>
+    //       <p><strong>Order Number:</strong> ${order_number}</p>
+    //       <p><strong>Total Amount:</strong> ₦${total_amount.toLocaleString()}</p>
+    //       <p><strong>Payment Method:</strong> ${payment_method}</p>
+    //       <p><strong>Status:</strong> Pending Payment</p>
+
+    //       <p>Please complete your payment to avoid order cancellation.</p>
+
+    //       <br/>
+    //       <p>Thanks for choosing MafaConnect!</p>
+    //     </div>
+    //   `,
+    //     });
+
+    //     console.log("Order email sent to:", customer.email);
+    //   } catch (err) {
+    //     console.error("Failed to send email:", err);
+    //   }
+    // }
     return res.json({
       success: true,
       message: "Order created successfully",
       order_id: order.id,
-      order_number:order.order_number,
+      order_number: order.order_number,
       reservation_expires_at: reservationExpires,
     });
 
@@ -850,14 +881,14 @@ exports.getOrderById = async (req, res) => {
     //   include: [OrderItem], // optional
     // });
     const order = await Order.findOne({
-  where: { order_number: req.params.orderId},
-  include: [
-    {
-      model: OrderItem,
-      as: "items"
-    }
-  ]
-});
+      where: { order_number: req.params.orderId },
+      include: [
+        {
+          model: OrderItem,
+          as: "items"
+        }
+      ]
+    });
 
 
     if (!order) {
@@ -1392,8 +1423,6 @@ exports.searchProducts = async (req, res) => {
 //   }
 // };
 
-
-
 exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1513,7 +1542,6 @@ exports.createLocation = async (req, res) => {
   }
 };
 
-
 exports.updateLocation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1575,7 +1603,6 @@ exports.getManagers = async (req, res) => {
     });
   }
 };
-
 
 exports.getLocationBankDetails = async (req, res) => {
   try {
@@ -1672,8 +1699,6 @@ exports.addProductStock = async (req, res) => {
     });
   }
 };
-
-
 
 exports.getSingleLocationStats = async (req, res) => {
   try {
@@ -1788,7 +1813,6 @@ exports.getLocationStats = async (req, res) => {
     });
   }
 };
-
 
 exports.getProductLocations = async (req, res) => {
   try {
