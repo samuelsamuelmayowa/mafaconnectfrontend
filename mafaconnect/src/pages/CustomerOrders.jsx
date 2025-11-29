@@ -243,7 +243,7 @@ export default function CustomerOrders() {
     variant="outline"
     size="sm"
     className="w-full"
-    onClick={() => navigate(`/invoices?invoice=${orderInvoice.invoice_number}`)}
+    onClick={() => navigate(`customer-invoices`)}
   >
     <FileText className="h-4 w-4 mr-2" />
     View Invoice

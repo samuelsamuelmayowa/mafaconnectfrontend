@@ -467,6 +467,31 @@ exports.confirmPayment = async (req, res) => {
 };
 
 
+// exports.getCustomerInvoices = async (req, res) => {
+//   try {
+//     const customer_id = req.user.id;
+
+//     const invoices = await Invoice.findAll({
+//       where: { customer_id },
+//       include: [
+//         { model: Order, as: "order" }
+//       ],
+//       order: [["createdAt", "DESC"]],
+//     });
+
+//     res.json({
+//       success: true,
+//       data: invoices
+//     });
+
+//   } catch (err) {
+//     console.error("Invoice fetch error:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to load invoices"
+//     });
+//   }
+// };
 exports.getCustomerInvoices = async (req, res) => {
   try {
     const customer_id = req.user.id;
@@ -474,24 +499,209 @@ exports.getCustomerInvoices = async (req, res) => {
     const invoices = await Invoice.findAll({
       where: { customer_id },
       include: [
-        { model: Order, as: "order" }
+        {
+          model: Order,
+          as: "order",
+          include: [
+            {
+              model: OrderItem,
+              as: "items",
+              include: [
+                {
+                  model: Product,
+                  as: "product",
+                  attributes: ["name", "sale_price"]
+                }
+              ]
+            }
+          ]
+        }
       ],
       order: [["createdAt", "DESC"]],
     });
 
-    res.json({
+    return res.json({
       success: true,
-      data: invoices
+      data: invoices,
     });
 
   } catch (err) {
     console.error("Invoice fetch error:", err);
     res.status(500).json({
       success: false,
-      message: "Failed to load invoices"
+      message: "Failed to load invoices",
     });
   }
 };
+
+
+const { generateInvoicePDF } = require("../utils/generateInvoicePDF");
+
+exports.downloadInvoicePDF = async (req, res) => {
+  try {
+    const { invoice_number } = req.params;
+    const customer_id = req.user.id;
+
+    const invoice = await Invoice.findOne({
+      where: { invoice_number, customer_id },
+      include: [
+        {
+          model: Order,
+          as: "order",
+          include: [
+            {
+              model: OrderItem,
+              as: "items",
+              include: [{ model: Product, as: "product" }],
+            }
+          ]
+        }
+      ]
+    });
+
+    if (!invoice) {
+      return res.status(404).json({
+        success: false,
+        message: "Invoice not found",
+      });
+    }
+
+    generateInvoicePDF(invoice, res);
+
+  } catch (err) {
+    console.error("PDF generation error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Could not generate PDF",
+    });
+  }
+};
+
+
+exports.downloadInvoice = async (req, res) => {
+  try {
+    const { invoice_number } = req.params;
+    const customer_id = req.user.id;
+
+    const invoice = await Invoice.findOne({
+      where: { invoice_number, customer_id },
+      include: [
+        {
+          model: Order,
+          as: "order",
+          include: [
+            {
+              model: OrderItem,
+              as: "items",
+              include: [{ model: Product, as: "product" }],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ success: false, message: "Invoice not found" });
+    }
+
+    // Ensure folder exists
+    const invoicesDir = path.join(__dirname, "..", "invoices");
+    if (!fs.existsSync(invoicesDir)) {
+      fs.mkdirSync(invoicesDir, { recursive: true });
+    }
+
+    const pdfPath = path.join(
+      invoicesDir,
+      `invoice-${invoice_number}.pdf`
+    );
+
+    const doc = new PDFDocument({ margin: 50 });
+
+    // Pipe PDF to file + response (streaming)
+    doc.pipe(fs.createWriteStream(pdfPath));
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${invoice_number}.pdf"`
+    );
+    doc.pipe(res);
+
+    // ---- PDF CONTENT ----  
+    doc.fontSize(20).text("MAFA Rice Mill Limited", { align: "left" });
+    doc.moveDown();
+    doc.fontSize(12).text("Local Government, Off km 11 Hadejia Road Gunduwawa Industrial Estate, Kano, Nigeria");
+    doc.text("Phone: +234 904 028 8888 | Email: sales@mafagroup.org");
+    doc.moveDown();
+
+    doc.fontSize(16).text(`Invoice #: ${invoice_number}`);
+    doc.text(`Order: ${invoice.order.order_number}`);
+    doc.text(`Issue Date: ${invoice.issue_date}`);
+    doc.text(`Due Date: ${invoice.due_date}`);
+    doc.text(`Status: ${invoice.status.toUpperCase()}`);
+    doc.moveDown();
+
+    doc.fontSize(14).text("Items", { underline: true });
+    doc.moveDown(0.5);
+
+    invoice.order.items.forEach((item) => {
+      doc.text(
+        `${item.product.name} (x${item.quantity}) - ₦${item.total_price.toLocaleString()}`
+      );
+    });
+
+    doc.moveDown();
+    doc.fontSize(14).text(`TOTAL: ₦${invoice.total_amount.toLocaleString()}`);
+
+    if (invoice.notes) {
+      doc.moveDown();
+      doc.fontSize(12).text(`Notes: ${invoice.notes}`);
+    }
+
+    doc.end();
+
+  } catch (err) {
+    console.error("Invoice PDF error:", err);
+    res.status(500).json({ success: false, message: "Failed to generate invoice PDF" });
+  }
+};
+
+
+// const { generateInvoicePDF } = require("../utils/generateInvoicePDF");
+
+// exports.downloadInvoicePDF = async (req, res) => {
+//   try {
+//     const { invoice_number } = req.params;
+//     const customer_id = req.user.id;
+
+//     const invoice = await Invoice.findOne({
+//       where: { invoice_number, customer_id },
+//       include: [
+//         { model: Order, as: "order" },
+//         {
+//           model: InvoiceItem,
+//           as: "items",
+//           include: [{ model: Product, as: "product" }],
+//         },
+//       ],
+//     });
+
+//     if (!invoice) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Invoice not found",
+//       });
+//     }
+
+//     generateInvoicePDF(invoice, res);
+
+//   } catch (err) {
+//     console.error("PDF generation error:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Could not generate PDF",
+//     });
+//   }
+// };
 
 
 

@@ -1,6 +1,5 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../db");
-
 const User = sequelize.define("User", {
   id: {
     type: DataTypes.INTEGER,
@@ -9,14 +8,11 @@ const User = sequelize.define("User", {
   },
   name: { type: DataTypes.STRING, allowNull: false },
   email: { type: DataTypes.STRING, allowNull: false, unique: true },
-  customer_type: { type: DataTypes.STRING, allowNull: false},
-  account_number: { type: DataTypes.STRING, allowNull: true, unique: true },
+  customer_type: { type: DataTypes.STRING, allowNull: false },
+  account_number: { type: DataTypes.STRING, allowNull: true },
   phone: { type: DataTypes.STRING, allowNull: true },
   password: { type: DataTypes.STRING, allowNull: false },
-  location_id: {
-  type: DataTypes.INTEGER,
-  allowNull: true,
-},
+  location_id: { type: DataTypes.INTEGER, allowNull: true },
   role: {
     type: DataTypes.ENUM("admin", "manager", "sales_agent", "customer"),
     defaultValue: "customer",
@@ -29,9 +25,48 @@ const User = sequelize.define("User", {
 }, {
   tableName: "users",
   timestamps: true,
+  indexes: [
+    { fields: ["account_number"] },
+  ]
 });
 
+
 module.exports = { User };
+
+// const { DataTypes } = require("sequelize");
+// const { sequelize } = require("../db");
+
+// const User = sequelize.define("User", {
+//   id: {
+//     type: DataTypes.INTEGER,
+//     autoIncrement: true,
+//     primaryKey: true,
+//   },
+//   name: { type: DataTypes.STRING, allowNull: false },
+//   email: { type: DataTypes.STRING, allowNull: false, unique: true },
+//   customer_type: { type: DataTypes.STRING, allowNull: false},
+//   account_number: { type: DataTypes.STRING, allowNull: true, unique: true },
+//   phone: { type: DataTypes.STRING, allowNull: true },
+//   password: { type: DataTypes.STRING, allowNull: false },
+//   location_id: {
+//   type: DataTypes.INTEGER,
+//   allowNull: true,
+// },
+//   role: {
+//     type: DataTypes.ENUM("admin", "manager", "sales_agent", "customer"),
+//     defaultValue: "customer",
+//   },
+//   kyc_status: {
+//     type: DataTypes.ENUM("pending", "approved", "rejected"),
+//     defaultValue: "pending",
+//   },
+//   is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
+// }, {
+//   tableName: "users",
+//   timestamps: true,
+// });
+
+// module.exports = { User };
 
 // const { DataTypes } = require("sequelize");
 // const { sequelize } = require("../db");

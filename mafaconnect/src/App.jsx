@@ -36,6 +36,7 @@ import Checkout from "./pages/Checkout";
 import Cart from "./pages/Cart";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import CustomerOrders from "./pages/CustomerOrders";
+import CustomerInvoices from "./pages/CustomerInvoices";
 
 const queryClient = new QueryClient();
 
@@ -134,6 +135,16 @@ function App() {
             }
           />
 
+   <Route
+            path="/customer-invoices"
+            element={
+              <CustomerProtectedRoute>
+                <DashboardLayout>
+                  <CustomerInvoices />
+                </DashboardLayout>
+              </CustomerProtectedRoute>
+            }
+          />
           {/* <Route
             path="/customer-orders"
             element={
