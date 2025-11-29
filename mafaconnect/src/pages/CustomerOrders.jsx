@@ -91,22 +91,17 @@ export default function CustomerOrders() {
       (order) =>
         order.order_number?.toLowerCase().includes(lower) ||
         order.payment_method?.toLowerCase().includes(lower) ||
-        order.status?.toLowerCase().includes(lower)
-    );
+        order.order_status?.toLowerCase().includes(lower)        // status 
+    );    
   }, [orders, searchQuery]);
 
   // 🔗 Match Invoice to Order
-  const getInvoiceForOrder = (orderNumber) => {
+  const getInvoiceForOrder = (order) => {
     if (!invoices) return null;
-    return invoices.find((inv) => inv.order_number === orderNumber);
+    // return invoices.find((inv) => inv.order_number === orderNumber);
+    return invoices.find((inv) => inv.order_id === order.id);
   };
-//   const getInvoiceForOrder = (orderId) => {
-//   if (!invoices) return null;
-
-//   return invoices.find((inv) => inv.order_id === orderId);
-// };
-
-  // 🔄 Loading
+  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -141,7 +136,7 @@ export default function CustomerOrders() {
           {filteredOrders.length > 0 ? (
             <div className="space-y-4">
               {filteredOrders.map((order) => {
-                const orderInvoice = getInvoiceForOrder(order.order_number);
+                const orderInvoice = getInvoiceForOrder(order);
 
                 return (
                   <Card key={order.order_number}>
@@ -151,12 +146,7 @@ export default function CustomerOrders() {
                           <CardTitle className="text-base sm:text-lg">
                             Order #{order.order_number}
                           </CardTitle>
-                          {/* <CardDescription className="text-xs sm:text-sm">
-                            {format(
-                              new Date(order.created_at),
-                              "MMM d, yyyy 'at' h:mm a"
-                            )}
-                          </CardDescription> */}
+                         
                           <CardDescription className="text-xs sm:text-sm">
                             {formatSafeDate(order.created_at)}
                           </CardDescription>
@@ -232,7 +222,7 @@ export default function CustomerOrders() {
                             </Button>
                           </div>
                         )} */}
-                        {orderInvoice && order.payment_status === "paid" && (
+                     {/* {orderInvoice && order.payment_status === "paid" && (
   <Button
     variant="outline"
     size="sm"
@@ -246,6 +236,17 @@ export default function CustomerOrders() {
   >
     <FileText className="h-4 w-4 mr-2" />
     Download Invoice
+  </Button>
+)} */}
+{orderInvoice && order.payment_status === "paid" && (
+  <Button
+    variant="outline"
+    size="sm"
+    className="w-full"
+    onClick={() => navigate(`/invoices?invoice=${orderInvoice.invoice_number}`)}
+  >
+    <FileText className="h-4 w-4 mr-2" />
+    View Invoice
   </Button>
 )}
 

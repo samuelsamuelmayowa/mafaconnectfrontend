@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -21,8 +21,12 @@ import { format } from "date-fns";
 import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { InvoiceDetailsDialog } from "@/components/InvoiceDetailsDialog";
 import { ExportButton } from "@/components/ExportButton";
+import { useSearchParams } from "react-router-dom";
+
 
 export default function Invoices() {
+  const [params] = useSearchParams();
+const preselectedInvoice = params.get("invoice");
   const { invoices, isLoading, updateInvoiceStatus, deleteInvoice } = useInvoices();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,6 +40,16 @@ export default function Invoices() {
     inv.invoice_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
     inv.customers?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+useEffect(() => {
+  if (preselectedInvoice) {
+    const target = invoices?.find(inv => inv.invoice_number === preselectedInvoice);
+    if (target) {
+      setSelectedInvoiceId(target.id);
+      setShowDetailsDialog(true);
+    }
+  }
+}, [invoices]);
 
   const handleCreateNew = () => {
     setDialogMode("create");
