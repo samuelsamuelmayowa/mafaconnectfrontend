@@ -15,4 +15,22 @@ router.put("/rewards/:id", authenticate, requireRole("customer", "sales_person",
 router.delete("/rewards/:id", authenticate, requireRole("customer", "sales_person", "manager", "admin"),deleteReward);
 router.patch("/rewards/:id/status", authenticate, requireRole("customer", "sales_person", "manager", "admin"), toggleStatus);
 
+
+
+
+
+// GET all tiers
+router.get("/tiers", getAllTiers);
+
+// CREATE new tier
+router.post("/tiers", createTier);
+
+// UPDATE tier
+router.put("/tiers/:id", updateTier);
+
+// DELETE tier
+router.delete("/tiers/:id", deleteTier);
+
+// TOGGLE ACTIVE / INACTIVE
+router.patch("/tiers/:id/status", toggleTierStatus);
 module.exports = router;
