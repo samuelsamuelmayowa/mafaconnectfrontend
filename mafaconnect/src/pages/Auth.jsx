@@ -101,7 +101,7 @@ export default function Auth() {
         phone: signupPhone,
         customer_type:customerType,
         password: signupPassword,
-        customer_type: customerType,
+        // customer_type: customerType,
       });
 
       toast({

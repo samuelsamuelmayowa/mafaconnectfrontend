@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Plus, Edit, Trash2, Power, PowerOff } from "lucide-react";
 import { TierDialog } from "./TierDialog";
 import { useLoyaltyTiers } from "@/hooks/useLoyaltyTiers";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/Badge";
 
 import {
   AlertDialog,
