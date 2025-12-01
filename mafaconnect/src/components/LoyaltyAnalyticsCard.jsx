@@ -27,7 +27,7 @@ import {
   AlertTriangle,
   Loader2,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/Badge";
 
 const COLORS = [
   "hsl(var(--primary))",
