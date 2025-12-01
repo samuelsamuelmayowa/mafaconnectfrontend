@@ -205,15 +205,15 @@ export default function CustomerOrders() {
                           </span>
                         </div>
 
-                        {/* {orderInvoice && order.payment_status === "paid" && (
+                        {orderInvoice && order.payment_status === "paid" && (
                           <div className="pt-2 border-t">
                             <Button
                               variant="outline"
                               size="sm"
                               className="w-full"
-                              onClick={() =>
+                            onClick={() =>
                                 navigate(
-                                  `/customer-invoices/${order.order_number}`
+                                  `/customer-invoices`
                                 )
                               }
                             >
@@ -221,7 +221,7 @@ export default function CustomerOrders() {
                               View Invoice ({orderInvoice.invoice_number})
                             </Button>
                           </div>
-                        )} */}
+                        )} 
                      {/* {orderInvoice && order.payment_status === "paid" && (
   <Button
     variant="outline"
@@ -238,7 +238,7 @@ export default function CustomerOrders() {
     Download Invoice
   </Button>
 )} */}
-{orderInvoice && order.payment_status === "paid" && (
+{/* {orderInvoice && order.payment_status === "paid" && (
   <Button
     variant="outline"
     size="sm"
@@ -254,7 +254,7 @@ export default function CustomerOrders() {
     <FileText className="h-4 w-4 mr-2" />
     View Invoice
   </Button>
-)}
+)} */}
 
 
                         {/* ✅ Track Order Button */}
