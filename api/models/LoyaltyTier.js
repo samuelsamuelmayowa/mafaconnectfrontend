@@ -34,31 +34,69 @@ const LoyaltyTier = sequelize.define(
     //   type: DataTypes.TEXT, // long text allowed
     //   allowNull: true,
     // },
-     benefits: {
+    //  benefits: {
+    //   type: DataTypes.TEXT,
+    //   allowNull: true,
+
+    //   // Convert DB TEXT → JS ARRAY
+    //   get() {
+    //     const raw = this.getDataValue("benefits");
+    //     try {
+    //       return raw ? JSON.parse(raw) : [];
+    //     } catch {
+    //       return [];
+    //     }
+    //   },
+
+    //   // Convert JS ARRAY → DB TEXT
+    //   set(value) {
+    //     if (Array.isArray(value)) {
+    //       this.setDataValue("benefits", JSON.stringify(value));
+    //     } else if (typeof value === "string") {
+    //       this.setDataValue("benefits", JSON.stringify([value]));
+    //     } else {
+    //       this.setDataValue("benefits", "[]");
+    //     }
+    //   },
+    // },
+
+    benefits: {
       type: DataTypes.TEXT,
       allowNull: true,
 
-      // Convert DB TEXT → JS ARRAY
       get() {
-        const raw = this.getDataValue("benefits");
+        const rawVal = this.getDataValue("benefits");
+        if (!rawVal) return [];
         try {
-          return raw ? JSON.parse(raw) : [];
+          const parsed = JSON.parse(rawVal);
+          return Array.isArray(parsed) ? parsed : [];
         } catch {
           return [];
         }
       },
 
-      // Convert JS ARRAY → DB TEXT
-      set(value) {
-        if (Array.isArray(value)) {
-          this.setDataValue("benefits", JSON.stringify(value));
-        } else if (typeof value === "string") {
-          this.setDataValue("benefits", JSON.stringify([value]));
-        } else {
-          this.setDataValue("benefits", "[]");
+      set(val) {
+        // If frontend sends a single string
+        if (typeof val === "string") {
+          this.setDataValue("benefits", JSON.stringify([val.trim()]));
+          return;
         }
+
+        // If frontend sends array
+        if (Array.isArray(val)) {
+          const cleaned = val
+            .filter((b) => typeof b === "string" && b.trim().length > 0)
+            .map((b) => b.trim());
+
+          this.setDataValue("benefits", JSON.stringify(cleaned));
+          return;
+        }
+
+        // Fallback
+        this.setDataValue("benefits", JSON.stringify([]));
       },
     },
+
     active: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
