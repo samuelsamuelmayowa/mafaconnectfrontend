@@ -6,32 +6,37 @@ const API_BASE = import.meta.env.VITE_HOME_OO;
 
 export function useLoyaltyTiers() {
   const queryClient = useQueryClient();
-  const token = localStorage.getItem("ACCESS_TOKEN");
 
-  // Helper function to attach token to headers
-  const axiosConfig = {
+  // Always fetch latest token (important for production)
+  const getHeaders = () => ({
     headers: {
-      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Authorization: localStorage.getItem("ACCESS_TOKEN")
+        ? `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`
+        : "",
     },
-  };
+  });
 
-  // ===============================
-  // GET TIERS
-  // ===============================
+  /* ===============================
+     GET TIERS
+  =============================== */
   const { data: tiers, isLoading } = useQuery({
     queryKey: ["loyalty_tiers"],
     queryFn: async () => {
-      const { data } = await axios.get(`${API_BASE}/tiers`, axiosConfig);
+      const { data } = await axios.get(
+        `${API_BASE}/tiers`,
+        getHeaders()
+      );
       return data;
     },
   });
 
-  // ===============================
-  // CREATE TIER
-  // ===============================
+  /* ===============================
+     CREATE TIER
+  =============================== */
   const createTier = useMutation({
     mutationFn: async (tierData) => {
-      await axios.post(`${API_BASE}/tiers`, tierData, axiosConfig);
+      await axios.post(`${API_BASE}/tiers`, tierData, getHeaders());
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["loyalty_tiers"]);
@@ -42,15 +47,19 @@ export function useLoyaltyTiers() {
     },
   });
 
-  // ===============================
-  // UPDATE TIER
-  // ===============================
+  /* ===============================
+     UPDATE TIER
+  =============================== */
   const updateTier = useMutation({
     mutationFn: async ({ id, ...data }) => {
-      await axios.put(`${API_BASE}/tiers/${id}`, {
-        ...data,
-        updated_at: new Date().toISOString(),
-      }, axiosConfig);
+      await axios.put(
+        `${API_BASE}/tiers/${id}`,
+        {
+          ...data,
+          updated_at: new Date().toISOString(),
+        },
+        getHeaders()
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["loyalty_tiers"]);
@@ -61,12 +70,15 @@ export function useLoyaltyTiers() {
     },
   });
 
-  // ===============================
-  // DELETE TIER
-  // ===============================
+  /* ===============================
+     DELETE TIER
+  =============================== */
   const deleteTier = useMutation({
     mutationFn: async (id) => {
-      await axios.delete(`${API_BASE}/tiers/${id}`, axiosConfig);
+      await axios.delete(
+        `${API_BASE}/tiers/${id}`,
+        getHeaders()
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["loyalty_tiers"]);
@@ -77,15 +89,19 @@ export function useLoyaltyTiers() {
     },
   });
 
-  // ===============================
-  // TOGGLE ACTIVE / INACTIVE
-  // ===============================
+  /* ===============================
+     TOGGLE TIER STATUS
+  =============================== */
   const toggleTierStatus = useMutation({
     mutationFn: async ({ id, active }) => {
-      await axios.patch(`${API_BASE}/tiers/${id}/status`, {
-        active,
-        updated_at: new Date().toISOString(),
-      }, axiosConfig);
+      await axios.patch(
+        `${API_BASE}/tiers/${id}/status`,
+        {
+          active,
+          updated_at: new Date().toISOString(),
+        },
+        getHeaders()
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["loyalty_tiers"]);
@@ -110,6 +126,7 @@ export function useLoyaltyTiers() {
     isDeleting: deleteTier.isPending,
   };
 }
+
 
 
 // import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

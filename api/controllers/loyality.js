@@ -197,7 +197,6 @@ exports.createTier = async (req, res) => {
       min_points,
       max_points,
       multiplier: multiplier || 1,
-    //   benefits: benefits || "",
      benefits: Array.isArray(benefits) ? JSON.stringify(benefits) : benefits || "",
       active: true,
     });
