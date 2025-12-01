@@ -5,6 +5,7 @@ const cors = require("cors");
 const { sequelize } = require("./db.js");
 const messageroutes =  require("./routes/messages.js");
 const adminRoutes = require("./routes/admin");
+const loyatityroutes= require('./routes/loyatityroutes.js')
 const customer_bussiness = require("./routes/customer_bussiness.js");
 
 dotenv.config();
@@ -33,7 +34,7 @@ app.use(
 app.use("/api/v1", adminRoutes);
 app.use("/api/v1", customer_bussiness);
 app.use("/api/v1", messageroutes);
-
+app.use("/api/v1", loyatityroutes)
 // HEALTH CHECK
 app.get("/", (req, res) => res.send("MafaConnect Backend is running..."));
 app.get("/health", (req, res) => res.send("Healthy "));

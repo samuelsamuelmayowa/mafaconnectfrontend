@@ -2,6 +2,7 @@ import React from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+
 import {
   Card,
   CardContent,
@@ -13,15 +14,21 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Loader2, ShoppingBag, FileText, Gift, Award } from "lucide-react";
 import { format } from "date-fns";
+
 import { useKYCStatus } from "@/hooks/useKYC";
 import { KYCStatusCard } from "@/components/KYCStatusCard";
 
+// import { TierProgressCard } from "@/components/TierProgressCard"; // <-- RESTORED
+
+import { TierProgressCard } from "@/components/TierProgressCard";
 export default function CustomerDashboard() {
   const { user } = useAuth();
   const { data: kycStatus } = useKYCStatus();
   const API_BASE = import.meta.env.VITE_HOME_OO;
 
-  // ✅ Fetch customer profile
+  // -----------------------------------------
+  // CUSTOMER PROFILE
+  // -----------------------------------------
   const { data: profile } = useQuery({
     queryKey: ["customer-profile", user?.id],
     queryFn: async () => {
@@ -31,7 +38,9 @@ export default function CustomerDashboard() {
     enabled: !!user?.id,
   });
 
-  // ✅ Fetch loyalty account
+  // -----------------------------------------
+  // LOYALTY ACCOUNT
+  // -----------------------------------------
   const { data: loyaltyAccount } = useQuery({
     queryKey: ["customer-loyalty", user?.id],
     queryFn: async () => {
@@ -41,7 +50,9 @@ export default function CustomerDashboard() {
     enabled: !!user?.id,
   });
 
-  // ✅ Fetch recent orders
+  // -----------------------------------------
+  // RECENT ORDERS
+  // -----------------------------------------
   const { data: recentOrders, isLoading: loadingOrders } = useQuery({
     queryKey: ["customer-recent-orders", user?.id],
     queryFn: async () => {
@@ -53,7 +64,9 @@ export default function CustomerDashboard() {
     enabled: !!user?.id,
   });
 
-  // ✅ Fetch pending invoices
+  // -----------------------------------------
+  // PENDING INVOICES
+  // -----------------------------------------
   const { data: pendingInvoices } = useQuery({
     queryKey: ["customer-pending-invoices", user?.id],
     queryFn: async () => {
@@ -65,7 +78,9 @@ export default function CustomerDashboard() {
     enabled: !!user?.id,
   });
 
-  // ✅ Fetch order stats
+  // -----------------------------------------
+  // ORDER STATS
+  // -----------------------------------------
   const { data: orderStats } = useQuery({
     queryKey: ["customer-order-stats", user?.id],
     queryFn: async () => {
@@ -76,10 +91,10 @@ export default function CustomerDashboard() {
     },
     enabled: !!user?.id,
   });
-  console.log("USER KYC STATUS:", user?.kyc_status);
-console.log("PROFILE KYC STATUS:", profile?.kyc_status);
 
-
+  // -----------------------------------------
+  // LOADING STATE
+  // -----------------------------------------
   if (loadingOrders) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -88,9 +103,13 @@ console.log("PROFILE KYC STATUS:", profile?.kyc_status);
     );
   }
 
-  // ✅ Layout
+  // -----------------------------------------
+  // UI OUTPUT
+  // -----------------------------------------
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+
+      {/* WELCOME HEADER */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">
           Welcome, {user?.name || "Customer"}!
@@ -100,40 +119,66 @@ console.log("PROFILE KYC STATUS:", profile?.kyc_status);
         </p>
       </div>
 
-      {/* {
-      kycStatus && 
-      (
+      {/* KYC STATUS */}
+      {kycStatus && (
         <KYCStatusCard
           kycStatus={kycStatus.kyc_status}
           customerType={kycStatus.customer_type}
           kycNotes={kycStatus.kyc_notes}
         />
-      )} */}
-      {/* <KYCStatusCard
-        kStatus={user?.kyc_status ==='approved' || "pending"}
-        customerType={profile?.customer_type || "individual"}
-        kycNotes={profile?.kyc_notes || ""}
-      /> */}
-      {/* <KYCStatusCard
-  kStatus={user?.kyc_status === "approved" ? "approved" : "pending"}
-  customerType={user?.customer_type || "individual"}
-  kycNotes={user?.kyc_notes || ""}
-/> */}
-{/* <KYCStatusCard
-  kycStatus={user?.kyc_status}
-  customerType={profile?.customer_type || "individual"}
-  kycNotes={profile?.kyc_notes || ""}
-/> */}
-   {/* {kycStatus && (
-        <KYCStatusCard
-          kycStatus={kycStatus.kyc_status}
-          customerType={kycStatus.customer_type}
-          kycNotes={kycStatus.kyc_notes}
-        />
-      )} */}
+      )}
 
-      {/* ✅ Stats Cards */}
+      {/* TIER PROGRESS CARD */}
+      {loyaltyAccount && (
+       <TierProgressCard
+  tiers={[
+    {
+      id: 1,
+      name: "Bronze",
+      min_points: 1,
+      max_points: 500,
+      multiplier: 1,
+      benefits: ["Basic member benefits"],
+      color: "text-amber-600",
+      icon: null,
+      sort_order: 1,
+      active: true,
+    },
+    {
+      id: 2,
+      name: "Silver",
+      min_points: 501,
+      max_points: 1000,
+      multiplier: 1.2,
+      benefits: ["Priority support", "Faster rewards"],
+      color: "text-slate-400",
+      icon: null,
+      sort_order: 2,
+      active: true,
+    },
+    {
+      id: 3,
+      name: "Gold",
+      min_points: 1001,
+      max_points: 2000,
+      multiplier: 1.5,
+      benefits: ["VIP support", "Exclusive discounts"],
+      color: "text-yellow-500",
+      icon: null,
+      sort_order: 3,
+      active: true,
+    },
+  ]}
+  currentPoints={loyaltyAccount.points_balance}
+  currentTierName={loyaltyAccount.tier}
+/>
+
+      )}
+
+      {/* STATS CARDS */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+
+        {/* Total Orders */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
@@ -149,6 +194,7 @@ console.log("PROFILE KYC STATUS:", profile?.kyc_status);
           </CardContent>
         </Card>
 
+        {/* Loyalty Points */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -160,10 +206,13 @@ console.log("PROFILE KYC STATUS:", profile?.kyc_status);
             <div className="text-2xl font-bold">
               {loyaltyAccount?.points_balance || 0}
             </div>
-            <p className="text-xs text-muted-foreground">Available to redeem</p>
+            <p className="text-xs text-muted-foreground">
+              Available to redeem
+            </p>
           </CardContent>
         </Card>
 
+        {/* Tier */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Loyalty Tier</CardTitle>
@@ -171,12 +220,13 @@ console.log("PROFILE KYC STATUS:", profile?.kyc_status);
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loyaltyAccount?.tier || "Silver"}
+              {loyaltyAccount?.tier || "Bronze"}
             </div>
             <p className="text-xs text-muted-foreground">Member status</p>
           </CardContent>
         </Card>
 
+        {/* Pending Invoices */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -193,7 +243,7 @@ console.log("PROFILE KYC STATUS:", profile?.kyc_status);
         </Card>
       </div>
 
-      {/* ✅ Recent Orders */}
+      {/* RECENT ORDERS */}
       <Card>
         <CardHeader>
           <CardTitle>Recent Orders</CardTitle>
@@ -213,6 +263,7 @@ console.log("PROFILE KYC STATUS:", profile?.kyc_status);
                       {format(new Date(order.created_at), "MMM d, yyyy")}
                     </p>
                   </div>
+
                   <div className="text-right">
                     <p className="font-bold">
                       ₦{Number(order.total_amount).toLocaleString()}
@@ -238,6 +289,218 @@ console.log("PROFILE KYC STATUS:", profile?.kyc_status);
     </div>
   );
 }
+
+
+// import React from "react";
+// import { useAuth } from "@/hooks/useAuth";
+// import { useQuery } from "@tanstack/react-query";
+// import axios from "axios";
+// import {
+//   Card,
+//   CardContent,
+//   CardDescription,
+//   CardHeader,
+//   CardTitle,
+// } from "@/components/ui/Card";
+
+// import { Badge } from "@/components/ui/Badge";
+// import { Loader2, ShoppingBag, FileText, Gift, Award } from "lucide-react";
+// import { format } from "date-fns";
+// import { useKYCStatus } from "@/hooks/useKYC";
+// import { KYCStatusCard } from "@/components/KYCStatusCard";
+
+// export default function CustomerDashboard() {
+//   const { user } = useAuth();
+//   const { data: kycStatus } = useKYCStatus();
+//   const API_BASE = import.meta.env.VITE_HOME_OO;
+
+//   // ✅ Fetch customer profile
+//   const { data: profile } = useQuery({
+//     queryKey: ["customer-profile", user?.id],
+//     queryFn: async () => {
+//       const { data } = await axios.get(`${API_BASE}/api/customers/${user?.id}`);
+//       return data;
+//     },
+//     enabled: !!user?.id,
+//   });
+
+//   // ✅ Fetch loyalty account
+//   const { data: loyaltyAccount } = useQuery({
+//     queryKey: ["customer-loyalty", user?.id],
+//     queryFn: async () => {
+//       const { data } = await axios.get(`${API_BASE}/api/loyalty/${user?.id}`);
+//       return data;
+//     },
+//     enabled: !!user?.id,
+//   });
+
+//   // ✅ Fetch recent orders
+//   const { data: recentOrders, isLoading: loadingOrders } = useQuery({
+//     queryKey: ["customer-recent-orders", user?.id],
+//     queryFn: async () => {
+//       const { data } = await axios.get(
+//         `${API_BASE}/api/orders/${user?.id}?limit=5`
+//       );
+//       return data;
+//     },
+//     enabled: !!user?.id,
+//   });
+
+//   // ✅ Fetch pending invoices
+//   const { data: pendingInvoices } = useQuery({
+//     queryKey: ["customer-pending-invoices", user?.id],
+//     queryFn: async () => {
+//       const { data } = await axios.get(
+//         `${API_BASE}/api/invoices/${user?.id}?status=pending`
+//       );
+//       return data;
+//     },
+//     enabled: !!user?.id,
+//   });
+
+//   // ✅ Fetch order stats
+//   const { data: orderStats } = useQuery({
+//     queryKey: ["customer-order-stats", user?.id],
+//     queryFn: async () => {
+//       const { data } = await axios.get(
+//         `${API_BASE}/api/orders/stats/${user?.id}`
+//       );
+//       return data;
+//     },
+//     enabled: !!user?.id,
+//   });
+//   console.log("USER KYC STATUS:", user?.kyc_status);
+// console.log("PROFILE KYC STATUS:", profile?.kyc_status);
+
+
+//   if (loadingOrders) {
+//     return (
+//       <div className="flex items-center justify-center h-96">
+//         <Loader2 className="h-12 w-12 animate-spin text-primary" />
+//       </div>
+//     );
+//   }
+
+//   // ✅ Layout
+//   return (
+//     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+//       <div>
+//         <h1 className="text-2xl sm:text-3xl font-bold">
+//           Welcome, {user?.name || "Customer"}!
+//         </h1>
+//         <p className="text-sm sm:text-base text-muted-foreground">
+//           Here's your account overview
+//         </p>
+//       </div>
+
+  
+
+//       {/* ✅ Stats Cards */}
+//       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+//         <Card>
+//           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+//             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+//             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+//           </CardHeader>
+//           <CardContent>
+//             <div className="text-2xl font-bold">
+//               {orderStats?.totalOrders || 0}
+//             </div>
+//             <p className="text-xs text-muted-foreground">
+//               {orderStats?.monthlyOrders || 0} this month
+//             </p>
+//           </CardContent>
+//         </Card>
+
+//         <Card>
+//           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+//             <CardTitle className="text-sm font-medium">
+//               Loyalty Points
+//             </CardTitle>
+//             <Gift className="h-4 w-4 text-muted-foreground" />
+//           </CardHeader>
+//           <CardContent>
+//             <div className="text-2xl font-bold">
+//               {loyaltyAccount?.points_balance || 0}
+//             </div>
+//             <p className="text-xs text-muted-foreground">Available to redeem</p>
+//           </CardContent>
+//         </Card>
+
+//         <Card>
+//           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+//             <CardTitle className="text-sm font-medium">Loyalty Tier</CardTitle>
+//             <Award className="h-4 w-4 text-muted-foreground" />
+//           </CardHeader>
+//           <CardContent>
+//             <div className="text-2xl font-bold">
+//               {loyaltyAccount?.tier || "Silver"}
+//             </div>
+//             <p className="text-xs text-muted-foreground">Member status</p>
+//           </CardContent>
+//         </Card>
+
+//         <Card>
+//           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+//             <CardTitle className="text-sm font-medium">
+//               Pending Invoices
+//             </CardTitle>
+//             <FileText className="h-4 w-4 text-muted-foreground" />
+//           </CardHeader>
+//           <CardContent>
+//             <div className="text-2xl font-bold">
+//               {pendingInvoices?.length || 0}
+//             </div>
+//             <p className="text-xs text-muted-foreground">Awaiting payment</p>
+//           </CardContent>
+//         </Card>
+//       </div>
+
+//       {/* ✅ Recent Orders */}
+//       <Card>
+//         <CardHeader>
+//           <CardTitle>Recent Orders</CardTitle>
+//           <CardDescription>Your latest purchases</CardDescription>
+//         </CardHeader>
+//         <CardContent>
+//           {recentOrders && recentOrders.length > 0 ? (
+//             <div className="space-y-3">
+//               {recentOrders.map((order) => (
+//                 <div
+//                   key={order.id}
+//                   className="flex items-center justify-between p-3 border rounded-lg"
+//                 >
+//                   <div>
+//                     <p className="font-medium">Order #{order.id.slice(0, 8)}</p>
+//                     <p className="text-sm text-muted-foreground">
+//                       {format(new Date(order.created_at), "MMM d, yyyy")}
+//                     </p>
+//                   </div>
+//                   <div className="text-right">
+//                     <p className="font-bold">
+//                       ₦{Number(order.total_amount).toLocaleString()}
+//                     </p>
+//                     <Badge
+//                       variant={
+//                         order.status === "completed" ? "default" : "secondary"
+//                       }
+//                     >
+//                       {order.status}
+//                     </Badge>
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+//           ) : (
+//             <p className="text-muted-foreground text-center py-8">
+//               No orders yet
+//             </p>
+//           )}
+//         </CardContent>
+//       </Card>
+//     </div>
+//   );
+// }
 
 // import React from "react";
 // import { useAuth } from "@/hookss/useAuth";

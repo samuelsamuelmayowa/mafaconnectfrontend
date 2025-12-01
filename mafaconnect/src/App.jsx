@@ -327,7 +327,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <Sales />
+                <Sales />
                 </DashboardLayout>
               </ProtectedRoute>
             }
