@@ -5,7 +5,10 @@ const { sequelize } = require("../db");
 const Product = sequelize.define(
   "Product",
   {
-    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    id: { 
+        type: DataTypes.INTEGER.UNSIGNED,
+      // type: DataTypes.INTEGER,
+       autoIncrement: true, primaryKey: true },
       productid: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,

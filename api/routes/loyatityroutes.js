@@ -3,7 +3,7 @@ const router = express.Router();
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
 const { Location } = require("../models");
-const { createReward, getAllRewards, updateReward, deleteReward, toggleStatus } = require("../controllers/loyality");
+const { createReward, getAllRewards, updateReward, deleteReward, toggleStatus, getAllTiers, createTier, updateTier, deleteTier, toggleTierStatus } = require("../controllers/loyality");
 
 
 router.post("/rewards", authenticate, requireRole("customer", "sales_person", "manager", "admin"),  createReward);
@@ -20,17 +20,17 @@ router.patch("/rewards/:id/status", authenticate, requireRole("customer", "sales
 
 
 // GET all tiers
-router.get("/tiers", getAllTiers);
+router.get("/tiers",authenticate, requireRole("customer", "sales_person", "manager", "admin"), getAllTiers);
 
 // CREATE new tier
-router.post("/tiers", createTier);
+router.post("/tiers",authenticate, requireRole("customer", "sales_person", "manager", "admin"), createTier);
 
 // UPDATE tier
-router.put("/tiers/:id", updateTier);
+router.put("/tiers/:id", authenticate, requireRole("customer", "sales_person", "manager", "admin"),updateTier);
 
 // DELETE tier
-router.delete("/tiers/:id", deleteTier);
+router.delete("/tiers/:id", authenticate, requireRole("customer", "sales_person", "manager", "admin"),deleteTier);
 
 // TOGGLE ACTIVE / INACTIVE
-router.patch("/tiers/:id/status", toggleTierStatus);
+router.patch("/tiers/:id/status", authenticate, requireRole("customer", "sales_person", "manager", "admin"),toggleTierStatus);
 module.exports = router;

@@ -7,6 +7,7 @@ const cloudinary = require("../cloudinary");
 const { Product, ProductImage, Location, ProductLocationStock } = require("../models");
 const { sequelize } = require("../db");
 const { Reward } = require("../models/Reward");
+const { LoyaltyTier } = require("../models/LoyaltyTier");
 // const Reward = require("../models/Reward.js");
 
 exports.createReward = async (req, res) => {
@@ -139,5 +140,145 @@ exports.toggleStatus = async (req, res) => {
       message: "Failed to update reward status",
       error: error.message,
     });
+  }
+};
+
+
+
+
+// exports.getAllTiers = async (req, res) => {
+//   try {
+//     const tiers = await LoyaltyTier.findAll({
+//       order: [["min_points", "ASC"]],
+//     });
+
+//     return res.json(tiers);
+//   } catch (error) {
+//     console.error("GET TIERS ERROR:", error);
+//     return res.status(500).json({ message: "Failed to fetch loyalty tiers" });
+//   }
+// };
+
+// ===============================
+// CREATE NEW TIER
+// ===============================
+exports.getAllTiers = async (req, res) => {
+  try {
+    const tiers = await LoyaltyTier.findAll();
+
+    const formatted = tiers.map((t) => ({
+      ...t.toJSON(),
+      benefits: t.benefits ? JSON.parse(t.benefits) : [],
+    }));
+
+    return res.json(formatted);
+  } catch (err) {
+    return res.status(500).json({ message: "Failed to fetch tiers" });
+  }
+};
+
+exports.createTier = async (req, res) => {
+  try {
+    const {name, min_points, max_points, multiplier, benefits } = req.body;
+
+    // VALIDATION
+    if (!name|| !min_points || !max_points) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Prevent duplicate tiertitles
+    const existing = await LoyaltyTier.findOne({ where: {name} });
+    if (existing) {
+      return res.status(400).json({ message: "Tiertitle already exists" });
+    }
+
+    const tier = await LoyaltyTier.create({
+     name,
+      min_points,
+      max_points,
+      multiplier: multiplier || 1,
+    //   benefits: benefits || "",
+     benefits: Array.isArray(benefits) ? JSON.stringify(benefits) : benefits || "",
+      active: true,
+    });
+
+    return res.status(201).json({
+      message: "Tier created successfully",
+      tier,
+    });
+  } catch (error) {
+    console.error("CREATE TIER ERROR:", error);
+    return res.status(500).json({ message: "Failed to create tier" });
+  }
+};
+
+// ===============================
+// UPDATE TIER
+// ===============================
+exports.updateTier = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const tier = await LoyaltyTier.findByPk(id);
+    if (!tier) {
+      return res.status(404).json({ message: "Tier not found" });
+    }
+
+    await tier.update(req.body);
+
+    return res.json({
+      message: "Tier updated successfully",
+      tier,
+    });
+  } catch (error) {
+    console.error("UPDATE TIER ERROR:", error);
+    return res.status(500).json({ message: "Failed to update tier" });
+  }
+};
+
+// ===============================
+// DELETE TIER
+// ===============================
+exports.deleteTier = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const tier = await LoyaltyTier.findByPk(id);
+    if (!tier) {
+      return res.status(404).json({ message: "Tier not found" });
+    }
+
+    await tier.destroy();
+
+    return res.json({ message: "Tier deleted successfully" });
+  } catch (error) {
+    console.error("DELETE TIER ERROR:", error);
+    return res.status(500).json({ message: "Failed to delete tier" });
+  }
+};
+
+// ===============================
+// TOGGLE ACTIVE STATUS
+// ===============================
+exports.toggleTierStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { active } = req.body;
+
+    const tier = await LoyaltyTier.findByPk(id);
+    if (!tier) {
+      return res.status(404).json({ message: "Tier not found" });
+    }
+
+    tier.active = active;
+    await tier.save();
+
+    return res.json({
+      message: "Tier status updated",
+      tier,
+    });
+  } catch (error) {
+    console.error("TOGGLE STATUS ERROR:", error);
+    return res.status(500).json({ message: "Failed to update tier status" });
   }
 };

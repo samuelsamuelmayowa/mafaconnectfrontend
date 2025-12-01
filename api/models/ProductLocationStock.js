@@ -3,7 +3,8 @@ const { sequelize } = require("../db");
 
 const ProductLocationStock = sequelize.define("ProductLocationStock", {
   id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
+    // type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
   },
