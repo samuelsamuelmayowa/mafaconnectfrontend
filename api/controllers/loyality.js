@@ -205,40 +205,82 @@ exports.getAllTiers = async (req, res) => {
 //   }
 // };
 
+// exports.createTier = async (req, res) => {
+//   try {
+//     const {name, min_points, max_points, multiplier, benefits } = req.body;
+
+//     // VALIDATION
+//     if (!name|| !min_points || !max_points) {
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     // Prevent duplicate tiertitles
+//     const existing = await LoyaltyTier.findOne({ where: {name} });
+//     if (existing) {
+//       return res.status(400).json({ message: "Tiertitle already exists" });
+//     }
+
+//     const tier = await LoyaltyTier.create({
+//      name,
+//       min_points,
+//       max_points,
+//       multiplier: multiplier || 1,
+//      benefits,
+//     //  Array.isArray(benefits) ? JSON.stringify(benefits) : benefits || "",
+//       active: true,
+//     });
+
+//     return res.status(201).json({
+//       message: "Tier created successfully",
+//       tier,
+//     });
+//   } catch (error) {
+//     console.error("CREATE TIER ERROR:", error);
+//     return res.status(500).json({ message: "Failed to create tier" });
+//   }
+// };
 exports.createTier = async (req, res) => {
   try {
-    const {name, min_points, max_points, multiplier, benefits } = req.body;
+    const { name, min_points, max_points, multiplier, benefits } = req.body;
 
     // VALIDATION
-    if (!name|| !min_points || !max_points) {
+    if (!name || !min_points || !max_points) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Prevent duplicate tiertitles
-    const existing = await LoyaltyTier.findOne({ where: {name} });
+    // Handle duplicate tier name BEFORE MySQL rejects it
+    const existing = await LoyaltyTier.findOne({ where: { name } });
     if (existing) {
-      return res.status(400).json({ message: "Tiertitle already exists" });
+      return res.status(400).json({ message: "A tier with this name already exists" });
     }
 
     const tier = await LoyaltyTier.create({
-     name,
+      name,
       min_points,
       max_points,
       multiplier: multiplier || 1,
-     benefits,
-    //  Array.isArray(benefits) ? JSON.stringify(benefits) : benefits || "",
+      benefits: Array.isArray(benefits) ? JSON.stringify(benefits) : benefits || "[]",
       active: true,
     });
 
     return res.status(201).json({
       message: "Tier created successfully",
-      tier,
+      data: tier,
     });
   } catch (error) {
     console.error("CREATE TIER ERROR:", error);
+
+    // 🚨 Catch MySQL duplicate key error
+    if (error.name === "SequelizeUniqueConstraintError") {
+      return res.status(400).json({
+        message: "Tier name already exists. Please use a different name.",
+      });
+    }
+
     return res.status(500).json({ message: "Failed to create tier" });
   }
 };
+
 
 // ===============================
 // UPDATE TIER

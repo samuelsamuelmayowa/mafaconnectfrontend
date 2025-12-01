@@ -32,7 +32,7 @@ export default function CustomerDashboard() {
   const { data: profile } = useQuery({
     queryKey: ["customer-profile", user?.id],
     queryFn: async () => {
-      const { data } = await axios.get(`${API_BASE}/api/customers/${user?.id}`);
+      const { data } = await axios.get(`${API_BASE}/auth/me`);
       return data;
     },
     enabled: !!user?.id,
@@ -129,48 +129,53 @@ export default function CustomerDashboard() {
 
       {/* TIER PROGRESS CARD */}
       {loyaltyAccount && (
+        // <TierProgressCard
+        //   tiers={[
+        //     {
+        //       id: 1,
+        //       name: "Bronze",
+        //       min_points: 1,
+        //       max_points: 500,
+        //       multiplier: 1,
+        //       benefits: ["Basic member benefits"],
+        //       color: "text-amber-600",
+        //       icon: null,
+        //       sort_order: 1,
+        //       active: true,
+        //     },
+        //     {
+        //       id: 2,
+        //       name: "Silver",
+        //       min_points: 501,
+        //       max_points: 1000,
+        //       multiplier: 1.2,
+        //       benefits: ["Priority support", "Faster rewards"],
+        //       color: "text-slate-400",
+        //       icon: null,
+        //       sort_order: 2,
+        //       active: true,
+        //     },
+        //     {
+        //       id: 3,
+        //       name: "Gold",
+        //       min_points: 1001,
+        //       max_points: 2000,
+        //       multiplier: 1.5,
+        //       benefits: ["VIP support", "Exclusive discounts"],
+        //       color: "text-yellow-500",
+        //       icon: null,
+        //       sort_order: 3,
+        //       active: true,
+        //     },
+        //   ]}
+        //   currentPoints={loyaltyAccount.points_balance}
+        //   currentTierName={loyaltyAccount.tier}
+        // />
         <TierProgressCard
-          tiers={[
-            {
-              id: 1,
-              name: "Bronze",
-              min_points: 1,
-              max_points: 500,
-              multiplier: 1,
-              benefits: ["Basic member benefits"],
-              color: "text-amber-600",
-              icon: null,
-              sort_order: 1,
-              active: true,
-            },
-            {
-              id: 2,
-              name: "Silver",
-              min_points: 501,
-              max_points: 1000,
-              multiplier: 1.2,
-              benefits: ["Priority support", "Faster rewards"],
-              color: "text-slate-400",
-              icon: null,
-              sort_order: 2,
-              active: true,
-            },
-            {
-              id: 3,
-              name: "Gold",
-              min_points: 1001,
-              max_points: 2000,
-              multiplier: 1.5,
-              benefits: ["VIP support", "Exclusive discounts"],
-              color: "text-yellow-500",
-              icon: null,
-              sort_order: 3,
-              active: true,
-            },
-          ]}
-          currentPoints={loyaltyAccount.points_balance}
-          currentTierName={loyaltyAccount.tier}
-        />
+  tiers={tiers || []}       // <-- dynamic tiers from backend
+  currentPoints={loyaltyAccount.points_balance}
+  currentTierName={loyaltyAccount.tier}
+/>
       )}
 
       {/* STATS CARDS */}

@@ -176,8 +176,8 @@ export default function ProductDetail() {
                 </div>
 
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Reorder Level</dt>
-                  <dd className="font-medium">{product.reorder_level}</dd>
+                  {/* <dt className="text-muted-foreground">Reorder Level</dt> */}
+                  {/* <dd className="font-medium">{product.reorder_level}</dd> */}
                 </div>
               </dl>
             </CardContent>
