@@ -108,7 +108,6 @@ export default function CustomerDashboard() {
   // -----------------------------------------
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
-
       {/* WELCOME HEADER */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">
@@ -130,54 +129,52 @@ export default function CustomerDashboard() {
 
       {/* TIER PROGRESS CARD */}
       {loyaltyAccount && (
-       <TierProgressCard
-  tiers={[
-    {
-      id: 1,
-      name: "Bronze",
-      min_points: 1,
-      max_points: 500,
-      multiplier: 1,
-      benefits: ["Basic member benefits"],
-      color: "text-amber-600",
-      icon: null,
-      sort_order: 1,
-      active: true,
-    },
-    {
-      id: 2,
-      name: "Silver",
-      min_points: 501,
-      max_points: 1000,
-      multiplier: 1.2,
-      benefits: ["Priority support", "Faster rewards"],
-      color: "text-slate-400",
-      icon: null,
-      sort_order: 2,
-      active: true,
-    },
-    {
-      id: 3,
-      name: "Gold",
-      min_points: 1001,
-      max_points: 2000,
-      multiplier: 1.5,
-      benefits: ["VIP support", "Exclusive discounts"],
-      color: "text-yellow-500",
-      icon: null,
-      sort_order: 3,
-      active: true,
-    },
-  ]}
-  currentPoints={loyaltyAccount.points_balance}
-  currentTierName={loyaltyAccount.tier}
-/>
-
+        <TierProgressCard
+          tiers={[
+            {
+              id: 1,
+              name: "Bronze",
+              min_points: 1,
+              max_points: 500,
+              multiplier: 1,
+              benefits: ["Basic member benefits"],
+              color: "text-amber-600",
+              icon: null,
+              sort_order: 1,
+              active: true,
+            },
+            {
+              id: 2,
+              name: "Silver",
+              min_points: 501,
+              max_points: 1000,
+              multiplier: 1.2,
+              benefits: ["Priority support", "Faster rewards"],
+              color: "text-slate-400",
+              icon: null,
+              sort_order: 2,
+              active: true,
+            },
+            {
+              id: 3,
+              name: "Gold",
+              min_points: 1001,
+              max_points: 2000,
+              multiplier: 1.5,
+              benefits: ["VIP support", "Exclusive discounts"],
+              color: "text-yellow-500",
+              icon: null,
+              sort_order: 3,
+              active: true,
+            },
+          ]}
+          currentPoints={loyaltyAccount.points_balance}
+          currentTierName={loyaltyAccount.tier}
+        />
       )}
 
       {/* STATS CARDS */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-
         {/* Total Orders */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -206,9 +203,7 @@ export default function CustomerDashboard() {
             <div className="text-2xl font-bold">
               {loyaltyAccount?.points_balance || 0}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Available to redeem
-            </p>
+            <p className="text-xs text-muted-foreground">Available to redeem</p>
           </CardContent>
         </Card>
 
@@ -289,7 +284,6 @@ export default function CustomerDashboard() {
     </div>
   );
 }
-
 
 // import React from "react";
 // import { useAuth } from "@/hooks/useAuth";
@@ -372,7 +366,6 @@ export default function CustomerDashboard() {
 //   console.log("USER KYC STATUS:", user?.kyc_status);
 // console.log("PROFILE KYC STATUS:", profile?.kyc_status);
 
-
 //   if (loadingOrders) {
 //     return (
 //       <div className="flex items-center justify-center h-96">
@@ -392,8 +385,6 @@ export default function CustomerDashboard() {
 //           Here's your account overview
 //         </p>
 //       </div>
-
-  
 
 //       {/* ✅ Stats Cards */}
 //       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

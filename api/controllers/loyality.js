@@ -145,6 +145,34 @@ exports.toggleStatus = async (req, res) => {
 
 
 
+// exports.getAllTiers = async (req, res) => {
+//   try {
+//     const tiers = await LoyaltyTier.findAll();
+
+//     // Benefits are already arrays because of the model getter
+//     const formatted = tiers.map((t) => t.toJSON());
+
+//     return res.json(formatted);
+
+//   } catch (err) {
+//     console.error("GET TIERS ERROR:", err);
+//     return res.status(500).json({ message: "Failed to fetch tiers" });
+//   }
+// };
+exports.getAllTiers = async (req, res) => {
+  try {
+    const tiers = await LoyaltyTier.findAll();
+
+    return res.json({
+      data: tiers,   // keep consistent API response structure
+    });
+  } catch (err) {
+    console.error("GET TIERS ERROR:", err);
+    return res.status(500).json({ message: "Failed to fetch tiers" });
+  }
+};
+
+
 
 // exports.getAllTiers = async (req, res) => {
 //   try {
@@ -162,20 +190,20 @@ exports.toggleStatus = async (req, res) => {
 // ===============================
 // CREATE NEW TIER
 // ===============================
-exports.getAllTiers = async (req, res) => {
-  try {
-    const tiers = await LoyaltyTier.findAll();
+// exports.getAllTiers = async (req, res) => {
+//   try {
+//     const tiers = await LoyaltyTier.findAll();
 
-    const formatted = tiers.map((t) => ({
-      ...t.toJSON(),
-      benefits: t.benefits ? JSON.parse(t.benefits) : [],
-    }));
+//     const formatted = tiers.map((t) => ({
+//       ...t.toJSON(),
+//       benefits: t.benefits ? JSON.parse(t.benefits) : [],
+//     }));
 
-    return res.json(formatted);
-  } catch (err) {
-    return res.status(500).json({ message: "Failed to fetch tiers" });
-  }
-};
+//     return res.json(formatted);
+//   } catch (err) {
+//     return res.status(500).json({ message: "Failed to fetch tiers" });
+//   }
+// };
 
 exports.createTier = async (req, res) => {
   try {
@@ -197,7 +225,8 @@ exports.createTier = async (req, res) => {
       min_points,
       max_points,
       multiplier: multiplier || 1,
-     benefits: Array.isArray(benefits) ? JSON.stringify(benefits) : benefits || "",
+     benefits,
+    //  Array.isArray(benefits) ? JSON.stringify(benefits) : benefits || "",
       active: true,
     });
 

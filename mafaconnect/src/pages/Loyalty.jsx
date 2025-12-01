@@ -676,7 +676,7 @@ export default function Loyalty() {
             </CardContent>
           </Card>
 
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>Loyalty Tiers</CardTitle>
             </CardHeader>
@@ -707,7 +707,55 @@ export default function Loyalty() {
                   ))}
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
+          <Card>
+  <CardHeader>
+    <CardTitle>Loyalty Tiers</CardTitle>
+  </CardHeader>
+
+  <CardContent>
+    <div className="grid gap-4 md:grid-cols-4">
+      {tiers
+        ?.filter((t) => t.active)
+        .map((tier) => (
+          <div
+            key={tier.id}
+            className="border rounded-lg p-4 space-y-3"
+          >
+            <div className={`text-lg font-semibold ${tier.color}`}>
+              {tier.name}
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              {tier.min_points.toLocaleString()} -{" "}
+              {tier.max_points
+                ? tier.max_points.toLocaleString()
+                : "∞"}{" "}
+              pts
+            </p>
+
+            <p className="text-sm">
+              <span className="font-medium">Multiplier:</span>{" "}
+              {tier.multiplier}x
+            </p>
+
+            {/* ✅ BENEFITS SECTION */}
+            {tier.benefits && tier.benefits.length > 0 && (
+              <ul className="text-sm space-y-1 pt-2 border-t">
+                {tier.benefits.map((benefit, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>{benefit}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+    </div>
+  </CardContent>
+</Card>
+
         </TabsContent>
 
         {/* Analytics */}

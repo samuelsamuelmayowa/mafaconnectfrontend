@@ -20,16 +20,24 @@ export function useLoyaltyTiers() {
   /* ===============================
      GET TIERS
   =============================== */
+  // const { data: tiers, isLoading } = useQuery({
+  //   queryKey: ["loyalty_tiers"],
+  //   queryFn: async () => {
+  //     const { data } = await axios.get(
+  //       `${API_BASE}/tiers`,
+  //       getHeaders()
+  //     );
+  //     return data;
+  //   },
+  // });
   const { data: tiers, isLoading } = useQuery({
-    queryKey: ["loyalty_tiers"],
-    queryFn: async () => {
-      const { data } = await axios.get(
-        `${API_BASE}/tiers`,
-        getHeaders()
-      );
-      return data;
-    },
-  });
+  queryKey: ["loyalty_tiers"],
+  queryFn: async () => {
+    const { data } = await axios.get(`${API_BASE}/tiers`, getHeaders());
+    // return data; // <-- FIXED: return the array directly
+     return data.data || []; // 🔥 ensure array
+  },
+});
 
   /* ===============================
      CREATE TIER
