@@ -40,6 +40,7 @@ const preselectedInvoice = params.get("invoice");
     inv.invoice_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
     inv.customers?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  console.log(1)
 
 useEffect(() => {
   if (preselectedInvoice) {

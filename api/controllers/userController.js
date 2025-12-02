@@ -2,7 +2,7 @@ const bcrypt = require("bcrypt");
 const { User } = require("../models/user");
 const { Order } = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
-const { Product } = require("../models");
+const { Product, LoyaltyAccount } = require("../models");
 
 
 exports.getCustomerOrders = async (req, res) => {
@@ -145,12 +145,80 @@ function generateAccountNumber(id) {
 }
 
 // ✅ Customer/Business Registration
+// exports.register = async (req, res) => {
+//   try {
+//     const { name, email, phone, password, customer_type, role } = req.body;
+
+//     if (!name || !email || !password) {
+//       return res.status(400).json({ message: "Name, email, and password are required." });
+//     }
+
+//     const existing = await User.findOne({ where: { email } });
+//     if (existing) {
+//       return res.status(400).json({ message: "Email already exists." });
+//     }
+
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     // Step 1: Create user without account number
+//     const user = await User.create({
+//       name,
+//       email,
+//       phone,
+//       password: hashedPassword,
+//       customer_type,
+//       role: role || "customer",
+//       kyc_status: "pending",
+//       is_active: true,
+//       account_number: null,
+//     });
+
+//     let account = await LoyaltyAccount.findOne({
+//       where: { customer_id: newUser.id }
+//     });
+
+//     if (!account) {
+//       await LoyaltyAccount.create({
+//         customer_id: newUser.id,
+//         points_balance: 0,
+//         tier: "Bronze",
+//       });
+//     }
+
+//     // Step 2: Generate account number from ID
+//     const accountNumber = generateAccountNumber(user.id);
+
+//     // Step 3: Save the account number
+//     user.account_number = accountNumber;
+//     await user.save();
+
+//     return res.status(201).json({
+//       message: "Account created successfully. Waiting for admin approval.",
+//       user: {
+//         id: user.id,
+//         name: user.name,
+//         customer_type: user.individual,
+//         email: user.email,
+//         account_number: user.account_number,
+//         role: user.role,
+//         kyc_status: user.kyc_status,
+//       },
+//     });
+
+//   } catch (err) {
+//     console.error("Signup error:", err.message);
+//     res.status(500).json({ message: "Server error during registration." });
+//   }
+// };
+
 exports.register = async (req, res) => {
   try {
     const { name, email, phone, password, customer_type, role } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ message: "Name, email, and password are required." });
+      return res
+        .status(400)
+        .json({ message: "Name, email, and password are required." });
     }
 
     const existing = await User.findOne({ where: { email } });
@@ -173,6 +241,21 @@ exports.register = async (req, res) => {
       account_number: null,
     });
 
+    // ---------------------------------------------
+    // CREATE LOYALTY ACCOUNT AUTOMATICALLY
+    // ---------------------------------------------
+    let account = await LoyaltyAccount.findOne({
+      where: { customer_id: user.id }, // <-- FIXED
+    });
+
+    if (!account) {
+      await LoyaltyAccount.create({
+        customer_id: user.id, // <-- FIXED
+        points_balance: 0,
+        tier: "Bronze",
+      });
+    }
+
     // Step 2: Generate account number from ID
     const accountNumber = generateAccountNumber(user.id);
 
@@ -185,16 +268,15 @@ exports.register = async (req, res) => {
       user: {
         id: user.id,
         name: user.name,
-        customer_type: user.individual,
+        customer_type: user.customer_type,
         email: user.email,
         account_number: user.account_number,
         role: user.role,
         kyc_status: user.kyc_status,
       },
     });
-
   } catch (err) {
-    console.error("Signup error:", err.message);
+    console.error("Signup error:", err);
     res.status(500).json({ message: "Server error during registration." });
   }
 };

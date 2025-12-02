@@ -3,14 +3,46 @@ const router = express.Router();
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
 const { Location } = require("../models");
-const { createReward, getAllRewards, updateReward, deleteReward, toggleStatus, getAllTiers, createTier, updateTier, deleteTier, toggleTierStatus } = require("../controllers/loyality");
+const { createReward, getAllRewards, updateReward, deleteReward, toggleStatus, getAllTiers, createTier, updateTier, deleteTier, toggleTierStatus, getRecentRedemptions, redeemReward, getAccountTransactions, getLoyaltyAccount, 
+  
+} = require("../controllers/loyality");
+
+//user side 
+// Match your frontend: `${API_BASE}/api/loyalty/${user?.id}`
+router.get(
+  "/loyalty/:customerId",
+   authenticate, requireRole("customer", "sales_person", "manager", "admin"),
+  getLoyaltyAccount
+);
+
+// `${API_BASE}/api/loyalty/accounts/${loyaltyAccount?.id}/transactions?limit=10`
+router.get(
+  "/loyalty/accounts/:accountId/transactions",
+ authenticate, requireRole("customer", "sales_person", "manager", "admin"),
+    getAccountTransactions
+);
+
+// Redeem reward: POST /api/loyalty/redeem   { rewardId }
+router.post(
+  "/loyalty/redeem",
+   authenticate, requireRole("customer", "sales_person", "manager", "admin"),
+  redeemReward
+);
+
+// Staff: recent redemptions dashboard
+// `${API_BASE}/api/loyalty/redemptions/recent?limit=5`
+router.get(
+  "/loyalty/redemptions/recent",
+   authenticate, requireRole("customer", "sales_person", "manager", "admin"),
+ getRecentRedemptions
+);
+
 
 // GET all tiers
 router.get("/tiers",
     authenticate,
      requireRole("customer", "sales_person", "manager", "admin"),
       getAllTiers);
-
 
 router.post("/rewards", authenticate, requireRole("customer", "sales_person", "manager", "admin"),  createReward);
 router.get("/rewards", authenticate, requireRole("customer", "sales_person", "manager", "admin"),  getAllRewards);

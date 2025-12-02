@@ -422,27 +422,89 @@ exports.getAdminOrders = async (req, res) => {
 //     res.status(500).json({ success: false, message: "Confirm payment failed" });
 //   }
 // };
+// exports.confirmPayment = async (req, res) => {
+//   const { id } = req.params;
+//   const { payment_reference } = req.body;
+
+//   try {
+//     const order = await Order.findByPk(id);
+
+//     if (!order) {
+//       return res.status(404).json({ message: "Order not found" });
+//     }
+
+//     // ✅ Save reference on order
+//     order.payment_reference = payment_reference;
+//     order.payment_status = "paid";
+//     if (order.payment_status === "paid") {
+//   await earnPointsForOrder(order.id);
+// }
+
+//     await order.save();
+
+//     const existingInvoice = await Invoice.findOne({
+//       where: { order_id: order.id }
+//     });
+
+//     // ✅ Automatically generate invoice
+//     if (!existingInvoice) {
+//       await Invoice.create({
+//         invoice_number: `INV-${Date.now()}`,
+//         order_id: order.id,
+//         customer_id: order.customer_id,
+//         total_amount: order.total_amount,
+//         payment_method: order.payment_method,
+//         payment_reference: payment_reference,   // ✅ IMPORTANT
+//         issued_at: new Date(),
+//       });
+//     }
+//     // await order.update({ payment_status: "paid" });
+
+// // Award loyalty points
+// await awardPointsForOrder(order.id);
+//     return res.json({
+//       success: true,
+//       message: "Payment confirmed and invoice generated"
+//     });
+
+//   } catch (error) {
+//     console.error("Confirm payment error:", error);
+//     res.status(500).json({ message: "Payment confirmation failed" });
+//   }
+// };
+
 exports.confirmPayment = async (req, res) => {
   const { id } = req.params;
   const { payment_reference } = req.body;
 
   try {
-    const order = await Order.findByPk(id);
+    const order = await Order.findByPk(id, {
+      include: [
+        {
+          model: OrderItem,
+          as: "items",
+          include: [{ model: Product, as: "product" }]
+        }
+      ]
+    });
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    // ✅ Save reference on order
+    // If already paid, no need to award twice
+    const isAlreadyPaid = order.payment_status === "paid";
+
+    // Save payment
     order.payment_reference = payment_reference;
     order.payment_status = "paid";
     await order.save();
 
+    // Generate invoice if missing
     const existingInvoice = await Invoice.findOne({
       where: { order_id: order.id }
     });
 
-    // ✅ Automatically generate invoice
     if (!existingInvoice) {
       await Invoice.create({
         invoice_number: `INV-${Date.now()}`,
@@ -450,21 +512,27 @@ exports.confirmPayment = async (req, res) => {
         customer_id: order.customer_id,
         total_amount: order.total_amount,
         payment_method: order.payment_method,
-        payment_reference: payment_reference,   // ✅ IMPORTANT
+        payment_reference,
         issued_at: new Date(),
       });
     }
 
+    // ⭐ Award points ONLY if not already awarded before
+    if (!isAlreadyPaid) {
+      await awardPointsForOrder(order);
+    }
+
     return res.json({
       success: true,
-      message: "Payment confirmed and invoice generated"
+      message: "Payment confirmed, invoice created, and points awarded."
     });
 
   } catch (error) {
-    console.error("Confirm payment error:", error);
-    res.status(500).json({ message: "Payment confirmation failed" });
+    console.error("CONFIRM PAYMENT ERROR:", error);
+    return res.status(500).json({ message: "Payment confirmation failed" });
   }
 };
+
 
 
 // exports.getCustomerInvoices = async (req, res) => {
@@ -536,6 +604,7 @@ exports.getCustomerInvoices = async (req, res) => {
 
 
 const { generateInvoicePDF } = require("../utils/generateInvoicePDF");
+const { earnPointsForOrder, awardPointsForOrder } = require("./loyality");
 
 exports.downloadInvoicePDF = async (req, res) => {
   try {
@@ -577,18 +646,22 @@ exports.downloadInvoicePDF = async (req, res) => {
   }
 };
 
-
 exports.downloadInvoice = async (req, res) => {
   try {
     const { invoice_number } = req.params;
-    const customer_id = req.user.id;
+    const customer_id = req.user.id; // logged-in user
 
+    console.log("Requesting invoice:", invoice_number, "Customer:", customer_id);
+
+    // Fetch invoice that belongs to the logged-in customer
     const invoice = await Invoice.findOne({
-      where: { invoice_number, customer_id },
+      where: { invoice_number },
       include: [
         {
           model: Order,
           as: "order",
+          required: true,
+          where: { customer_id }, // ensure ownership
           include: [
             {
               model: OrderItem,
@@ -601,69 +674,260 @@ exports.downloadInvoice = async (req, res) => {
     });
 
     if (!invoice) {
-      return res.status(404).json({ success: false, message: "Invoice not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Invoice not found or not authorized.",
+      });
     }
 
-    // Ensure folder exists
-    const invoicesDir = path.join(__dirname, "..", "invoices");
-    if (!fs.existsSync(invoicesDir)) {
-      fs.mkdirSync(invoicesDir, { recursive: true });
-    }
-
-    const pdfPath = path.join(
-      invoicesDir,
-      `invoice-${invoice_number}.pdf`
-    );
-
-    const doc = new PDFDocument({ margin: 50 });
-
-    // Pipe PDF to file + response (streaming)
-    doc.pipe(fs.createWriteStream(pdfPath));
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${invoice_number}.pdf"`
-    );
-    doc.pipe(res);
-
-    // ---- PDF CONTENT ----  
-    doc.fontSize(20).text("MAFA Rice Mill Limited", { align: "left" });
-    doc.moveDown();
-    doc.fontSize(12).text("Local Government, Off km 11 Hadejia Road Gunduwawa Industrial Estate, Kano, Nigeria");
-    doc.text("Phone: +234 904 028 8888 | Email: sales@mafagroup.org");
-    doc.moveDown();
-
-    doc.fontSize(16).text(`Invoice #: ${invoice_number}`);
-    doc.text(`Order: ${invoice.order.order_number}`);
-    doc.text(`Issue Date: ${invoice.issue_date}`);
-    doc.text(`Due Date: ${invoice.due_date}`);
-    doc.text(`Status: ${invoice.status.toUpperCase()}`);
-    doc.moveDown();
-
-    doc.fontSize(14).text("Items", { underline: true });
-    doc.moveDown(0.5);
-
-    invoice.order.items.forEach((item) => {
-      doc.text(
-        `${item.product.name} (x${item.quantity}) - ₦${item.total_price.toLocaleString()}`
-      );
+    // Return JSON invoice so frontend can build HTML/PDF
+    return res.json({
+      success: true,
+      data: invoice,
     });
 
-    doc.moveDown();
-    doc.fontSize(14).text(`TOTAL: ₦${invoice.total_amount.toLocaleString()}`);
-
-    if (invoice.notes) {
-      doc.moveDown();
-      doc.fontSize(12).text(`Notes: ${invoice.notes}`);
-    }
-
-    doc.end();
-
   } catch (err) {
-    console.error("Invoice PDF error:", err);
-    res.status(500).json({ success: false, message: "Failed to generate invoice PDF" });
+    console.error("Invoice fetch error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error fetching invoice.",
+    });
   }
 };
+
+// GET JSON invoice details (frontend will build PDF)
+// exports.getInvoiceDetails = async (req, res) => {
+//   try {
+//     const { invoice_number } = req.params;
+//     const customer_id = req.user.id;
+
+//     console.log("Fetching invoice:", invoice_number, "Customer:", customer_id);
+
+//     const invoice = await Invoice.findOne({
+//       where: { invoice_number },
+//       include: [
+//         {
+//           model: Order,
+//           as: "order",
+//           required: true,
+//           where: { customer_id }, // ensure user owns this invoice
+//           include: [
+//             {
+//               model: OrderItem,
+//               as: "items",
+//               include: [{ model: Product, as: "product" }],
+//             },
+//           ],
+//         },
+//       ],
+//     });
+
+//     if (!invoice) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Invoice not found or unauthorized",
+//       });
+//     }
+
+//     return res.json({
+//       success: true,
+//       data: invoice,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching invoice:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error fetching invoice",
+//     });
+//   }
+// };
+// exports.getInvoiceDetails = async (req, res) => {
+//   try {
+//     const { invoice_number } = req.params;
+//     const customer_id = req.user.id;
+
+//     const invoice = await Invoice.findOne({
+//       where: { invoice_number },
+//       include: [
+//         {
+//           model: Order,
+//           as: "order",
+//           required: true,
+//           where: { customer_id },
+//           include: [
+//             {
+//               model: OrderItem,
+//               as: "items",            // first attempt
+//               include: [{ model: Product, as: "product" }],
+//             },
+//             {
+//               model: OrderItem,
+//               as: "order_items",      // second attempt (common in many DBs)
+//               include: [{ model: Product, as: "product" }],
+//             },
+//           ],
+//         },
+//         // If invoice_items exists under invoice
+//         {
+//           model: InvoiceItem,
+//           as: "invoice_items",
+//           include: [{ model: Product, as: "product" }],
+//         },
+//       ],
+//     });
+
+//     if (!invoice) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Invoice not found or unauthorized",
+//       });
+//     }
+
+//     return res.json({
+//       success: true,
+//       data: invoice,
+//     });
+
+//   } catch (error) {
+//     console.error("Error fetching invoice:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error fetching invoice",
+//     });
+//   }
+// };
+
+exports.getInvoiceDetails = async (req, res) => {
+  try {
+    const { invoice_number } = req.params;
+    const customer_id = req.user.id;
+
+    const invoice = await Invoice.findOne({
+      where: { invoice_number },
+      include: [
+        {
+          model: Order,
+          as: "order",
+          required: true,
+          where: { customer_id },
+          include: [
+            {
+              model: OrderItem,
+              as: "items",
+              include: [{ model: Product, as: "product" }],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!invoice) {
+      return res.status(404).json({
+        success: false,
+        message: "Invoice not found or unauthorized",
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: invoice,
+    });
+
+  } catch (error) {
+    console.error("Error fetching invoice:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error fetching invoice",
+    });
+  }
+};
+
+// exports.downloadInvoice = async (req, res) => {
+//   try {
+//     const { invoice_number } = req.params;
+//     const customer_id = req.user.id;
+
+//     const invoice = await Invoice.findOne({
+//       where: { invoice_number, customer_id },
+//       include: [
+//         {
+//           model: Order,
+//           as: "order",
+//           include: [
+//             {
+//               model: OrderItem,
+//               as: "items",
+//               include: [{ model: Product, as: "product" }],
+//             },
+//           ],
+//         },
+//       ],
+//     });
+
+//     if (!invoice) {
+//       return res.status(404).json({ success: false, message: "Invoice not found" });
+//     }
+
+//     // Ensure folder exists
+//     const invoicesDir = path.join(__dirname, "..", "invoices");
+//     if (!fs.existsSync(invoicesDir)) {
+//       fs.mkdirSync(invoicesDir, { recursive: true });
+//     }
+
+//     const pdfPath = path.join(
+//       invoicesDir,
+//       `invoice-${invoice_number}.pdf`
+//     );
+
+//     const doc = new PDFDocument({ margin: 50 });
+
+//     // Pipe PDF to file + response (streaming)
+//     doc.pipe(fs.createWriteStream(pdfPath));
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader(
+//       "Content-Disposition",
+//       `attachment; filename="${invoice_number}.pdf"`
+//     );
+//     doc.pipe(res);
+
+//     // ---- PDF CONTENT ----  
+//     doc.fontSize(20).text("MAFA Rice Mill Limited", { align: "left" });
+//     doc.moveDown();
+//     doc.fontSize(12).text("Local Government, Off km 11 Hadejia Road Gunduwawa Industrial Estate, Kano, Nigeria");
+//     doc.text("Phone: +234 904 028 8888 | Email: sales@mafagroup.org");
+//     doc.moveDown();
+
+//     doc.fontSize(16).text(`Invoice #: ${invoice_number}`);
+//     doc.text(`Order: ${invoice.order.order_number}`);
+//     doc.text(`Issue Date: ${invoice.issue_date}`);
+//     doc.text(`Due Date: ${invoice.due_date}`);
+//     doc.text(`Status: ${invoice.status.toUpperCase()}`);
+//     doc.moveDown();
+
+//     doc.fontSize(14).text("Items", { underline: true });
+//     doc.moveDown(0.5);
+
+//     invoice.order.items.forEach((item) => {
+//       doc.text(
+//         `${item.product.name} (x${item.quantity}) - ₦${item.total_price.toLocaleString()}`
+//       );
+//     });
+
+//     doc.moveDown();
+//     doc.fontSize(14).text(`TOTAL: ₦${invoice.total_amount.toLocaleString()}`);
+
+//     if (invoice.notes) {
+//       doc.moveDown();
+//       doc.fontSize(12).text(`Notes: ${invoice.notes}`);
+//     }
+
+//     doc.end();
+
+//   } catch (err) {
+//     console.error("Invoice PDF error:", err);
+//     res.status(500).json({ success: false, message: "Failed to generate invoice PDF" });
+//   }
+// };
 
 
 // const { generateInvoicePDF } = require("../utils/generateInvoicePDF");
@@ -705,64 +969,64 @@ exports.downloadInvoice = async (req, res) => {
 
 
 
-exports.downloadInvoice = async (req, res) => {
-  try {
-    const orderNumber = req.params.order_number;
+// exports.downloadInvoice = async (req, res) => {
+//   try {
+//     const orderNumber = req.params.order_number;
 
-    const invoice = await Invoice.findOne({
-      include: [
-        {
-          model: Order,
-          as: "order",
-          include: [{
-            model: OrderItem,
-            as: "items",
-            include: [{ model: Product, as: "product" }]
-          }]
-        }
-      ],
-      where: { invoice_number: req.params.invoice_number }
-    });
+//     const invoice = await Invoice.findOne({
+//       include: [
+//         {
+//           model: Order,
+//           as: "order",
+//           include: [{
+//             model: OrderItem,
+//             as: "items",
+//             include: [{ model: Product, as: "product" }]
+//           }]
+//         }
+//       ],
+//       where: { invoice_number: req.params.invoice_number }
+//     });
 
-    if (!invoice) {
-      return res.status(404).json({ message: "Invoice not found" });
-    }
+//     if (!invoice) {
+//       return res.status(404).json({ message: "Invoice not found" });
+//     }
 
-    const doc = new PDFDocument();
-    const fileName = `invoice-${invoice.invoice_number}.pdf`;
-    const filePath = path.join(__dirname, `../invoices/${fileName}`);
+//     const doc = new PDFDocument();
+//     const fileName = `invoice-${invoice.invoice_number}.pdf`;
+//     const filePath = path.join(__dirname, `../invoices/${fileName}`);
 
-    const stream = fs.createWriteStream(filePath);
-    doc.pipe(stream);
+//     const stream = fs.createWriteStream(filePath);
+//     doc.pipe(stream);
 
-    doc.fontSize(20).text("MAFACONNECT INVOICE", { align: "center" });
+//     doc.fontSize(20).text("MAFACONNECT INVOICE", { align: "center" });
 
-    doc.moveDown();
-    doc.text(`Invoice: ${invoice.invoice_number}`);
-    doc.text(`Order: ${invoice.order.order_number}`);
-    doc.text(`Date: ${invoice.createdAt}`);
+//     doc.moveDown();
+//     doc.text(`Invoice: ${invoice.invoice_number}`);
+//     doc.text(`Order: ${invoice.order.order_number}`);
+//     doc.text(`Date: ${invoice.createdAt}`);
 
-    doc.moveDown();
+//     doc.moveDown();
 
-    doc.text("Items:");
-    invoice.order.items.forEach(item => {
-      doc.text(`${item.product.name} x ${item.quantity} - ₦${item.total_price}`);
-    });
+//     doc.text("Items:");
+//     invoice.order.items.forEach(item => {
+//       doc.text(`${item.product.name} x ${item.quantity} - ₦${item.total_price}`);
+//     });
 
-    doc.moveDown();
-    doc.text(`Total: ₦${invoice.total_amount}`);
+//     doc.moveDown();
+//     doc.text(`Total: ₦${invoice.total_amount}`);
 
-    doc.end();
+//     doc.end();
 
-    stream.on("finish", () => {
-      res.download(filePath);
-    });
+//     stream.on("finish", () => {
+//       res.download(filePath);
+//     });
 
-  } catch (err) {
-    console.error("Invoice PDF error:", err);
-    res.status(500).json({ message: "Failed to generate invoice" });
-  }
-};
+//   } catch (err) {
+//     console.error("Invoice PDF error:", err);
+//     res.status(500).json({ message: "Failed to generate invoice" });
+//   }
+// };
 
 
 // exports.createOrder = async (req, res) => {
@@ -1029,7 +1293,8 @@ exports.createOrder = async (req, res) => {
         { transaction: t }
       );
     }
-
+    // await earnPointsForOrder(order.id, t);
+    // await awardPointsForOrder(order,t)
     await t.commit();
     // const customer = await User.findByPk(customer_id);
     // if (customer?.email || customer && customer.email) {

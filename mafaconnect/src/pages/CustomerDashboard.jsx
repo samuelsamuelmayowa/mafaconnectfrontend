@@ -21,11 +21,12 @@ import { KYCStatusCard } from "@/components/KYCStatusCard";
 // import { TierProgressCard } from "@/components/TierProgressCard"; // <-- RESTORED
 
 import { TierProgressCard } from "@/components/TierProgressCard";
+import { useRewards } from "@/hooks/useRewards";
 export default function CustomerDashboard() {
   const { user } = useAuth();
   const { data: kycStatus } = useKYCStatus();
   const API_BASE = import.meta.env.VITE_HOME_OO;
-
+  // const { rewards } = useRewards();
   // -----------------------------------------
   // CUSTOMER PROFILE
   // -----------------------------------------
@@ -41,14 +42,14 @@ export default function CustomerDashboard() {
   // -----------------------------------------
   // LOYALTY ACCOUNT
   // -----------------------------------------
-  const { data: loyaltyAccount } = useQuery({
-    queryKey: ["customer-loyalty", user?.id],
-    queryFn: async () => {
-      const { data } = await axios.get(`${API_BASE}/api/loyalty/${user?.id}`);
-      return data;
-    },
-    enabled: !!user?.id,
-  });
+  // const { data: loyaltyAccount } = useQuery({
+  //   queryKey: ["customer-loyalty", user?.id],
+  //   queryFn: async () => {
+  //     const { data } = await axios.get(`${API_BASE}/loyalty/${user?.id}`);
+  //     return data;
+  //   },
+  //   enabled: !!user?.id,
+  // });
 
   // -----------------------------------------
   // RECENT ORDERS
@@ -57,7 +58,8 @@ export default function CustomerDashboard() {
     queryKey: ["customer-recent-orders", user?.id],
     queryFn: async () => {
       const { data } = await axios.get(
-        `${API_BASE}/api/orders/${user?.id}?limit=5`
+        `${API_BASE}orders/${user?.id}`
+        //  `${API_BASE}orders/${user?.id}?limit=5`
       );
       return data;
     },
@@ -71,7 +73,7 @@ export default function CustomerDashboard() {
     queryKey: ["customer-pending-invoices", user?.id],
     queryFn: async () => {
       const { data } = await axios.get(
-        `${API_BASE}/api/invoices/${user?.id}?status=pending`
+        `${API_BASE}/invoices/${user?.id}?status=pending`
       );
       return data;
     },
@@ -95,6 +97,48 @@ export default function CustomerDashboard() {
   // -----------------------------------------
   // LOADING STATE
   // -----------------------------------------
+  const { data: loyaltyAccount, isLoading: loadingAccount } = useQuery({
+    queryKey: ["customer-loyalty", user?.id],
+    queryFn: async () => {
+      const { data } = await axios.get(`${API_BASE}/loyalty/${user?.id}`);
+      console.log("form here ",data)
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const { data: tiers = [], isLoading: loadingTiers } = useQuery({
+    queryKey: ["loyalty-tiers"],
+    queryFn: async () => {
+      const { data } = await axios.get(`${API_BASE}/loyalty/tiers`);
+      return data.data || []; // backend returns { data: [...] }
+    },
+  });
+
+  const { data: rewards = [], isLoading: loadingRewards } = useQuery({
+    queryKey: ["loyalty-rewards"],
+    queryFn: async () => {
+      const { data } = await axios.get(`${API_BASE}/loyalty/rewards`);
+      return data;
+    },
+  });
+
+  const normalizedTiers = Array.isArray(tiers)
+    ? tiers.map((t) => ({
+        ...t,
+        // Backend sends benefits as JSON string → parse safely
+        benefits:
+          typeof t.benefits === "string"
+            ? JSON.parse(t.benefits || "[]")
+            : t.benefits || [],
+
+        // Fallback for multiplier
+        multiplier: t.multiplier || 1,
+
+        // Ensure sort order exists (otherwise dashboard crashes)
+        sort_order: t.sort_order ?? t.min_points ?? 0,
+      }))
+    : [];
   if (loadingOrders) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -106,6 +150,9 @@ export default function CustomerDashboard() {
   // -----------------------------------------
   // UI OUTPUT
   // -----------------------------------------
+  if (loadingAccount || loadingTiers || loadingRewards) {
+    return <p>Loading...</p>;
+  }
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
       {/* WELCOME HEADER */}
@@ -130,52 +177,53 @@ export default function CustomerDashboard() {
       {/* TIER PROGRESS CARD */}
       {loyaltyAccount && (
         // <TierProgressCard
-        //   tiers={[
-        //     {
-        //       id: 1,
-        //       name: "Bronze",
-        //       min_points: 1,
-        //       max_points: 500,
-        //       multiplier: 1,
-        //       benefits: ["Basic member benefits"],
-        //       color: "text-amber-600",
-        //       icon: null,
-        //       sort_order: 1,
-        //       active: true,
-        //     },
-        //     {
-        //       id: 2,
-        //       name: "Silver",
-        //       min_points: 501,
-        //       max_points: 1000,
-        //       multiplier: 1.2,
-        //       benefits: ["Priority support", "Faster rewards"],
-        //       color: "text-slate-400",
-        //       icon: null,
-        //       sort_order: 2,
-        //       active: true,
-        //     },
-        //     {
-        //       id: 3,
-        //       name: "Gold",
-        //       min_points: 1001,
-        //       max_points: 2000,
-        //       multiplier: 1.5,
-        //       benefits: ["VIP support", "Exclusive discounts"],
-        //       color: "text-yellow-500",
-        //       icon: null,
-        //       sort_order: 3,
-        //       active: true,
-        //     },
-        //   ]}
+        //   tiers={tiers || []} // <-- dynamic tiers from backend
         //   currentPoints={loyaltyAccount.points_balance}
         //   currentTierName={loyaltyAccount.tier}
         // />
         <TierProgressCard
-  tiers={tiers || []}       // <-- dynamic tiers from backend
-  currentPoints={loyaltyAccount.points_balance}
-  currentTierName={loyaltyAccount.tier}
-/>
+          tiers={normalizedTiers}
+          currentPoints={loyaltyAccount.points_balance}
+          currentTierName={loyaltyAccount.tier}
+        />
+      )}
+
+      {/* Redeem Rewards CTA */}
+      {loyaltyAccount && rewards && rewards.length > 0 && (
+        <Card className="border-primary/50 bg-gradient-to-r from-primary/5 to-primary/10">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-primary" />
+                  Redeem Your Points
+                </CardTitle>
+                <CardDescription>
+                  You have {loyaltyAccount.points_balance.toLocaleString()}{" "}
+                  points available
+                </CardDescription>
+              </div>
+              <Badge variant="secondary">
+                {
+                  rewards.filter(
+                    (r) =>
+                      r.active && r.points_cost <= loyaltyAccount.points_balance
+                  ).length
+                }{" "}
+                Available
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Explore our rewards catalog and redeem your points for exclusive
+              benefits, discounts, and special offers.
+            </p>
+            <Link to="/loyalty">
+              <Button className="w-full sm:w-auto">Browse Rewards</Button>
+            </Link>
+          </CardContent>
+        </Card>
       )}
 
       {/* STATS CARDS */}

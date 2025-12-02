@@ -15,6 +15,7 @@ export function useRewards() {
   // ================================
   const { data: rewards, isLoading } = useQuery({
     queryKey: ["rewards", isStaff],
+    // Staff see ALL rewards, customers only see active
     queryFn: async () => {
       const url = isStaff
         ? `${API_URL}/rewards` // staff sees all

@@ -15,7 +15,7 @@ export function useLoyaltyStats() {
     queryKey: ["loyalty-stats"],
     queryFn: async () => {
       // Call REST endpoint that aggregates loyalty stats
-      const data = await fetchAPI("/api/loyalty/stats");
+      const data = await fetchAPI("/loyalty/stats");
 
       // Expected response shape:
       // {

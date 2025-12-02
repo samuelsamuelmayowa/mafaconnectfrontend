@@ -29,7 +29,8 @@ const {
   getCustomerInvoices,
   downloadInvoice,
   confirmPayment,
-  downloadInvoicePDF
+  downloadInvoicePDF,
+  getInvoiceDetails
 } = require("../controllers/adminController");
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
@@ -60,6 +61,7 @@ router.put("/orders/:id/status", updateOrderStatus);
 /// invoice 
 router.get("/customer/invoices", authenticate, getCustomerInvoices);
 router.get("/customer/invoice/:invoice_number/download", authenticate, downloadInvoice);
+router.get("/customer/invoice/:invoice_number", authenticate, getInvoiceDetails);
 router.get("/customer/invoice/:invoice_number/pdf", authenticate, downloadInvoicePDF);
 
 

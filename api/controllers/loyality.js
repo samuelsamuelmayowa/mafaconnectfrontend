@@ -4,56 +4,739 @@ const { Op } = require("sequelize");
 const { User } = require("../models/user");
 require("dotenv").config();
 const cloudinary = require("../cloudinary");
-const { Product, ProductImage, Location, ProductLocationStock } = require("../models");
+const { Product, ProductImage, Location, ProductLocationStock, Order, OrderItem, LoyaltyTransaction, LoyaltyAccount } = require("../models");
 const { sequelize } = require("../db");
 const { Reward } = require("../models/Reward");
 const { LoyaltyTier } = require("../models/LoyaltyTier");
+const { calculatePointsFromOrderItems, calculatePointsFromOrder } = require("./calu");
 // const Reward = require("../models/Reward.js");
 
-exports.createReward = async (req, res) => {
-    try {
-        const { title, description, points_cost, reward_type, stock_limit, active } = req.body;
+// exports.awardPointsForOrder = async (orderId) => {
+//   try {
+//     const order = await Order.findOne({
+//       where: { id: orderId },
+//       include: [
+//         {
+//           model: OrderItem,
+//           as: "items",
+//           include: [{ model: Product }]
+//         }
+//       ]
+//     });
 
-        const existing = await Reward.findOne({ where: { title } });
-        if (existing) {
-            return res.status(409).json({
-                message: "Reward title already exists",
-            });
-        }
-        // Validate required fields
-        if (!title || !points_cost || !reward_type) {
-            return res.status(400).json({
-                message: "Missing required fields",
-            });
-        }
+//     if (!order) return;
 
-        // Create reward
-        const reward = await Reward.create({
-            title,
-            description,
-            points_cost,
-            reward_type,
-            stock_limit: stock_limit || null,
-            active: active ?? true,
-        });
+//     if (order.payment_status !== "paid") {
+//       console.log("Order is not paid — no points awarded");
+//       return;
+//     }
 
-        return res.status(201).json({
-            message: "Reward created successfully",
-            reward,
-        });
-    } catch (error) {
-        console.error("CREATE REWARD ERROR:", error);
+//     // Ensure user loyalty account exists
+//     let account = await LoyaltyAccount.findOne({
+//       where: { customer_id: order.customer_id }
+//     });
 
-        return res.status(500).json({
-            message: "Failed to create reward",
-            error: error.message,
-        });
+//     if (!account) {
+//       account = await LoyaltyAccount.create({
+//         customer_id: order.customer_id,
+//         points_balance: 0,
+//         tier: "Bronze",
+//       });
+//     }
+
+//     // Prevent awarding twice
+//     const alreadyAwarded = await LoyaltyTransaction.findOne({
+//       where: {
+//         account_id: account.id,
+//         description: `Order #${order.id}`
+//       }
+//     });
+
+//     if (alreadyAwarded) {
+//       console.log("Points already awarded for this order.");
+//       return;
+//     }
+
+//     // Calculate points
+//     const points = calculatePointsFromOrder(order);
+
+//     // Add points
+//     account.points_balance += points;
+//     await account.save();
+
+//     // Insert loyalty transaction record
+//     await LoyaltyTransaction.create({
+//       account_id: account.id,
+//       points,
+//       description: `Order #${order.id}`
+//     });
+
+//     console.log(`POINTS ADDED — ${points} points for Order ${order.id}`);
+
+//   } catch (err) {
+//     console.error("EARN POINTS ERROR:", err);
+//   }
+// };
+
+// async function awardPointsForOrder(orderInput) {
+//   try {
+//     console.log("Processing points for order:", orderInput);
+
+//     // Reload with needed relations (important)
+//      const orderId = typeof orderInput === "object" ? orderInput.id : orderInput;
+//     const fullOrder = await Order.findByPk(orderId, {
+//       include: [
+//         {
+//           model: OrderItem,
+    
+//           as: "items",
+//           include: [{ model: Product, as: "product" }]
+//         }
+//       ]
+//     });
+
+//     if (!fullOrder) {
+//       console.log("ORDER NOT FOUND WHEN AWARDING POINTS");
+//       return;
+//     }
+
+//     if (!fullOrder.items || fullOrder.items.length === 0) {
+//       console.log("NO ITEMS — CANNOT AWARD POINTS");
+//       return;
+//     }
+
+//     // Total points is total KG purchased
+//     let totalPoints = 0;
+
+//     fullOrder.items.forEach(item => {
+//       const KG = item.product?.bag_size_kg || 0;
+//       const qty = item.quantity || 0;
+
+//       totalPoints += KG * qty;
+//     });
+
+//     // Get loyalty account
+//     let account = await LoyaltyAccount.findOne({
+//       where: { customer_id: fullOrder.customer_id }
+//     });
+
+//     // Auto-create account if not exist
+//     if (!account) {
+//       account = await LoyaltyAccount.create({
+//         customer_id: fullOrder.customer_id,
+//         points_balance: 0,
+//         tier: "Bronze"
+//       });
+//     }
+
+//     // Add points
+//     account.points_balance += totalPoints;
+//     await account.save();
+
+//     // Log transaction
+//     // await LoyaltyTransaction.create({
+//     //   loyalty_account_id: account.id,
+//     //   points: totalPoints,
+//     //   type: "earn",
+//     //   source: `Order ${fullOrder.order_number}`
+//     // });
+//     //     await LoyaltyTransaction.create({
+//     //   account_id: account.id,                 // correct field
+//     //   points: totalPoints,
+//     //   type: "earn",
+//     //   description: `Order ${fullOrder.order_number}`,   // correct field
+//     // });
+//     // await LoyaltyTransaction.create({
+//     //   loyalty_account_id: account.id,
+//     //   points: totalPoints,
+//     //   type: "earn",
+//     //   description: `Order ${fullOrder.order_number}`,
+//     // });
+//      await LoyaltyTransaction.create({
+//       loyalty_account_id: account.id,
+//       points: totalPoints,
+//       type: "earn",
+//       description: `Order #${fullOrder.id}`,
+//       meta: JSON.stringify({
+//         order_id: fullOrder.id,
+//         items: fullOrder.items.map(i => ({
+//           product: i.product?.name,
+//           kg: i.product?.bag_size_kg,
+//           qty: i.quantity
+//         }))
+//       })
+//     });
+
+//     console.log(`POINTS ADDED: ${totalPoints} -> ACCOUNT: ${account.id}`);
+
+//   } catch (err) {
+//     console.error("AWARD POINTS ERROR:", err);
+//   }
+// }
+async function awardPointsForOrder(orderInput) {
+  try {
+    console.log("RAW awardPointsForOrder input:", orderInput);
+
+    const orderId =
+      typeof orderInput === "object"
+        ? orderInput.id
+        : Number(orderInput);
+
+    console.log("Processed Order ID:", orderId);
+
+    if (!orderId) {
+      console.log("❌ INVALID ORDER ID:", orderId);
+      return;
     }
+
+    const fullOrder = await Order.findByPk(orderId, {
+      include: [
+        {
+          model: OrderItem,
+          as: "items",
+          include: [{ model: Product, as: "product" }]
+        }
+      ]
+    });
+
+    if (!fullOrder) {
+      console.log("❌ ORDER NOT FOUND IN DATABASE FOR ID:", orderId);
+      return;
+    }
+
+    console.log("✅ ORDER FOUND FOR POINTS:", fullOrder.id);
+
+    if (!fullOrder.items || fullOrder.items.length === 0) {
+      console.log("❌ NO ITEMS — cannot award points");
+      return;
+    }
+
+    let totalPoints = 0;
+    // fullOrder.items.forEach(item => {
+    //   const KG = item.product?.bag_size_kg || 0;
+    //   const qty = item.quantity || 0;
+    //   totalPoints += KG * qty;
+    // });
+fullOrder.items.forEach(item => {
+  console.log("ITEM LOG =>", {
+    product_id: item.product_id,
+    product_name: item.product?.name,
+    bag_size_kg: item.product?.bag_size_kg,
+    quantity: item.quantity
+  });
+
+  const KG = item.product?.bag_size_kg || 0;
+  const qty = item.quantity || 0;
+
+  totalPoints += KG * qty;
+});
+    let account = await LoyaltyAccount.findOne({
+      where: { customer_id: fullOrder.customer_id }
+    });
+
+    if (!account) {
+      console.log("Creating new loyalty account...");
+      account = await LoyaltyAccount.create({
+        customer_id: fullOrder.customer_id,
+        points_balance: 0,
+        tier: "Bronze"
+      });
+    }
+
+    account.points_balance += totalPoints;
+    await account.save();
+
+    await LoyaltyTransaction.create({
+      loyalty_account_id: account.id,
+      points: totalPoints,
+      type: "earn",
+      description: `Order #${fullOrder.id}`
+    });
+
+    console.log(`🎉 POINTS ADDED: ${totalPoints} to account ${account.id}`);
+
+  } catch (err) {
+    console.error("AWARD POINTS ERROR:", err);
+  }
+}
+
+// exports.earnPointsForOrder = async (orderId, tFromCaller = null) => {
+//   const transaction = tFromCaller || (await sequelize.transaction());
+//   const commitNeeded = !tFromCaller;
+
+//   try {
+//     // 1) Load order + items + product sizes
+//     const order = await Order.findOne({
+//       where: { id: orderId },
+//       include: [
+//         {
+//           model: OrderItem,
+//           as: "items",
+//           include: [
+//             {
+//               model: Product,
+//               as: "product",
+//               attributes: ["id", "name", "bag_size_kg"], // CHANGE if name differs
+//             },
+//           ],
+//         },
+//       ],
+//       transaction,
+//     });
+
+//     if (!order) {
+//       if (commitNeeded) await transaction.rollback();
+//       return;
+//     }
+
+//     // 2) Calculate points from KG
+//     const pointsEarned = calculatePointsFromOrder(order.items || []);
+
+//     if (pointsEarned <= 0) {
+//       if (commitNeeded) await transaction.commit();
+//       return;
+//     }
+
+//     // 3) Get / create loyalty account
+//     let account = await getOrCreateLoyaltyAccount(
+//       order.customer_id,
+//       transaction
+//     );
+
+//     // 4) Update balances
+//     account.points_balance += pointsEarned;
+//     account.lifetime_points_earned += pointsEarned;
+//     await account.save({ transaction });
+
+//     // 5) Log transaction
+//     await LoyaltyTransaction.create(
+//       {
+//         loyalty_account_id: account.id,
+//         type: "earn",
+//         points: pointsEarned,
+//         source: "order",
+//         source_ref: order.order_number || String(order.id),
+//         note: `Earned ${pointsEarned} pts from order ${order.order_number || order.id}`,
+//       },
+//       { transaction }
+//     );
+
+//     // 6) Recalculate tier (Bronze / Silver / Gold based on tiers table)
+//     await recalculateTierForAccount(account, transaction);
+
+//     if (commitNeeded) await transaction.commit();
+//   } catch (err) {
+//     console.error("EARN POINTS FOR ORDER (KG) ERROR:", err);
+//     if (commitNeeded) await transaction.rollback();
+//   }
+// };
+
+const earnPointsForOrder = async (orderArg) => {
+  try {
+    // orderArg can be an ID or object
+    const orderId = typeof orderArg === "object" ? orderArg.id : orderArg;
+
+    const order = await Order.findOne({
+      where: { id: orderId },
+      include: [
+        {
+          model: OrderItem,
+          as: "items",
+          include: [
+            {
+              model: Product,
+              as: "product",
+              attributes: ["id", "name", "bag_size_kg"],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!order) return console.log("ORDER NOT FOUND");
+    if (order.payment_status !== "paid")
+      return console.log("PAYMENT NOT PAID — POINTS SKIPPED");
+
+    // 1. Ensure customer has a loyalty account
+    let account = await LoyaltyAccount.findOne({
+      where: { customer_id: order.customer_id },
+    });
+
+    if (!account) {
+      account = await LoyaltyAccount.create({
+        customer_id: order.customer_id,
+        points_balance: 0,
+        tier: "Bronze",
+      });
+    }
+
+    // 2. Prevent double-earning
+    const already = await LoyaltyTransaction.findOne({
+      where: {
+        loyalty_account_id: account.id,
+        description: `Order #${order.id}`,
+        type: "earn",
+      },
+    });
+
+    if (already) {
+      console.log("POINTS ALREADY AWARDED FOR THIS ORDER");
+      return;
+    }
+
+    // 3. Calculate points based on bag_size_kg
+    const earnedPoints = calculatePointsFromOrder(order);
+
+    if (earnedPoints <= 0) {
+      console.log("NO POINTS EARNED");
+      return;
+    }
+
+    // 4. Add points
+    account.points_balance += earnedPoints;
+    await account.save();
+
+    // 5. Save transaction log
+    await LoyaltyTransaction.create({
+      loyalty_account_id: account.id,
+      type: "earn",
+      points: earnedPoints,
+      description: `Order #${order.id}`,
+      meta: JSON.stringify({
+        order_id: order.id,
+        items: order.items.map((i) => ({
+          product: i.product?.name,
+          kg: i.product?.bag_size_kg,
+          qty: i.quantity,
+        })),
+      }),
+    });
+
+    console.log(`AWARDED ${earnedPoints} POINTS FOR ORDER #${order.id}`);
+  } catch (err) {
+    console.error("EARN POINTS ERROR:", err);
+  }
 };
 
 
 
-exports.getAllRewards = async (req, res) => {
+const redeemReward = async (req, res) => {
+  const customerId = req.user && req.user.id; // from authenticate middleware
+  const { rewardId } = req.body;
+
+  if (!customerId || !rewardId) {
+    return res.status(400).json({ message: "Missing customer or reward id" });
+  }
+
+  const t = await sequelize.transaction();
+
+  try {
+    const account = await getOrCreateLoyaltyAccount(customerId, t);
+
+    const reward = await Reward.findOne({
+      where: { id: rewardId, active: true },
+      transaction: t,
+      lock: t.LOCK.UPDATE,
+    });
+
+    if (!reward) {
+      await t.rollback();
+      return res.status(404).json({ message: "Reward not found or inactive" });
+    }
+
+    if (reward.stock_limit !== null && reward.stock_limit <= 0) {
+      await t.rollback();
+      return res.status(400).json({ message: "Reward out of stock" });
+    }
+
+    if (account.points_balance < reward.points_cost) {
+      await t.rollback();
+      return res.status(400).json({ message: "Not enough points" });
+    }
+
+    // Deduct points
+    account.points_balance -= reward.points_cost;
+    account.lifetime_points_redeemed += reward.points_cost;
+    await account.save({ transaction: t });
+
+    // Log transaction (redeem = negative points)
+    await LoyaltyTransaction.create(
+      {
+        loyalty_account_id: account.id,
+        type: "redeem",
+        points: -reward.points_cost,
+        source: "reward",
+        source_ref: String(reward.id),
+        note: `Redeemed reward: ${reward.title}`,
+      },
+      { transaction: t }
+    );
+
+    // Decrease stock
+    if (reward.stock_limit !== null) {
+      reward.stock_limit = reward.stock_limit - 1;
+      await reward.save({ transaction: t });
+    }
+
+    // Generate redemption code (simple version)
+    const redemptionCode = `RDM-${Date.now()}-${Math.floor(
+      Math.random() * 1000
+    )}`;
+
+    const expiresAt = null; // or set 30 days ahead if you want
+
+    const redemption = await RewardRedemption.create(
+      {
+        loyalty_account_id: account.id,
+        reward_id: reward.id,
+        customer_id: customerId,
+        points_spent: reward.points_cost,
+        redemption_code: redemptionCode,
+        status: "active",
+        expires_at: expiresAt,
+      },
+      { transaction: t }
+    );
+
+    await recalculateTierForAccount(account, t);
+
+    await t.commit();
+
+    return res.status(201).json({
+      message: "Reward redeemed successfully",
+      redemption_code: redemption.redemption_code,
+      redemption: {
+        id: redemption.id,
+        status: redemption.status,
+        points_spent: redemption.points_spent,
+        created_at: redemption.createdAt,
+        expires_at: redemption.expires_at,
+        used_at: redemption.used_at,
+        reward: {
+          id: reward.id,
+          title: reward.title,
+          description: reward.description,
+        },
+      },
+    });
+  } catch (err) {
+    console.error("REDEEM REWARD ERROR:", err);
+    await t.rollback();
+    return res.status(500).json({ message: "Failed to redeem reward" });
+  }
+};
+
+// ===================================================
+// 5. RECENT REDEMPTIONS (staff dashboard)
+//    GET /api/loyalty/redemptions/recent?limit=5
+// ===================================================
+const getRecentRedemptions = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit, 10) || 5;
+
+    const redemptions = await RewardRedemption.findAll({
+      order: [["createdAt", "DESC"]],
+      limit,
+      include: [
+        { model: Reward, attributes: ["title", "description"] },
+        { model: Customer, attributes: ["name"] },
+      ],
+    });
+
+    const formatted = redemptions.map((r) => ({
+      id: r.id,
+      status: r.status,
+      points_spent: r.points_spent,
+      created_at: r.createdAt,
+      expires_at: r.expires_at,
+      used_at: r.used_at,
+      reward: r.Reward
+        ? {
+          title: r.Reward.title,
+          description: r.Reward.description,
+        }
+        : null,
+      customer: r.Customer ? { name: r.Customer.name } : null,
+    }));
+
+    return res.json(formatted);
+  } catch (err) {
+    console.error("GET RECENT REDEMPTIONS ERROR:", err);
+    return res.status(500).json({ message: "Failed to load redemptions" });
+  }
+};
+
+
+
+
+
+
+
+
+async function getOrCreateLoyaltyAccount(customerId, t = null) {
+  let account = await LoyaltyAccount.findOne({
+    where: { customer_id: customerId },
+    transaction: t || undefined,
+  });
+
+  if (!account) {
+    account = await LoyaltyAccount.create(
+      {
+        customer_id: customerId,
+        points_balance: 0,
+        lifetime_points_earned: 0,
+        lifetime_points_redeemed: 0,
+        tier: "Bronze",
+      },
+      { transaction: t || undefined }
+    );
+  }
+
+  return account;
+}
+
+// ================================
+// Helper: recalc tier by points
+// ================================
+async function recalculateTierForAccount(account, t = null) {
+  const tiers = await LoyaltyTier.findAll({
+    where: { active: true },
+    order: [["min_points", "ASC"]],
+    transaction: t || undefined,
+  });
+
+  let newTierName = account.tier || "Bronze";
+
+  for (const tier of tiers) {
+    if (
+      account.points_balance >= tier.min_points &&
+      (tier.max_points === null || account.points_balance <= tier.max_points)
+    ) {
+      newTierName = tier.name;
+    }
+  }
+
+  if (newTierName !== account.tier) {
+    account.tier = newTierName;
+    await account.save({ transaction: t || undefined });
+  }
+
+  return account;
+}
+
+// ===================================================
+// 1. GET loyalty account by customerId
+//    GET /api/loyalty/:customerId
+// ===================================================
+const getLoyaltyAccount = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+
+    let account = await getOrCreateLoyaltyAccount(customerId);
+
+    // Ensure tier is up to date
+    account = await recalculateTierForAccount(account);
+
+    return res.json({
+      id: account.id,
+      customer_id: account.customer_id,
+      points_balance: account.points_balance,
+      lifetime_points_earned: account.lifetime_points_earned,
+      lifetime_points_redeemed: account.lifetime_points_redeemed,
+      tier: account.tier,
+      created_at: account.createdAt,
+      updated_at: account.updatedAt,
+    });
+  } catch (err) {
+    console.error("GET LOYALTY ACCOUNT ERROR:", err);
+    return res.status(500).json({ message: "Failed to load loyalty account" });
+  }
+};
+
+// ===================================================
+// 2. GET transactions for account
+//    GET /api/loyalty/accounts/:accountId/transactions?limit=10
+// ===================================================
+const getAccountTransactions = async (req, res) => {
+  try {
+    const { accountId } = req.params;
+    const limit = parseInt(req.query.limit, 10) || 10;
+
+    const transactions = await LoyaltyTransaction.findAll({
+      where: { loyalty_account_id: accountId },
+      order: [["createdAt", "DESC"]],
+      limit,
+    });
+
+    const formatted = transactions.map((t) => ({
+      id: t.id,
+      loyalty_account_id: t.loyalty_account_id,
+      type: t.type,
+      points: t.points,
+      source: t.source,
+      source_ref: t.source_ref,
+      note: t.note,
+      created_at: t.createdAt,
+    }));
+
+    return res.json(formatted);
+  } catch (err) {
+    console.error("GET ACCOUNT TRANSACTIONS ERROR:", err);
+    return res
+      .status(500)
+      .json({ message: "Failed to load loyalty transactions" });
+  }
+};
+
+
+
+
+
+
+const createReward = async (req, res) => {
+  try {
+    const { title, description, points_cost, reward_type, stock_limit, active } = req.body;
+
+    const existing = await Reward.findOne({ where: { title } });
+    if (existing) {
+      return res.status(409).json({
+        message: "Reward title already exists",
+      });
+    }
+    // Validate required fields
+    if (!title || !points_cost || !reward_type) {
+      return res.status(400).json({
+        message: "Missing required fields",
+      });
+    }
+
+    // Create reward
+    const reward = await Reward.create({
+      title,
+      description,
+      points_cost,
+      reward_type,
+      stock_limit: stock_limit || null,
+      active: active ?? true,
+    });
+
+    return res.status(201).json({
+      message: "Reward created successfully",
+      reward,
+    });
+  } catch (error) {
+    console.error("CREATE REWARD ERROR:", error);
+
+    return res.status(500).json({
+      message: "Failed to create reward",
+      error: error.message,
+    });
+  }
+};
+
+
+
+const getAllRewards = async (req, res) => {
   try {
     const rewards = await Reward.findAll({
       order: [["createdAt", "DESC"]],
@@ -72,7 +755,7 @@ exports.getAllRewards = async (req, res) => {
 
 
 
-exports.updateReward = async (req, res) => {
+const updateReward = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -97,7 +780,7 @@ exports.updateReward = async (req, res) => {
 // ==============================
 // DELETE REWARD
 // ==============================
-exports.deleteReward = async (req, res) => {
+const deleteReward = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -119,7 +802,7 @@ exports.deleteReward = async (req, res) => {
 // ==============================
 // TOGGLE ACTIVE STATUS
 // ==============================
-exports.toggleStatus = async (req, res) => {
+const toggleStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { active } = req.body;
@@ -159,7 +842,7 @@ exports.toggleStatus = async (req, res) => {
 //     return res.status(500).json({ message: "Failed to fetch tiers" });
 //   }
 // };
-exports.getAllTiers = async (req, res) => {
+const getAllTiers = async (req, res) => {
   try {
     const tiers = await LoyaltyTier.findAll();
 
@@ -239,7 +922,7 @@ exports.getAllTiers = async (req, res) => {
 //     return res.status(500).json({ message: "Failed to create tier" });
 //   }
 // };
-exports.createTier = async (req, res) => {
+const createTier = async (req, res) => {
   try {
     const { name, min_points, max_points, multiplier, benefits } = req.body;
 
@@ -285,7 +968,7 @@ exports.createTier = async (req, res) => {
 // ===============================
 // UPDATE TIER
 // ===============================
-exports.updateTier = async (req, res) => {
+const updateTier = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -309,7 +992,7 @@ exports.updateTier = async (req, res) => {
 // ===============================
 // DELETE TIER
 // ===============================
-exports.deleteTier = async (req, res) => {
+const deleteTier = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -330,7 +1013,7 @@ exports.deleteTier = async (req, res) => {
 // ===============================
 // TOGGLE ACTIVE STATUS
 // ===============================
-exports.toggleTierStatus = async (req, res) => {
+const toggleTierStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { active } = req.body;
@@ -351,4 +1034,35 @@ exports.toggleTierStatus = async (req, res) => {
     console.error("TOGGLE STATUS ERROR:", error);
     return res.status(500).json({ message: "Failed to update tier status" });
   }
+};
+
+
+
+
+
+
+module.exports = {
+  // Award points
+  awardPointsForOrder,
+  earnPointsForOrder,
+
+  // Loyalty Accounts
+  getLoyaltyAccount,
+  getAccountTransactions,
+
+  // Rewards
+  createReward,
+  getAllRewards,
+  updateReward,
+  deleteReward,
+  toggleStatus,
+  redeemReward,
+  getRecentRedemptions,
+
+  // Tiers
+  getAllTiers,
+  createTier,
+  updateTier,
+  deleteTier,
+  toggleTierStatus,
 };

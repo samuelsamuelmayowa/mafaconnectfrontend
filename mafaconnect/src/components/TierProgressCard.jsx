@@ -13,7 +13,12 @@ import { cn } from "@/lib/utils";
 
 export function TierProgressCard({ tiers, currentPoints, currentTierName }) {
   if (!tiers || tiers.length === 0) return null;
-
+const normalizedTiers = tiers.map(t => ({
+  ...t,
+  benefits: typeof t.benefits === "string" ? JSON.parse(t.benefits || "[]") : t.benefits,
+  multiplier: t.multiplier || 1,
+  sort_order: t.sort_order ?? t.min_points ?? 0
+}));
   const sortedTiers = [...tiers].sort((a, b) => a.sort_order - b.sort_order);
   const currentTierIndex = sortedTiers.findIndex(
     (t) => t.name === currentTierName
