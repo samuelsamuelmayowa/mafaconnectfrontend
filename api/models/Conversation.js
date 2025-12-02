@@ -3,7 +3,8 @@ const { sequelize } = require("../db");
 
 const Conversation = sequelize.define("Conversation", {
   id: {
-    type: DataTypes.INTEGER,
+type: DataTypes.INTEGER.UNSIGNED,    
+    // type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
   },
@@ -12,8 +13,10 @@ const Conversation = sequelize.define("Conversation", {
     type: DataTypes.ENUM("open", "closed"),
     defaultValue: "open",
   },
-  created_by: DataTypes.INTEGER,
-  assigned_to: DataTypes.INTEGER,
+  created_by:{type: DataTypes.INTEGER.UNSIGNED} ,
+  // DataTypes.INTEGER,
+  assigned_to:{type: DataTypes.INTEGER.UNSIGNED},
+  //  DataTypes.INTEGER,
 }, {
   tableName: "conversations",
   timestamps: true,

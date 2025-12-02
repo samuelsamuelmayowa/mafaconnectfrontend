@@ -19,7 +19,8 @@ const RewardRedemption = sequelize.define(
             allowNull: false,
         },
         customer_id: {
-            type: DataTypes.INTEGER, // MUST match users.id
+            type: DataTypes.INTEGER.UNSIGNED,
+            // type: DataTypes.INTEGER, // MUST match users.id
             allowNull: false,
             references: {
                 model: "users",

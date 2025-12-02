@@ -14,7 +14,9 @@ const Invoice = sequelize.define("Invoice", {
   },
 
   order_id: {
-    type: DataTypes.INTEGER,
+    // type: DataTypes.INTEG
+    // ER,
+     type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false,
   },
 

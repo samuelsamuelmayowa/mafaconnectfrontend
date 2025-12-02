@@ -19,7 +19,7 @@ sequelize.authenticate()
   .then(() => console.log('Database connected!'))
   .catch(err => console.error('Unable to connect:', err));
 
-// const sequelize = new Sequelize(
+// const sequelize = new Sequelize(3
 //   process.env.DB_NAME,
 //   process.env.DB_USER,
 //   process.env.DB_PASS,

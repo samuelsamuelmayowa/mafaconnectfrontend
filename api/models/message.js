@@ -10,17 +10,23 @@ const Message = sequelize.define("Message", {
   },
 
   conversation_id: {
-    type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
+
+    // type: DataTypes.INTEGER,
     allowNull: false,
   },
 
   sender_id: {
-    type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
+
+    // type: DataTypes.INTEGER,
     allowNull: false,
   },
 
   receiver_id: {
-    type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
+
+    // type: DataTypes.INTEGER,
     allowNull: true,
   },
 

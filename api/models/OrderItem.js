@@ -9,11 +9,13 @@ const OrderItem = sequelize.define("OrderItem", {
   },
 
   order_id: {
-    type: DataTypes.INTEGER,
+     type: DataTypes.INTEGER.UNSIGNED,
+    // type: DataTypes.INTEGER,
   },
 
   product_id: {
-    type: DataTypes.INTEGER,
+     type: DataTypes.INTEGER.UNSIGNED,
+    // type: DataTypes.INTEGER,
   },
 
   quantity: {

@@ -6,7 +6,8 @@ const LoyaltyAccount = sequelize.define("LoyaltyAccount", {
 
   // customer_id: { type: DataTypes.INTEGER, allowNull: false },
     customer_id: {
-         type: DataTypes.INTEGER,   
+      type: DataTypes.INTEGER.UNSIGNED,
+        //  type: DataTypes.INTEGER,   
     //   type: DataTypes.INTEGER.UNSIGNED,  // MUST match users.id
       allowNull: false,
       unique: true,

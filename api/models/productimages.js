@@ -8,7 +8,10 @@ const ProductImage = sequelize.define(
       type: DataTypes.INTEGER.UNSIGNED,
       //  type: DataTypes.INTEGER,
        autoIncrement: true, primaryKey: true },
-    product_id: { type: DataTypes.INTEGER, allowNull: false },
+    product_id: {
+      //  type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: false },
     image_url: { type: DataTypes.STRING, allowNull: false },
     cloudinary_public_id: { type: DataTypes.STRING, allowNull: false },
   },

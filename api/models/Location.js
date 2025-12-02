@@ -4,7 +4,8 @@ const { User } = require("./user");
 
 const Location = sequelize.define("Location", {
   id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
+    // type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
   },
@@ -62,7 +63,8 @@ const Location = sequelize.define("Location", {
   },
 
   manager_id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.INTEGER.UNSIGNED,
+    // type: DataTypes.INTEGER,
     allowNull: true,
   },
 

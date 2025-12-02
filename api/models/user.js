@@ -34,7 +34,7 @@ const User = sequelize.define("User", {
 
 module.exports = { User };
 
-// const { DataTypes } = require("sequelize");
+
 // const { sequelize } = require("../db");
 
 // const User = sequelize.define("User", {
@@ -191,15 +191,4 @@ module.exports = { User };
 // //       type: DataTypes.BOOLEAN,
 // //       defaultValue: false,
 // //     },
-// //     must_change_password: {
-// //       type: DataTypes.BOOLEAN,
-// //       defaultValue: false,
-// //     },
-// //   },
-// //   {
-// //     tableName: "users",
-// //     timestamps: true,
-// //   }
-// // );
-
-// // module.exports = { User };
+// //     must_change_password: 
