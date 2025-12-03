@@ -181,7 +181,7 @@ export default function Transactions() {
         </div>
       )}
 
-      {/* Dialogs */}
+{/*      
       {showDialog && (
         <TransactionDialog open={showDialog} onOpenChange={setShowDialog} />
       )}
@@ -192,7 +192,23 @@ export default function Transactions() {
           onOpenChange={setShowDetailsDialog}
           transaction={selectedTransaction}
         />
-      )}
+      )} */}
+      {/* Create Transaction Dialog */}
+<TransactionDialog
+  open={showDialog}
+  onOpenChange={setShowDialog}
+/>
+
+{/* View Transaction Details */}
+<TransactionDetailsDialog
+  open={showDetailsDialog}
+  onOpenChange={(isOpen) => {
+    setShowDetailsDialog(isOpen);
+    if (!isOpen) setSelectedTransaction(null); // reset when closed
+  }}
+  transaction={selectedTransaction}
+/>
+
     </div>
   );
 }

@@ -36,6 +36,7 @@ const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
 const { Location } = require("../models");
 const { getCompletedTransactions } = require("../controllers/Transaction");
+const { getCustomerStatement } = require("../controllers/Statement");
 
 // working api for admin side
 router.get('/allusers',authenticate, requireRole( "admin"), showAllUser)
@@ -66,6 +67,10 @@ router.get("/customer/invoice/:invoice_number/download", authenticate, downloadI
 router.get("/customer/invoice/:invoice_number", authenticate, getInvoiceDetails);
 router.get("/customer/invoice/:invoice_number/pdf", authenticate, downloadInvoicePDF);
 
+
+router.get("/statements/:customerId", 
+  // authenticate,
+   getCustomerStatement);
 
 
 //transaction
