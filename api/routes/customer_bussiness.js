@@ -13,7 +13,9 @@ const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 router.post("/register", register);
 router.get("/kyc/status", authenticate, requireRole("admin", "manager","customer"), getKYCStatus);
 // Get single user (manager)
-router.get("/customer/orders", authenticate, requireRole("admin", "manager","customer"), getCustomerOrders);
+router.get("/customer/orders", 
+  authenticate, requireRole("admin", "manager","customer"),
+   getCustomerOrders);
 router.get("/users/:id", authenticate, getSingleUser);
 router.post("/login/user", login);
 module.exports = router;

@@ -35,6 +35,7 @@ const {
 const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/multerUpload");
 const { Location } = require("../models");
+const { getCompletedTransactions } = require("../controllers/Transaction");
 
 // working api for admin side
 router.get('/allusers',authenticate, requireRole( "admin"), showAllUser)
@@ -52,6 +53,7 @@ router.post(
 
 // GET /api/v1/messages/latest/:userId
 
+;
 
 
 router.get("/orders", getAdminOrders);
@@ -64,6 +66,13 @@ router.get("/customer/invoice/:invoice_number/download", authenticate, downloadI
 router.get("/customer/invoice/:invoice_number", authenticate, getInvoiceDetails);
 router.get("/customer/invoice/:invoice_number/pdf", authenticate, downloadInvoicePDF);
 
+
+
+//transaction
+router.get("/orders/transactions", 
+  authenticate, 
+   requireRole("admin", "manager","customer","sales_agent"),
+  getCompletedTransactions)
 
 // sarch for product for both admin and everyone 
 // Live product search

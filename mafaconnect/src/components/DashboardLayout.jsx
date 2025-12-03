@@ -60,17 +60,27 @@ const navigation = [
     managerOnly: true,
   },
   { name: "Suppliers", href: "/suppliers", icon: Truck, managerOnly: true },
-  { name: "Locations", href: "/locations", icon: MapPin, managerOnly: true },
+  // { name: "Locations", href: "/locations", icon: MapPin, managerOnly: true },
+   { name: "Locations", href: "/locations", icon: MapPin, managerOnly: true },
   { name: "Loyalty", href: "/loyalty", icon: Gift, managerOnly: true },
   { name: "Analytics", href: "/analytics", icon: BarChart3, managerOnly: true },
   { name: "Admin", href: "/admin", icon: Shield, adminOnly: true },
 ];
 
 const customerNavigation = [
+  // { name: "Shop", href: "/shop", icon: ShoppingBag },
+  // { name: "Dashboard", href: "/customer-dashboard", icon: LayoutDashboard },
+  // { name: "My Orders", href: "/customer-orders", icon: ShoppingCart },
+  // { name: "My Invoices", href: "/customer-invoices", icon: FileText },
+  // { name: "Messages", href: "/messages", icon: MessageSquare },
+  // { name: "Loyalty & Rewards", href: "/loyalty", icon: Gift },
+  // { name: "Products", href: "/products", icon: Package },
+
   { name: "Shop", href: "/shop", icon: ShoppingBag },
   { name: "Dashboard", href: "/customer-dashboard", icon: LayoutDashboard },
   { name: "My Orders", href: "/customer-orders", icon: ShoppingCart },
   { name: "My Invoices", href: "/customer-invoices", icon: FileText },
+  { name: "Statement", href: "/customer-statement", icon: Receipt },
   { name: "Messages", href: "/messages", icon: MessageSquare },
   { name: "Loyalty & Rewards", href: "/loyalty", icon: Gift },
   { name: "Products", href: "/products", icon: Package },

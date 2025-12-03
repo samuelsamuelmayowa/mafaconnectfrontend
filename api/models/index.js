@@ -34,9 +34,40 @@ module.exports = {
   RewardRedemption,
 };
 
+
+
+Order.belongsTo(User, {
+  foreignKey: "customer_id",
+  as: "customers",
+});
+
+// Order.belongsTo(User, {
+//   foreignKey: "created_by",
+//   as: "creator",
+// });
+
+Order.belongsTo(Location, {
+  foreignKey: "location_id",
+  as: "locations",
+});
+
+Order.hasMany(OrderItem, {
+  foreignKey: "order_id",
+  as: "order_items",
+});
+
+User.hasMany(Order, {
+  foreignKey: "customer_id",
+  as: "customer_orders",
+});
+
 /* ========================================================================
    LOYALTY SYSTEM
-======================================================================== */
+===OrderItem.belongsTo(Order, {
+  foreignKey: "order_id",
+  as: "order",
+});
+===================================================================== */
 
 // LoyaltyAccount → Transactions
 LoyaltyAccount.hasMany(LoyaltyTransaction, {
@@ -200,6 +231,11 @@ Conversation.belongsTo(User, {
   foreignKey: "assigned_to",
   as: "assignee",
 });
+
+
+
+
+
 
 
 

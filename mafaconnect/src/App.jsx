@@ -37,6 +37,8 @@ import Cart from "./pages/Cart";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import CustomerOrders from "./pages/CustomerOrders";
 import CustomerInvoices from "./pages/CustomerInvoices";
+import CustomerStatementOfAccount from "./pages/CustomerStatementOfAccount";
+import ProfileSettings from "./pages/ProfileSettings";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +51,17 @@ function App() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/portal" element={<CustomerPortal />} />
           <Route path="/install" element={<Install />} />
+
+             <Route
+            path="/profile"
+            element={
+              <AuthProtectedRoute>
+                <DashboardLayout>
+                  <ProfileSettings />
+                </DashboardLayout>
+              </AuthProtectedRoute>
+            }
+          />
           <Route
             path="/customer-dashboard"
             element={
@@ -102,7 +115,7 @@ function App() {
             }
           />
 
-            <Route
+          <Route
             path="/cart"
             element={
               <CustomerProtectedRoute>
@@ -113,18 +126,18 @@ function App() {
             }
           />
 
-            <Route
+          <Route
             path="/order-confirmation/:orderId"
             element={
               <CustomerProtectedRoute>
                 <DashboardLayout>
-                  <OrderConfirmation/>
+                  <OrderConfirmation />
                 </DashboardLayout>
               </CustomerProtectedRoute>
             }
           />
 
-            <Route
+          <Route
             path="/customer-orders"
             element={
               <CustomerProtectedRoute>
@@ -135,12 +148,23 @@ function App() {
             }
           />
 
-   <Route
+          <Route
             path="/customer-invoices"
             element={
               <CustomerProtectedRoute>
                 <DashboardLayout>
                   <CustomerInvoices />
+                </DashboardLayout>
+              </CustomerProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/customer-statement"
+            element={
+              <CustomerProtectedRoute>
+                <DashboardLayout>
+                  <CustomerStatementOfAccount />
                 </DashboardLayout>
               </CustomerProtectedRoute>
             }
@@ -247,16 +271,7 @@ function App() {
             }
           />
 
-          <Route
-            path="/profile"
-            element={
-              <AuthProtectedRoute>
-                <DashboardLayout>
-                  <ProfileSettings />
-                </DashboardLayout>
-              </AuthProtectedRoute>
-            }
-          />
+       
 
           <Route
             path="/kyc-onboarding"
@@ -327,7 +342,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardLayout>
-                <Sales />
+                  <Sales />
                 </DashboardLayout>
               </ProtectedRoute>
             }
