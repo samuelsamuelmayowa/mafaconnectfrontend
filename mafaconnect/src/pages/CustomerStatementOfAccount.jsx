@@ -2,7 +2,8 @@ import React from "react";
 import axios from "axios";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-
+// import  BusinessLogo  from "../assets/mafa-logo.png"
+import { BusinessLogo } from "@/components/BusinessLogo";
 import {
   Card,
   CardHeader,
@@ -45,7 +46,7 @@ export default function CustomerStatementOfAccount() {
       const res = await axios.get(`${API_BASE}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      return res.data.data;
+      return res.data.user;
     }
   });
 
@@ -248,7 +249,7 @@ export default function CustomerStatementOfAccount() {
         </CardContent>
       </Card> */}
 {/* Customer Info */}
-<Card>
+{/* <Card>
   <CardHeader>
     <CardTitle>Customer Information</CardTitle>
   </CardHeader>
@@ -257,7 +258,7 @@ export default function CustomerStatementOfAccount() {
     <div className="grid grid-cols-2 gap-4">
       <div>
         <p className="text-muted-foreground text-sm">Name</p>
-        <p className="font-medium">{customer?.name || "N/A"}</p>
+        <p className="font-medium">{customer.name || "N/A"}</p>
       </div>
       <div>
         <p className="text-muted-foreground text-sm">Account Number</p>
@@ -276,7 +277,39 @@ export default function CustomerStatementOfAccount() {
       )}
     </div>
   </CardContent>
-</Card>
+</Card> */}
+ {customer && (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-end">
+              <BusinessLogo size="md" showName showContactInfo />
+            </div>
+            <CardTitle className="text-center mt-4">Customer Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Name</p>
+                <p className="font-medium">{customer.full_name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Account Number</p>
+                <p className="font-medium">{customer.account_number || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium">{customer.email}</p>
+              </div>
+              {customer.phone && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className="font-medium">{customer.phone}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Statement Table */}
       <Card>
