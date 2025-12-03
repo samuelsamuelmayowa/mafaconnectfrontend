@@ -129,7 +129,14 @@ export default function Checkout() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [checkoutError, setCheckoutError] = useState(null);
+//  
 
+
+const totalEarnablePoints = cart?.items?.reduce((sum, item) => {
+  const kg = item.product?.bag_size_kg || 0;
+  const qty = item.quantity || 1;
+  return sum + kg * qty;
+}, 0) || 0;
   const isKYCApproved = kycStatus?.kyc_status === "approved";
 
   // 🧮 Store settings (shipping only, like your TS version)
@@ -186,6 +193,8 @@ export default function Checkout() {
       setSelectedLocation(location || null);
     }
   }, [pickupLocationId, locations]);
+
+
 
   // ✅ React Query mutation for creating order
   const createOrder = useMutation({
@@ -291,7 +300,7 @@ export default function Checkout() {
       });
       return;
     }
-
+    
     if (!isKYCApproved) {
       toast({
         title: "KYC verification required",
@@ -840,6 +849,11 @@ export default function Checkout() {
                     {checkoutError}
                   </div>
                 )}
+
+                <div className="p-4 bg-primary/10 rounded-lg text-primary font-medium">
+  ⭐ You will earn {totalEarnablePoints} loyalty points from this order!
+</div>
+
 
                 <Button
                   type="submit"
