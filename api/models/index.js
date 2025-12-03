@@ -46,6 +46,10 @@ Order.belongsTo(User, {
 //   as: "creator",
 // });
 
+// Invoice.belongsTo(Order, { foreignKey: "order_id", as: "order" });
+// Order.hasOne(Invoice, { foreignKey: "order_id", as: "invoice" });
+
+
 Order.belongsTo(Location, {
   foreignKey: "location_id",
   as: "locations",

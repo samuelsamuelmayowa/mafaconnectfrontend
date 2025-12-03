@@ -68,6 +68,8 @@ router.get("/customer/invoice/:invoice_number", authenticate, getInvoiceDetails)
 router.get("/customer/invoice/:invoice_number/pdf", authenticate, downloadInvoicePDF);
 
 
+
+
 router.get("/customer/statement", authenticate, getCustomerStatement);
 
 // router.get("/statements/:customerId", 
