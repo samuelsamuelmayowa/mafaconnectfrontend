@@ -109,20 +109,50 @@ export default function Loyalty() {
   // =======================
   // CUSTOMER LOYALTY ACCOUNT
   // =======================
-  const {
-    data: loyaltyAccount,
-    isLoading: loadingAccount,
-    error: accountError,
-  } = useQuery({
-    queryKey: ["customer-loyalty-account", user?.id],
-    queryFn: async () => {
+  // const {
+  //   data: loyaltyAccount,
+  //   isLoading: loadingAccount,
+  //   error: accountError,
+  // } = useQuery({
+  //   queryKey: ["customer-loyalty-account", user?.id],
+  //   queryFn: async () => {
+  //     console.log("Fetching loyalty account for user:", user?.id);
+  //     const { data } = await axios.get(`${API_BASE}/loyalty/${user?.id}`);
+  //     console.log("Loyalty account data:", data);
+  //     return data;
+  //   },
+  //   enabled: !!user?.id && !isStaff,
+  // });
+
+const {
+  data: loyaltyAccount,
+  isLoading: loadingAccount,
+  error: accountError,
+} = useQuery({
+  queryKey: ["customer-loyalty-account", user?.id],
+  queryFn: async () => {
+    try {
       console.log("Fetching loyalty account for user:", user?.id);
-      const { data } = await axios.get(`${API_BASE}/api/loyalty/${user?.id}`);
-      console.log("Loyalty account data:", data);
-      return data;
-    },
-    enabled: !!user?.id && !isStaff,
-  });
+
+      const { data } = await axios.get(
+        `${API_BASE}/loyalty/${user?.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`,
+          },
+        }
+      );
+
+      console.log("Loyalty response:", data);
+      return data.data;
+    } catch (err) {
+      console.error("LOYALTY ACCOUNT ERROR RESPONSE:", err.response);
+      throw err;
+    }
+  },
+  enabled: !!user?.id && !isStaff,
+});
+
 
   // =======================
   // CUSTOMER TRANSACTIONS
@@ -131,7 +161,7 @@ export default function Loyalty() {
     queryKey: ["customer-loyalty-transactions", loyaltyAccount?.id],
     queryFn: async () => {
       const { data } = await axios.get(
-        `${API_BASE}/api/loyalty/accounts/${loyaltyAccount?.id}/transactions?limit=10`
+        `${API_BASE}/loyalty/accounts/${loyaltyAccount?.id}/transactions?limit=10`
       );
       return data;
     },
@@ -144,7 +174,7 @@ export default function Loyalty() {
   const { data: recentRedemptions } = useQuery({
     queryKey: ["recent-redemptions"],
     queryFn: async () => {
-      const { data } = await axios.get(`${API_BASE}/api/loyalty/redemptions/recent?limit=5`);
+      const { data } = await axios.get(`${API_BASE}/loyalty/redemptions/recent?limit=5`);
       return data;
     },
     enabled: isStaff,

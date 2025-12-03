@@ -11,7 +11,7 @@ const { createReward, getAllRewards, updateReward, deleteReward, toggleStatus, g
 // Match your frontend: `${API_BASE}/api/loyalty/${user?.id}`
 router.get(
   "/loyalty/:customerId",
-   authenticate, requireRole("customer", "sales_person", "manager", "admin"),
+   authenticate, requireRole("customer"),
   getLoyaltyAccount
 );
 

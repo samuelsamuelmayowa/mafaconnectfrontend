@@ -629,27 +629,83 @@ async function recalculateTierForAccount(account, t = null) {
 //    GET /api/loyalty/:customerId
 // ===================================================
 const getLoyaltyAccount = async (req, res) => {
+  // try {
+  //   const { customerId } = req.params;
+
+  //   let account = await getOrCreateLoyaltyAccount(customerId);
+
+  //   // Ensure tier is up to date
+  //   account = await recalculateTierForAccount(account);
+
+  //   return res.json({
+  //     id: account.id,
+  //     customer_id: account.customer_id,
+  //     points_balance: account.points_balance,
+  //     lifetime_points_earned: account.lifetime_points_earned,
+  //     lifetime_points_redeemed: account.lifetime_points_redeemed,
+  //     tier: account.tier,
+  //     created_at: account.createdAt,
+  //     updated_at: account.updatedAt,
+  //   });
+  // } catch (err) {
+  //   console.error("GET LOYALTY ACCOUNT ERROR:", err);
+  //   return res.status(500).json({ message: "Failed to load loyalty account" });
+  // }
+
+  // try {
+  //   const { customerId } = req.params;
+
+  //   // MUST be integer
+  //   const numericId = Number(customerId);
+
+  //   if (isNaN(numericId)) {
+  //     return res.status(400).json({
+  //       success: false,
+  //       message: "customerId must be a valid number",
+  //     });
+  //   }
+
+  //   const account = await getOrCreateLoyaltyAccount(numericId);
+
+  //   res.json({
+  //     success: true,
+  //     data: account,
+  //   });
+  // } catch (error) {
+  //   console.error("LOYALTY ACCOUNT ERROR:", error);
+  //   res.status(500).json({
+  //     success: false,
+  //     message: error.message || "Server error",
+  //   });
+  // }
+
   try {
-    const { customerId } = req.params;
+    const customerId = Number(req.params.customerId);
 
-    let account = await getOrCreateLoyaltyAccount(customerId);
+    if (isNaN(customerId)) {
+      return res.status(400).json({ success: false, message: "Invalid customer ID" });
+    }
 
-    // Ensure tier is up to date
-    account = await recalculateTierForAccount(account);
+    const user = await User.findByPk(customerId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
-    return res.json({
-      id: account.id,
-      customer_id: account.customer_id,
-      points_balance: account.points_balance,
-      lifetime_points_earned: account.lifetime_points_earned,
-      lifetime_points_redeemed: account.lifetime_points_redeemed,
-      tier: account.tier,
-      created_at: account.createdAt,
-      updated_at: account.updatedAt,
-    });
-  } catch (err) {
-    console.error("GET LOYALTY ACCOUNT ERROR:", err);
-    return res.status(500).json({ message: "Failed to load loyalty account" });
+    let account = await LoyaltyAccount.findOne({ where: { customer_id: customerId } });
+
+    if (!account) {
+      account = await LoyaltyAccount.create({
+        customer_id: customerId,
+        points_balance: 0,
+        tier: "Bronze"
+      });
+    }
+
+    res.json({ success: true, data: account });
+
+  } catch (error) {
+    console.error("LOYALTY ERROR:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
