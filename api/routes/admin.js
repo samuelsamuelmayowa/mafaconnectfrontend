@@ -56,7 +56,7 @@ router.post(
 
 ;
 
-
+/// Admin side 
 router.get("/orders", getAdminOrders);
 router.put("/orders/:id/confirm-payment", confirmPayment);
 router.put("/orders/:id/status", updateOrderStatus);
@@ -96,9 +96,9 @@ router.get(
 
 
 /// order api 
-router.get("/orders/:orderId",
-  //  authenticate, requireRole("admin", "manager", "customer"), 
-   getOrderById);
+// router.get("/orders/:orderId",
+//   //  authenticate, requireRole("admin", "manager", "customer"), 
+//    getOrderById);
 router.post("/orders/create", authenticate, requireRole("admin", "manager", "customer"), createOrder);
 
 
