@@ -96,9 +96,9 @@ router.get(
 
 
 /// order api 
-// router.get("/orders/:orderId",
+router.get("/orders/:orderId",
 //   //  authenticate, requireRole("admin", "manager", "customer"), 
-//    getOrderById);
+   getOrderById);
 router.post("/orders/create", authenticate, requireRole("admin", "manager", "customer"), createOrder);
 
 

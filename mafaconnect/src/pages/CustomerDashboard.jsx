@@ -85,7 +85,7 @@ export default function CustomerDashboard() {
   const { data: recentOrders, isLoading: loadingOrders } = useQuery({
     queryKey: ["customer-recent-orders", user?.id],
     queryFn: async () => {
-      const res = await axios.get(`${API_BASE}/orders/${user?.id}`, authHeaders);
+      const res = await axios.get(`${API_BASE}/orders/user/${user?.id}`, authHeaders);
       return res.data.data || [];
     },
     enabled: !!user?.id,
