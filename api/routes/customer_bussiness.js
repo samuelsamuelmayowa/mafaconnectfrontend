@@ -17,7 +17,7 @@ router.get("/kyc/status", authenticate, requireRole("admin", "manager","customer
 
 // All customer-related endpoints require login
 router.get("/orders/user/:customerId", authenticate,  requireRole("admin", "manager","customer"), getCustomerRecentOrders);
-router.get("/invoices/:customerId", authenticate,  requireRole("admin", "manager","customer"), getCustomerPendingInvoices);
+router.get("/invoices/:customerId", authenticate,  requireRole("admin", "manager","customer"),getCustomerPendingInvoices);
 router.get("/orders/stats/:customerId", authenticate,  requireRole("admin", "manager","customer"),getCustomerOrderStats);
 
 router.get("/customer/orders", 

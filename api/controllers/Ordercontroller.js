@@ -110,40 +110,103 @@ exports.getCustomerRecentOrders = async (req, res) => {
 // const { Order } = require("../models/Order");
 // const Invoice = require("../models/Invoice");
 
+// exports.getCustomerPendingInvoices = async (req, res) => {
+//   try {
+//     const { customerId } = req.params;
+//     const { status } = req.query; // ?status=pending
+
+//     // If no status is passed → return all invoices for this customer
+//     const orderFilter = status ? { payment_status: status } : {};
+
+//     const invoices = await Invoice.findAll({
+//       where: { customer_id: customerId },
+//       include: [
+//         {
+//           model: Order,
+//           as: "order",
+//           attributes: ["order_status", "payment_status"],
+//           where: orderFilter, // <--- THIS MAKES ?status=pending WORK
+//         },
+//       ],
+//       order: [["issue_date", "DESC"]],
+//     });
+
+//     res.json({
+//       success: true,
+//       data: invoices,
+//     });
+
+//   } catch (error) {
+//     console.error("Pending Invoice Error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error fetching invoices",
+//     });
+//   }
+// };
+
+
+// exports.getCustomerPendingInvoices = async (req, res) => {
+//   try {
+//     const { customerId } = req.params;
+//     const { status } = req.query; // pending
+
+//     const filter = {
+//       customer_id: customerId,
+//       ...(status && { payment_status: status }) // apply only if provided
+//     };
+
+//     const invoices = await Invoice.findAll({
+//       where: filter,
+//       include: [
+//         {
+//           model: Order,
+//           as: "order",
+//           attributes: ["order_status", "payment_status"],
+//         }
+//       ],
+//       order: [["issue_date", "DESC"]],
+//     });
+
+//     return res.json({ success: true, data: invoices });
+
+//   } catch (error) {
+//     console.error("Pending Invoice Error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error fetching invoices",
+//     });
+//   }
+// };
+
+
 exports.getCustomerPendingInvoices = async (req, res) => {
   try {
     const { customerId } = req.params;
-    const { status } = req.query; // ?status=pending
-
-    // If no status is passed → return all invoices for this customer
-    const orderFilter = status ? { payment_status: status } : {};
+    const { status } = req.query; // pending
 
     const invoices = await Invoice.findAll({
       where: { customer_id: customerId },
       include: [
         {
           model: Order,
-          as: "order",
+          as: "order",                 // very important!
+          required: !!status,          // if status present, force match
           attributes: ["order_status", "payment_status"],
-          where: orderFilter, // <--- THIS MAKES ?status=pending WORK
-        },
+          where: status ? { order_status: status } : undefined,
+        }
       ],
-      order: [["issue_date", "DESC"]],
+      order: [["createdAt", "DESC"]],
     });
 
-    res.json({
-      success: true,
-      data: invoices,
-    });
+    return res.json({ success: true, data: invoices });
 
   } catch (error) {
-    console.error("Pending Invoice Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error fetching invoices",
-    });
+    console.log(error);
+    return res.status(500).json({ success: false, message: "Server error fetching invoices" });
   }
 };
+
 
 exports.getCustomerOrderStats = async (req, res) => {
   try {
