@@ -52,7 +52,7 @@ export default function CustomerDashboard() {
     queryKey: ["customer-loyalty", user?.id],
     queryFn: async () => {
       const res = await axios.get(`${API_BASE}/loyalty/${user?.id}`, authHeaders);
-      return res.data;
+      return res.data.data;
     },
     enabled: !!user?.id,
   });
@@ -280,7 +280,7 @@ export default function CustomerDashboard() {
 
           <CardContent>
             <div className="text-2xl font-bold">
-              {loyaltyAccount?.points_balance || 0}
+              {loyaltyAccount?.points_balance}
             </div>
           </CardContent>
         </Card>
@@ -330,7 +330,7 @@ export default function CustomerDashboard() {
                 >
                   <div>
                     <p className="font-medium">
-                      Order #{order.order_number}
+                     #{order.order_number}
                     </p>
 
                     <p className="text-sm text-muted-foreground">
