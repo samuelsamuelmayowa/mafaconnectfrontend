@@ -628,6 +628,7 @@ async function recalculateTierForAccount(account, t = null) {
 // 1. GET loyalty account by customerId
 //    GET /api/loyalty/:customerId
 // ===================================================
+const tiers = require("../config/tierLevels");
 const getLoyaltyAccount = async (req, res) => {
   // try {
   //   const { customerId } = req.params;
@@ -679,33 +680,62 @@ const getLoyaltyAccount = async (req, res) => {
   //   });
   // }
 
-  try {
-    const customerId = Number(req.params.customerId);
+  // try {
+  //   const customerId = Number(req.params.customerId);
 
-    if (isNaN(customerId)) {
-      return res.status(400).json({ success: false, message: "Invalid customer ID" });
-    }
+  //   if (isNaN(customerId)) {
+  //     return res.status(400).json({ success: false, message: "Invalid customer ID" });
+  //   }
 
-    const user = await User.findByPk(customerId);
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
+  //   const user = await User.findByPk(customerId);
+  //   if (!user) {
+  //     return res.status(404).json({ success: false, message: "User not found" });
+  //   }
 
-    let account = await LoyaltyAccount.findOne({ where: { customer_id: customerId } });
+  //   let account = await LoyaltyAccount.findOne({ where: { customer_id: customerId } });
+
+  //   if (!account) {
+  //     account = await LoyaltyAccount.create({
+  //       customer_id: customerId,
+  //       points_balance: 0,
+  //       tier: "Bronze"
+  //     });
+  //   }
+
+  //   res.json({ success: true, data: account });
+
+  // } catch (error) {
+  //   console.error("LOYALTY ERROR:", error);
+  //   res.status(500).json({ success: false, message: "Server error" });
+  // }
+
+
+   try {
+    const { customerId } = req.params;
+
+    const account = await LoyaltyAccount.findOne({ where: { customer_id: customerId } });
 
     if (!account) {
-      account = await LoyaltyAccount.create({
-        customer_id: customerId,
-        points_balance: 0,
-        tier: "Bronze"
-      });
+      return res.status(404).json({ success: false, message: "No loyalty account found" });
     }
 
-    res.json({ success: true, data: account });
+    // 🔥 Detect tier dynamically based on points
+    const currentTier = tiers.find(t => 
+      account.points_balance >= t.min && account.points_balance <= t.max
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        ...account.dataValues,
+        tier: currentTier.name,
+        tier_range: `${currentTier.min} - ${currentTier.max}`
+      }
+    });
 
   } catch (error) {
-    console.error("LOYALTY ERROR:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.log("LOYALTY ERROR:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -900,14 +930,21 @@ const toggleStatus = async (req, res) => {
 // };
 const getAllTiers = async (req, res) => {
   try {
-    const tiers = await LoyaltyTier.findAll();
+    const tiers = await LoyaltyTier.findAll({
+      order: [["min_points", "ASC"]],
+    });
 
     return res.json({
-      data: tiers,   // keep consistent API response structure
+      success: true,
+      data: tiers,
     });
-  } catch (err) {
-    console.error("GET TIERS ERROR:", err);
-    return res.status(500).json({ message: "Failed to fetch tiers" });
+
+  } catch (error) {
+    console.log("Tier Fetch Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load tiers list"
+    });
   }
 };
 
