@@ -1,4 +1,5 @@
-// ================== MODELS IMPORT ==================
+
+
 const { Product } = require("./products");
 const { ProductImage } = require("./productimages");
 const { User } = require("./user");
@@ -9,17 +10,15 @@ const OrderItem = require("./OrderItem");
 const Invoice = require("./Invoice");
 const { Message } = require("./message");
 const { Conversation } = require("./Conversation");
-
-// Loyalty System
 const { LoyaltyAccount } = require("./LoyaltyAccount");
 const { LoyaltyTransaction } = require("./LoyaltyTransaction");
-const LoyaltyActivity = require("./LoyaltyActivity");
 const { Reward } = require("./Reward");
 const { RewardRedemption } = require("./RewardRedemption");
+const LoyaltyActivity = require("./LoyaltyActivity");
 
-// ======================================================
-// EXPORT
-// ======================================================
+/* ========================================================================
+   MODULE EXPORTS
+======================================================================== */
 module.exports = {
   Product,
   ProductImage,
@@ -34,339 +33,246 @@ module.exports = {
   Message,
   LoyaltyAccount,
   LoyaltyTransaction,
-  LoyaltyActivity,
   Reward,
+  LoyaltyActivity,
   RewardRedemption,
-};
+}
+// RewardRedemption <-> Customer
+RewardRedemption.belongsTo(User, {
+  foreignKey: "customer_id",
+  as: "customer"
+});
 
-/* ======================================================
-    🔥 CLEAN CORRECT ASSOCIATIONS — ONE TIME ONLY
-======================================================*/
+User.hasMany(RewardRedemption, {
+  foreignKey: "customer_id",
+  as: "redemptions"
+});
 
-// LoyaltyAccount ↔ User
-User.hasOne(LoyaltyAccount, { foreignKey: "customer_id", as: "loyalty_account" });
-LoyaltyAccount.belongsTo(User, { foreignKey: "customer_id", as: "customer" });
+// RewardRedemption <-> Reward
+RewardRedemption.belongsTo(Reward, {
+  foreignKey: "reward_id",
+  as: "reward"
+});
 
-// LoyaltyAccount ↔ Transactions
-LoyaltyAccount.hasMany(LoyaltyTransaction, { foreignKey: "loyalty_account_id", as: "transactions" });
-LoyaltyTransaction.belongsTo(LoyaltyAccount, { foreignKey: "loyalty_account_id", as: "account" });
+Reward.hasMany(RewardRedemption, {
+  foreignKey: "reward_id",
+  as: "redemptions"
+});
 
-// LoyaltyActivity ↔ User
-User.hasMany(LoyaltyActivity, { foreignKey: "customer_id", as: "activities" });
-LoyaltyActivity.belongsTo(User, { foreignKey: "customer_id", as: "customer" });
 
-/* ============= REDEMPTIONS — MAIN FIX ================= */
 
-// RewardRedemption → Reward
-RewardRedemption.belongsTo(Reward, { foreignKey: "reward_id", as: "reward" });
-Reward.hasMany(RewardRedemption, { foreignKey: "reward_id", as: "redemptions" });
+Order.belongsTo(User, {
+  foreignKey: "customer_id",
+  as: "customers",
+});
 
-// RewardRedemption → Customer (User)
-RewardRedemption.belongsTo(User, { foreignKey: "customer_id", as: "customer" });
-User.hasMany(RewardRedemption, { foreignKey: "customer_id", as: "redemptions" });
 
-// LoyaltyAccount ↔ RewardRedemption
-LoyaltyAccount.hasMany(RewardRedemption, { foreignKey: "loyalty_account_id", as: "redemptions" });
-RewardRedemption.belongsTo(LoyaltyAccount, { foreignKey: "loyalty_account_id", as: "account" });
 
-/* ======================================================
-    ORDERS + STOCK + PRODUCT (as you already had)
-======================================================*/
+Order.hasMany(OrderItem, { foreignKey: "order_id" });
+OrderItem.belongsTo(Order, { foreignKey: "order_id" });
+User.hasMany(LoyaltyActivity, {
+  foreignKey: "customer_id",
+  as: "activities"
+});
+Order.hasMany(LoyaltyActivity, { foreignKey: "order_id", as: "order_activities" });
 
+
+User.hasMany(LoyaltyActivity, {
+  foreignKey: "customer_id",
+  as: "loyalty_history",
+});
+
+LoyaltyActivity.belongsTo(User, {
+  foreignKey: "customer_id",
+  as: "customer",
+});
+
+
+Order.belongsTo(Location, {
+  foreignKey: "location_id",
+  as: "locations",
+});
+
+Order.hasMany(OrderItem, {
+  foreignKey: "order_id",
+  as: "order_items",
+});
+
+User.hasMany(Order, {
+  foreignKey: "customer_id",
+  as: "customer_orders",
+});
+
+/* ========================================================================
+   LOYALTY SYSTEM
+===OrderItem.belongsTo(Order, {
+  foreignKey: "order_id",
+  as: "order",
+});
+===================================================================== */
+
+// LoyaltyAccount → Transactions
+LoyaltyAccount.hasMany(LoyaltyTransaction, {
+  foreignKey: "loyalty_account_id",
+});
+LoyaltyTransaction.belongsTo(LoyaltyAccount, {
+  foreignKey: "loyalty_account_id",
+});
+
+// LoyaltyAccount → RewardRedemptions
+LoyaltyAccount.hasMany(RewardRedemption, {
+  foreignKey: "loyalty_account_id",
+});
+RewardRedemption.belongsTo(LoyaltyAccount, {
+  foreignKey: "loyalty_account_id",
+});
+
+// Reward → RewardRedemptions
+Reward.hasMany(RewardRedemption, { foreignKey: "reward_id" });
+RewardRedemption.belongsTo(Reward, { foreignKey: "reward_id" });
+
+// User → LoyaltyAccount
+User.hasOne(LoyaltyAccount, { foreignKey: "customer_id" });
+LoyaltyAccount.belongsTo(User, { foreignKey: "customer_id" });
+
+// User → RewardRedemptions
+User.hasMany(RewardRedemption, { foreignKey: "customer_id" });
+RewardRedemption.belongsTo(User, { foreignKey: "customer_id" });
+
+/* ========================================================================
+   ORDER SYSTEM
+======================================================================== */
+
+// Order → Customer
 Order.belongsTo(User, { foreignKey: "customer_id", as: "customer" });
+
+// Order → Sales Agent
+Order.belongsTo(User, { foreignKey: "sales_agent_id", as: "sales_agent" });
+
+// User → Orders (customer)
 User.hasMany(Order, { foreignKey: "customer_id" });
 
-Order.belongsTo(User, { foreignKey: "sales_agent_id", as: "sales_agent" });
+// User → Orders (sales agent)
 User.hasMany(Order, { foreignKey: "sales_agent_id" });
 
+// Order → Location
 Order.belongsTo(Location, { foreignKey: "location_id", as: "location" });
 Location.hasMany(Order, { foreignKey: "location_id", as: "orders" });
 
+// Order → Invoice
 Order.hasOne(Invoice, { foreignKey: "order_id", as: "invoice" });
 Invoice.belongsTo(Order, { foreignKey: "order_id", as: "order" });
 
+// Order → OrderItems
 Order.hasMany(OrderItem, { foreignKey: "order_id", as: "items" });
 OrderItem.belongsTo(Order, { foreignKey: "order_id", as: "order" });
 
+// OrderItem → Product
 OrderItem.belongsTo(Product, { foreignKey: "product_id", as: "product" });
 Product.hasMany(OrderItem, { foreignKey: "product_id", as: "orderItems" });
 
-// Stock relations stay same...
+/* ========================================================================
+   PRODUCT SYSTEM
+======================================================================== */
 
+// Product → Images
+Product.hasMany(ProductImage, { foreignKey: "product_id", as: "images" });
+ProductImage.belongsTo(Product, { foreignKey: "product_id" });
 
-// const { Product } = require("./products");
-// const { ProductImage } = require("./productimages");
-// const { User } = require("./user");
-// const { ProductLocationStock } = require("./ProductLocationStock");
-// const { Location } = require("./Location");
-// const { Order, Notification } = require("./Order");
-// const OrderItem = require("./OrderItem");
-// const Invoice = require("./Invoice");
-// const { Message } = require("./message");
-// const { Conversation } = require("./Conversation");
-// const { LoyaltyAccount } = require("./LoyaltyAccount");
-// const { LoyaltyTransaction } = require("./LoyaltyTransaction");
-// const { Reward } = require("./Reward");
-// const { RewardRedemption } = require("./RewardRedemption");
-// const LoyaltyActivity = require("./LoyaltyActivity");
+// Product → Creator
+Product.belongsTo(User, { foreignKey: "created_by", as: "creator" });
+User.hasMany(Product, { foreignKey: "created_by" });
 
-// /* ========================================================================
-//    MODULE EXPORTS
-// ======================================================================== */
-// module.exports = {
-//   Product,
-//   ProductImage,
-//   User,
-//   Location,
-//   ProductLocationStock,
-//   Order,
-//   OrderItem,
-//   Notification,
-//   Invoice,
-//   Conversation,
-//   Message,
-//   LoyaltyAccount,
-//   LoyaltyTransaction,
-//   Reward,
-//   LoyaltyActivity,
-//   RewardRedemption,
-// }
-// // RewardRedemption <-> Customer
-// RewardRedemption.belongsTo(User, {
-//   foreignKey: "customer_id",
-//   as: "customer"
-// });
+/* ========================================================================
+   PRODUCT ↔ LOCATION (STOCK SYSTEM)
+======================================================================== */
 
-// User.hasMany(RewardRedemption, {
-//   foreignKey: "customer_id",
-//   as: "redemptions"
-// });
+Product.belongsToMany(Location, {
+  through: ProductLocationStock,
+  foreignKey: "product_id",
+  otherKey: "location_id",
+  as: "locations",
+});
 
-// // RewardRedemption <-> Reward
-// RewardRedemption.belongsTo(Reward, {
-//   foreignKey: "reward_id",
-//   as: "reward"
-// });
+Location.belongsToMany(Product, {
+  through: ProductLocationStock,
+  foreignKey: "location_id",
+  otherKey: "product_id",
+  as: "products",
+});
 
-// Reward.hasMany(RewardRedemption, {
-//   foreignKey: "reward_id",
-//   as: "redemptions"
-// });
+Product.hasMany(ProductLocationStock, {
+  foreignKey: "product_id",
+  as: "locationStocks",
+});
+ProductLocationStock.belongsTo(Product, {
+  foreignKey: "product_id",
+  as: "product",
+});
 
+Location.hasMany(ProductLocationStock, {
+  foreignKey: "location_id",
+  as: "stocks",
+});
+ProductLocationStock.belongsTo(Location, {
+  foreignKey: "location_id",
+  as: "location",
+});
 
+/* ========================================================================
+   MESSAGING SYSTEM
+======================================================================== */
 
-// Order.belongsTo(User, {
-//   foreignKey: "customer_id",
-//   as: "customers",
-// });
+// Conversation → Messages
+Conversation.hasMany(Message, {
+  foreignKey: "conversation_id",
+  as: "messages",
+  onDelete: "CASCADE",
+});
+Message.belongsTo(Conversation, {
+  foreignKey: "conversation_id",
+  as: "conversation",
+});
 
+// User → Sent Messages
+User.hasMany(Message, {
+  foreignKey: "sender_id",
+  as: "sentMessages",
+});
+Message.belongsTo(User, {
+  foreignKey: "sender_id",
+  as: "sender",
+});
 
+// User → Received Messages
+User.hasMany(Message, {
+  foreignKey: "receiver_id",
+  as: "receivedMessages",
+});
+Message.belongsTo(User, {
+  foreignKey: "receiver_id",
+  as: "receiver",
+});
 
-// Order.hasMany(OrderItem, { foreignKey: "order_id" });
-// OrderItem.belongsTo(Order, { foreignKey: "order_id" });
-// User.hasMany(LoyaltyActivity, {
-//   foreignKey: "customer_id",
-//   as: "activities"
-// });
-// Order.hasMany(LoyaltyActivity, { foreignKey: "order_id", as: "order_activities" });
+// User → Conversations
+User.hasMany(Conversation, {
+  foreignKey: "created_by",
+  as: "createdConversations",
+});
+Conversation.belongsTo(User, {
+  foreignKey: "created_by",
+  as: "creator",
+});
 
-
-// User.hasMany(LoyaltyActivity, {
-//   foreignKey: "customer_id",
-//   as: "loyalty_history",
-// });
-
-// LoyaltyActivity.belongsTo(User, {
-//   foreignKey: "customer_id",
-//   as: "customer",
-// });
-
-
-// Order.belongsTo(Location, {
-//   foreignKey: "location_id",
-//   as: "locations",
-// });
-
-// Order.hasMany(OrderItem, {
-//   foreignKey: "order_id",
-//   as: "order_items",
-// });
-
-// User.hasMany(Order, {
-//   foreignKey: "customer_id",
-//   as: "customer_orders",
-// });
-
-// /* ========================================================================
-//    LOYALTY SYSTEM
-// ===OrderItem.belongsTo(Order, {
-//   foreignKey: "order_id",
-//   as: "order",
-// });
-// ===================================================================== */
-
-// // LoyaltyAccount → Transactions
-// LoyaltyAccount.hasMany(LoyaltyTransaction, {
-//   foreignKey: "loyalty_account_id",
-// });
-// LoyaltyTransaction.belongsTo(LoyaltyAccount, {
-//   foreignKey: "loyalty_account_id",
-// });
-
-// // LoyaltyAccount → RewardRedemptions
-// LoyaltyAccount.hasMany(RewardRedemption, {
-//   foreignKey: "loyalty_account_id",
-// });
-// RewardRedemption.belongsTo(LoyaltyAccount, {
-//   foreignKey: "loyalty_account_id",
-// });
-
-// // Reward → RewardRedemptions
-// Reward.hasMany(RewardRedemption, { foreignKey: "reward_id" });
-// RewardRedemption.belongsTo(Reward, { foreignKey: "reward_id" });
-
-// // User → LoyaltyAccount
-// User.hasOne(LoyaltyAccount, { foreignKey: "customer_id" });
-// LoyaltyAccount.belongsTo(User, { foreignKey: "customer_id" });
-
-// // User → RewardRedemptions
-// User.hasMany(RewardRedemption, { foreignKey: "customer_id" });
-// RewardRedemption.belongsTo(User, { foreignKey: "customer_id" });
-
-// /* ========================================================================
-//    ORDER SYSTEM
-// ======================================================================== */
-
-// // Order → Customer
-// Order.belongsTo(User, { foreignKey: "customer_id", as: "customer" });
-
-// // Order → Sales Agent
-// Order.belongsTo(User, { foreignKey: "sales_agent_id", as: "sales_agent" });
-
-// // User → Orders (customer)
-// User.hasMany(Order, { foreignKey: "customer_id" });
-
-// // User → Orders (sales agent)
-// User.hasMany(Order, { foreignKey: "sales_agent_id" });
-
-// // Order → Location
-// Order.belongsTo(Location, { foreignKey: "location_id", as: "location" });
-// Location.hasMany(Order, { foreignKey: "location_id", as: "orders" });
-
-// // Order → Invoice
-// Order.hasOne(Invoice, { foreignKey: "order_id", as: "invoice" });
-// Invoice.belongsTo(Order, { foreignKey: "order_id", as: "order" });
-
-// // Order → OrderItems
-// Order.hasMany(OrderItem, { foreignKey: "order_id", as: "items" });
-// OrderItem.belongsTo(Order, { foreignKey: "order_id", as: "order" });
-
-// // OrderItem → Product
-// OrderItem.belongsTo(Product, { foreignKey: "product_id", as: "product" });
-// Product.hasMany(OrderItem, { foreignKey: "product_id", as: "orderItems" });
-
-// /* ========================================================================
-//    PRODUCT SYSTEM
-// ======================================================================== */
-
-// // Product → Images
-// Product.hasMany(ProductImage, { foreignKey: "product_id", as: "images" });
-// ProductImage.belongsTo(Product, { foreignKey: "product_id" });
-
-// // Product → Creator
-// Product.belongsTo(User, { foreignKey: "created_by", as: "creator" });
-// User.hasMany(Product, { foreignKey: "created_by" });
-
-// /* ========================================================================
-//    PRODUCT ↔ LOCATION (STOCK SYSTEM)
-// ======================================================================== */
-
-// Product.belongsToMany(Location, {
-//   through: ProductLocationStock,
-//   foreignKey: "product_id",
-//   otherKey: "location_id",
-//   as: "locations",
-// });
-
-// Location.belongsToMany(Product, {
-//   through: ProductLocationStock,
-//   foreignKey: "location_id",
-//   otherKey: "product_id",
-//   as: "products",
-// });
-
-// Product.hasMany(ProductLocationStock, {
-//   foreignKey: "product_id",
-//   as: "locationStocks",
-// });
-// ProductLocationStock.belongsTo(Product, {
-//   foreignKey: "product_id",
-//   as: "product",
-// });
-
-// Location.hasMany(ProductLocationStock, {
-//   foreignKey: "location_id",
-//   as: "stocks",
-// });
-// ProductLocationStock.belongsTo(Location, {
-//   foreignKey: "location_id",
-//   as: "location",
-// });
-
-// /* ========================================================================
-//    MESSAGING SYSTEM
-// ======================================================================== */
-
-// // Conversation → Messages
-// Conversation.hasMany(Message, {
-//   foreignKey: "conversation_id",
-//   as: "messages",
-//   onDelete: "CASCADE",
-// });
-// Message.belongsTo(Conversation, {
-//   foreignKey: "conversation_id",
-//   as: "conversation",
-// });
-
-// // User → Sent Messages
-// User.hasMany(Message, {
-//   foreignKey: "sender_id",
-//   as: "sentMessages",
-// });
-// Message.belongsTo(User, {
-//   foreignKey: "sender_id",
-//   as: "sender",
-// });
-
-// // User → Received Messages
-// User.hasMany(Message, {
-//   foreignKey: "receiver_id",
-//   as: "receivedMessages",
-// });
-// Message.belongsTo(User, {
-//   foreignKey: "receiver_id",
-//   as: "receiver",
-// });
-
-// // User → Conversations
-// User.hasMany(Conversation, {
-//   foreignKey: "created_by",
-//   as: "createdConversations",
-// });
-// Conversation.belongsTo(User, {
-//   foreignKey: "created_by",
-//   as: "creator",
-// });
-
-// // Assigned conversations
-// User.hasMany(Conversation, {
-//   foreignKey: "assigned_to",
-//   as: "assignedConversations",
-// });
-// Conversation.belongsTo(User, {
-//   foreignKey: "assigned_to",
-//   as: "assignee",
-// });
+// Assigned conversations
+User.hasMany(Conversation, {
+  foreignKey: "assigned_to",
+  as: "assignedConversations",
+});
+Conversation.belongsTo(User, {
+  foreignKey: "assigned_to",
+  as: "assignee",
+});
 
 
 
