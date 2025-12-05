@@ -37,6 +37,7 @@ const upload = require("../middlewares/multerUpload");
 const { Location } = require("../models");
 const { getCompletedTransactions } = require("../controllers/Transaction");
 const { getCustomerStatement } = require("../controllers/Statement");
+const { getRecentPaidOrders } = require("../controllers/loyality");
 
 // working api for admin side
 router.get('/allusers',authenticate, requireRole( "admin"), showAllUser)
@@ -60,6 +61,13 @@ router.post(
 router.get("/orders", getAdminOrders);
 router.put("/orders/:id/confirm-payment", confirmPayment);
 router.put("/orders/:id/status", updateOrderStatus);
+router.get(
+  "/orders/recent-paid",
+  authenticate,
+  requireRole("admin", "manager"), // only staff
+  getRecentPaidOrders
+);
+
 
 /// invoice 
 router.get("/customer/invoices", authenticate, getCustomerInvoices);

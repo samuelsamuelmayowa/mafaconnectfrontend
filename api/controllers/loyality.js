@@ -1323,10 +1323,80 @@ const toggleTierStatus = async (req, res) => {
 
 
 
+
+
+
+const getRecentPaidOrders = async (req, res) => {
+  // try {
+  //   const limit = req.query.limit || 10; // frontend can request ?limit=5 or ?limit=20
+
+  //   const orders = await Order.findAll({
+  //     where: { payment_status: "paid" },
+  //     include: [
+  //       {
+  //         model: User,
+  //         as: "customer",
+  //         attributes: ["id", "name", "phone", "email"],
+  //       },
+  //       {
+  //         model: OrderItem,
+  //         as: "items",
+  //         include: [
+  //           { model: Product, as: "product", attributes: ["id", "name"] }
+  //         ],
+  //       },
+  //     ],
+  //     order: [["createdAt", "DESC"]],
+  //     limit: parseInt(limit),
+  //   });
+
+  //   return res.json({
+  //     success: true,
+  //     count: orders.length,
+  //     orders,
+  //   });
+
+  // } catch (err) {
+  //   console.error("❌ Recent paid orders error:", err);
+  //   res.status(500).json({ success: false, message: "Failed to fetch paid orders" });
+  // }
+try {
+    const sales = await Order.findAll({
+      where: { payment_status: "paid" },
+
+      include: [
+        { model: OrderItem, as: "items" },
+        { model: User, as: "customer", attributes: ["name"] }
+      ],
+
+      limit: 10,
+      order: [["createdAt", "DESC"]]
+    });
+
+    const formatted = sales.map(order => ({
+      id: order.id,
+      customer: order.customer?.name || "Walk-in Customer",
+      items: order.items?.length || 0,
+      amount: Number(order.total_amount) || 0,
+      time: order.createdAt
+    }));
+
+    res.json(formatted);
+
+  } catch (err) {
+    console.log("RECENT SALES ERROR →", err);
+    res.status(500).json({ message: "Failed to load recent sales" });
+  }
+};
+
+
+
+
 module.exports = {
   getLoyaltyActivity,
   // Award points
   awardPointsForOrder,
+  getRecentPaidOrders,
   earnPointsForOrder,
 
   // Loyalty Accounts

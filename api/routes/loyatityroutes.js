@@ -8,6 +8,9 @@ const { createReward, getAllRewards, updateReward, deleteReward, toggleStatus, g
 
 } = require("../controllers/loyality");
 router.post("/loyalty/redeem", authenticate, requireRole("customer"), redeemReward)
+
+
+
 //user side 
 // Match your frontend: `${API_BASE}/api/loyalty/${user?.id}`
 router.get(

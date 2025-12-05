@@ -17,20 +17,33 @@ import {
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useSales } from "@/hooks/useSales";
 import { useProducts } from "@/hooks/useProducts";
+import { format } from "date-fns";
 
 export default function Dashboard() {
   const { analytics, isLoading: analyticsLoading } = useAnalytics();
   const { sales, isLoading: salesLoading } = useSales();
   const { products, isLoading: productsLoading } = useProducts();
 
-  const recentSales = sales?.slice(0, 4).map((sale) => ({
-    id: sale.id,
-    customer: sale.customers?.name || "Walk-in Customer",
-    amount: Number(sale.total_amount),
-    items: sale.sale_items?.length || 0,
-    time: new Date(sale.created_at).toLocaleString(),
-  })) || [];
+  const recentSales = (sales || []).slice(0, 4).map(sale => ({
+  id: sale.id,
+  customer: sale.customer || "Walk-in Customer",
+  items: sale.items ?? 0,
+  amount: Number(sale.amount) || 0,
+  time: sale.time ? new Date(sale.time).toLocaleString() : "Unknown Date"
+}));
 
+
+  console.log("Recent sales incoming →", recentSales);
+
+
+  const formatTime = (date) => {
+  if (!date) return "No Date";
+  try {
+    return format(new Date(date), "MMM d, yyyy — h:mm a");
+  } catch {
+    return "Invalid Date";
+  }
+};
   const topProducts = products
     ?.filter((p) => p.active)
     .sort((a, b) => b.stock_qty - a.stock_qty)
@@ -103,27 +116,36 @@ export default function Dashboard() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentSales.map((sale) => (
-                <div
-                  key={sale.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
-                >
-                  <div>
-                    <p className="font-medium text-foreground">{sale.customer}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {sale.items} items • {sale.time}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-foreground">
-                      ₦{sale.amount.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
+  <div className="space-y-4">
+    {recentSales?.map((sale) => {
+      const customerName = sale.customer || sale.customer_name || "Walk-in Customer";
+      const itemCount = sale.items || sale.total_items || sale.item_count || 0;
+      const amount = Number(sale.amount || sale.total_amount || 0);
+      const date = sale.time || sale.createdAt || sale.date;
+
+      return (
+        <div
+          key={sale.id}
+          className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+        >
+          <div>
+            <p className="font-medium text-foreground">{customerName}</p>
+            <p className="text-sm text-muted-foreground">
+              {itemCount} items •{" "}
+              {date ? new Date(date).toLocaleString() : "No Date"}
+            </p>
+          </div>
+
+          <div className="text-right">
+            <p className="font-semibold text-foreground">
+              ₦{amount.toLocaleString()}
+            </p>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</CardContent>
         </Card>
 
         {/* Top Products */}

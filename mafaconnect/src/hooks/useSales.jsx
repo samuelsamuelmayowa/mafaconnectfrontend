@@ -10,12 +10,17 @@ export function useSales() {
   const queryClient = useQueryClient();
 
   const apiBaseUrl = import.meta.env.VITE_HOME_OO; // e.g. "https://your-backend.com/api"
-
+const token = localStorage.getItem("ACCESS_TOKEN");
   // ✅ Fetch Sales
   const { data: sales, isLoading } = useQuery({
     queryKey: ["sales"],
     queryFn: async () => {
-      const response = await axios.get(`${apiBaseUrl}/sales`);
+      const response = await axios.get(`${apiBaseUrl}/orders/recent-paid`,{
+         headers: { Authorization: `Bearer ${token}` },
+    credentials: "include",
+      });
+      console.log("Recent sales incoming →", response.data);
+
       return response.data; // expected: [{id, customer, sale_items, ...}]
     },
   });
