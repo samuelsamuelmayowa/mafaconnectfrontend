@@ -4,7 +4,7 @@ const { Op } = require("sequelize");
 const { User } = require("../models/user");
 require("dotenv").config();
 const cloudinary = require("../cloudinary");
-const { Product, ProductImage, Location, ProductLocationStock, Order, OrderItem, LoyaltyTransaction, LoyaltyAccount } = require("../models");
+const { Product, ProductImage, Location, ProductLocationStock, Order, OrderItem, LoyaltyTransaction, LoyaltyAccount, RewardRedemption } = require("../models");
 const { sequelize } = require("../db");
 const { Reward } = require("../models/Reward");
 const { LoyaltyTier } = require("../models/LoyaltyTier");
@@ -420,8 +420,118 @@ const earnPointsForOrder = async (orderArg) => {
 
 
 
+// const redeemReward = async (req, res) => {
+//   const customerId = req.user && req.user.id; // from authenticate middleware
+//   const { rewardId } = req.body;
+
+//   if (!customerId || !rewardId) {
+//     return res.status(400).json({ message: "Missing customer or reward id" });
+//   }
+
+//   const t = await sequelize.transaction();
+
+//   try {
+//     const account = await getOrCreateLoyaltyAccount(customerId, t);
+
+//     const reward = await Reward.findOne({
+//       where: { id: rewardId, active: true },
+//       transaction: t,
+//       lock: t.LOCK.UPDATE,
+//     });
+
+//     if (!reward) {
+//       await t.rollback();
+//       return res.status(404).json({ message: "Reward not found or inactive" });
+//     }
+
+//     if (reward.stock_limit !== null && reward.stock_limit <= 0) {
+//       await t.rollback();
+//       return res.status(400).json({ message: "Reward out of stock" });
+//     }
+
+//     if (account.points_balance < reward.points_cost) {
+//       await t.rollback();
+//       return res.status(400).json({ message: "Not enough points" });
+//     }
+
+//     // Deduct points
+//     account.points_balance -= reward.points_cost;
+//     account.lifetime_points_redeemed += reward.points_cost;
+//     await account.save({ transaction: t });
+
+//     // Log transaction (redeem = negative points)
+//     await LoyaltyTransaction.create(
+//       {
+//         loyalty_account_id: account.id,
+//         type: "redeem",
+//         points: -reward.points_cost,
+//         source: "reward",
+//         source_ref: String(reward.id),
+//         note: `Redeemed reward: ${reward.title}`,
+//       },
+//       { transaction: t }
+//     );
+
+//     // Decrease stock
+//     if (reward.stock_limit !== null) {
+//       reward.stock_limit = reward.stock_limit - 1;
+//       await reward.save({ transaction: t });
+//     }
+
+//     // Generate redemption code (simple version)
+//     const redemptionCode = `RDM-${Date.now()}-${Math.floor(
+//       Math.random() * 1000
+//     )}`;
+
+//     const expiresAt = null; // or set 30 days ahead if you want
+
+//     const redemption = await RewardRedemption.create(
+//       {
+//         loyalty_account_id: account.id,
+//         reward_id: reward.id,
+//         customer_id: customerId,
+//         points_spent: reward.points_cost,
+//         redemption_code: redemptionCode,
+//         status: "active",
+//         expires_at: expiresAt,
+//       },
+//       { transaction: t }
+//     );
+
+//     await recalculateTierForAccount(account, t);
+
+//     await t.commit();
+
+//     return res.status(201).json({
+//       message: "Reward redeemed successfully",
+//       redemption_code: redemption.redemption_code,
+//       redemption: {
+//         id: redemption.id,
+//         status: redemption.status,
+//         points_spent: redemption.points_spent,
+//         created_at: redemption.createdAt,
+//         expires_at: redemption.expires_at,
+//         used_at: redemption.used_at,
+//         reward: {
+//           id: reward.id,
+//           title: reward.title,
+//           description: reward.description,
+//         },
+//       },
+//     });
+//   } catch (err) {
+//     console.error("REDEEM REWARD ERROR:", err);
+//     await t.rollback();
+//     return res.status(500).json({ message: "Failed to redeem reward" });
+//   }
+// };
+
+// ===================================================
+// 5. RECENT REDEMPTIONS (staff dashboard)
+//    GET /api/loyalty/redemptions/recent?limit=5
+// ===================================================
 const redeemReward = async (req, res) => {
-  const customerId = req.user && req.user.id; // from authenticate middleware
+  const customerId = req.user?.id; 
   const { rewardId } = req.body;
 
   if (!customerId || !rewardId) {
@@ -454,36 +564,26 @@ const redeemReward = async (req, res) => {
       return res.status(400).json({ message: "Not enough points" });
     }
 
-    // Deduct points
+    // Deduct points immediately
     account.points_balance -= reward.points_cost;
     account.lifetime_points_redeemed += reward.points_cost;
     await account.save({ transaction: t });
 
-    // Log transaction (redeem = negative points)
+    // Log transaction as redemption (negative points)
     await LoyaltyTransaction.create(
       {
         loyalty_account_id: account.id,
-        type: "redeem",
-        points: -reward.points_cost,
+        type: "redeem",              // SAME AS BEFORE
+        points: -reward.points_cost, // subtract
         source: "reward",
         source_ref: String(reward.id),
-        note: `Redeemed reward: ${reward.title}`,
+        note: `Requested reward: ${reward.title}`,
       },
       { transaction: t }
     );
 
-    // Decrease stock
-    if (reward.stock_limit !== null) {
-      reward.stock_limit = reward.stock_limit - 1;
-      await reward.save({ transaction: t });
-    }
-
-    // Generate redemption code (simple version)
-    const redemptionCode = `RDM-${Date.now()}-${Math.floor(
-      Math.random() * 1000
-    )}`;
-
-    const expiresAt = null; // or set 30 days ahead if you want
+    // Generate code NOW, but not usable yet
+    const redemptionCode = `RDM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     const redemption = await RewardRedemption.create(
       {
@@ -492,8 +592,11 @@ const redeemReward = async (req, res) => {
         customer_id: customerId,
         points_spent: reward.points_cost,
         redemption_code: redemptionCode,
-        status: "active",
-        expires_at: expiresAt,
+
+        // 🔥 HERE IS THE CHANGE
+        status: "pending",  // WAITING FOR ADMIN APPROVAL ❗
+        
+        expires_at: null  // you can enable expiry later
       },
       { transaction: t }
     );
@@ -503,22 +606,21 @@ const redeemReward = async (req, res) => {
     await t.commit();
 
     return res.status(201).json({
-      message: "Reward redeemed successfully",
-      redemption_code: redemption.redemption_code,
+      message: "Redemption submitted — awaiting admin approval",
       redemption: {
         id: redemption.id,
-        status: redemption.status,
+        status: "pending",
+        redemption_code:redemptionCode,
         points_spent: redemption.points_spent,
         created_at: redemption.createdAt,
-        expires_at: redemption.expires_at,
-        used_at: redemption.used_at,
         reward: {
           id: reward.id,
           title: reward.title,
           description: reward.description,
-        },
-      },
+        }
+      }
     });
+
   } catch (err) {
     console.error("REDEEM REWARD ERROR:", err);
     await t.rollback();
@@ -526,10 +628,72 @@ const redeemReward = async (req, res) => {
   }
 };
 
-// ===================================================
-// 5. RECENT REDEMPTIONS (staff dashboard)
-//    GET /api/loyalty/redemptions/recent?limit=5
-// ===================================================
+
+
+
+const approveReward = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const redemption = await RewardRedemption.findByPk(id, {
+      include:[{ model: Reward }]
+    });
+
+    if (!redemption) return res.status(404).json({ message:"Not found" });
+    if (redemption.status !== "pending")
+      return res.status(400).json({ message:"Already processed" });
+
+    redemption.status = "active";        // 🔥 Admin approves
+    redemption.used_at = null;           // will be filled when collected
+    await redemption.save();
+
+    return res.json({ message:"Approved!", redemption });
+  } catch(e) {
+    console.log(e);
+    return res.status(500).json({ message:"Failed approval" });
+  }
+};
+
+const rejectReward = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { id } = req.params;
+
+    const redemption = await RewardRedemption.findByPk(id, { transaction:t });
+    if (!redemption) return res.json({ message:"Not found" });
+    if (redemption.status !== "pending")
+      return res.json({ message:"Already approved/rejected" });
+
+    // refund points
+    const account = await LoyaltyAccount.findByPk(
+      redemption.loyalty_account_id,
+      { transaction:t }
+    );
+    account.points_balance += redemption.points_spent;
+    await account.save({ transaction:t });
+
+    redemption.status = "rejected";
+    await redemption.save({ transaction:t });
+
+    await LoyaltyTransaction.create(
+      {
+        loyalty_account_id: account.id,
+        type:"refund",
+        points: redemption.points_spent,
+        note:`Refund for rejected redemption`
+      },
+      { transaction:t }
+    );
+
+    await t.commit();
+    return res.json({ message:"Redemption rejected — points refunded" });
+  } catch(e) {
+    await t.rollback();
+    return res.json({ message:"Error rejecting redemption" });
+  }
+};
+
+
 const getRecentRedemptions = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit, 10) || 5;
@@ -539,7 +703,7 @@ const getRecentRedemptions = async (req, res) => {
       limit,
       include: [
         { model: Reward, attributes: ["title", "description"] },
-        { model: Customer, attributes: ["name"] },
+        { model:User, attributes: ["name"] },
       ],
     });
 
@@ -629,6 +793,7 @@ async function recalculateTierForAccount(account, t = null) {
 //    GET /api/loyalty/:customerId
 // ===================================================
 const tiers = require("../config/tierLevels");
+const LoyaltyActivity = require("../models/LoyaltyActivity");
 const getLoyaltyAccount = async (req, res) => {
   // try {
   //   const { customerId } = req.params;
@@ -738,6 +903,30 @@ const getLoyaltyAccount = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
+
+const getLoyaltyActivity = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+
+    const history = await LoyaltyActivity.findAll({
+      where: { customer_id: customerId },
+      order: [["id", "DESC"]],
+      limit: 20 // recent 20 activities
+    });
+
+    return res.json({
+      success: true,
+      data: history,
+    });
+
+  } catch (error) {
+    console.log("Activity fetch error:", error);
+    return res.status(500).json({ success: false, message: "Failed to load activity" });
+  }
+};
+
 
 // ===================================================
 // 2. GET transactions for account
@@ -1135,6 +1324,7 @@ const toggleTierStatus = async (req, res) => {
 
 
 module.exports = {
+  getLoyaltyActivity,
   // Award points
   awardPointsForOrder,
   earnPointsForOrder,

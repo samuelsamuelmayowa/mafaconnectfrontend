@@ -3,7 +3,7 @@ import axios from "axios";
 import { toast } from "sonner";
 
 const API_BASE = import.meta.env.VITE_HOME_OO;
-
+const token = localStorage.getItem("ACCESS_TOKEN");
 export function useRedemptionManagement() {
   const queryClient = useQueryClient();
 
@@ -13,9 +13,13 @@ export function useRedemptionManagement() {
   const { data: redemptions, isLoading } = useQuery({
     queryKey: ["redemption-management"],
     queryFn: async () => {
-      const res = await axios.get(`${API_BASE}/api/loyalty/redemptions`);
+      const res = await axios.get(`${API_BASE}/loyalty/redemptions/admin`,{
+         headers: { Authorization: `Bearer ${token}` },
+    credentials: "include",
+      });
 
       // Backend returns: redemption + reward + customer info
+      // alert('Hel')
       return res.data;
     },
   });
@@ -25,7 +29,10 @@ export function useRedemptionManagement() {
   // -------------------------------------------------------
   const markAsUsed = useMutation({
     mutationFn: async (redemptionId) => {
-      await axios.put(`${API_BASE}/api/loyalty/redemptions/${redemptionId}/use`);
+      await axios.put(`${API_BASE}/api/loyalty/redemptions/${redemptionId}/use`,{
+         headers: { Authorization: `Bearer ${token}` },
+    credentials: "include",
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["redemption-management"]);
@@ -42,7 +49,10 @@ export function useRedemptionManagement() {
   // -------------------------------------------------------
   const cancelRedemption = useMutation({
     mutationFn: async (redemptionId) => {
-      await axios.put(`${API_BASE}/api/loyalty/redemptions/${redemptionId}/cancel`);
+      await axios.put(`${API_BASE}/api/loyalty/redemptions/${redemptionId}/cancel`,{
+         headers: { Authorization: `Bearer ${token}` },
+    credentials: "include",
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["redemption-management"]);

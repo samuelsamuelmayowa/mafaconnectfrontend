@@ -1,3 +1,37 @@
+await LoyaltyActivity.create({
+  customer_id,
+  type: "earned",
+  points: +pointsAwarded,
+  description: `${kg}KG Rice Purchase`
+});
+
+await LoyaltyActivity.create({
+  customer_id,
+  type: "redemption",
+  points: -pointsUsed,
+  description: `Redeemed for product ${productName}`
+});
+
+await LoyaltyActivity.create({
+  customer_id,
+  type: "refund",
+  points: +pointsUsed,
+  description: `Refunded — redemption not approved`
+});
+
+
+
+
+my order showing overview  ... on my order dashboard , status 
+// total earnd point ,collect lifetime
+
+
+
+
+
+
+
+
 I can generate the full backend loyalty API to match this dashboard:
 
 ✅ /api/loyalty/:id
@@ -79,3 +113,45 @@ I can generate:
 What Backend Routes You Need
 GET User’s Past Redemptions
 GET /loyalty/rewards/redemptions/:customerId
+
+
+
+
+
+
+
+
+
+
+
+exports.approveRedemption = async (req, res) => {
+  const { id } = req.params;
+
+  const redemption = await RewardRedemption.findByPk(id, { include: [Reward] });
+  if (!redemption) return res.status(404).json({ message: "Redemption not found" });
+
+  redemption.status = "approved";
+  redemption.used_at = new Date();
+
+  await redemption.save();
+  return res.json({ success: true, message: "Redemption approved", redemption });
+};
+
+
+exports.rejectRedemption = async (req, res) => {
+  const { id } = req.params;
+
+  const redemption = await RewardRedemption.findByPk(id);
+  if (!redemption) return res.status(404).json({ message: "Not found" });
+
+  const account = await LoyaltyAccount.findByPk(redemption.loyalty_account_id);
+
+  account.points_balance += redemption.points_spent;
+  await account.save();
+
+  redemption.status = "rejected";
+  redemption.used_at = null;
+  await redemption.save();
+
+  return res.json({ success: true, message: "Redemption rejected — points refunded", redemption });
+};

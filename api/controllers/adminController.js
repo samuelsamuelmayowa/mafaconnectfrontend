@@ -215,62 +215,194 @@ function calculateExpiry(payment_method) {
 
   return now;
 }
+// exports.confirmOrderPayment = async (req, res) => {
+//   const t = await sequelize.transaction();
+
+//   try {
+//     const { id } = req.params;
+//     const { payment_reference } = req.body;
+
+//     const order = await Order.findByPk(id, { transaction: t });
+
+//     if (!order) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Order not found",
+//       });
+//     }
+
+//     if (order.payment_status === "paid") {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Order already marked as paid",
+//       });
+//     }
+
+//     order.payment_status = "paid";
+//     order.order_status = "confirmed";
+
+//     if (payment_reference) {
+//       order.payment_reference = payment_reference;
+//     }
+
+//     await order.save({ transaction: t });
+
+//     // 🔔 Create notification for customer
+//     await Notification.create({
+//       user_id: order.customer_id,
+//       title: "Payment Confirmed ✅",
+//       message: `Your payment for order ${order.order_number} has been confirmed.`,
+//       order_id: order.id,
+//     }, { transaction: t });
+
+//     await LoyaltyActivity.create({
+//       customer_id,
+//       type: "earned",
+//       points: +pointsAwarded,
+//       description: `${kg}KG Rice Purchase`
+//     });
+
+//     await t.commit();
+
+//     res.json({
+//       success: true,
+//       message: "Payment confirmed successfully",
+//     });
+
+//   } catch (err) {
+//     await t.rollback();
+//     console.error("Confirm payment error:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to confirm payment",
+//     });
+//   }
+// };
+
 exports.confirmOrderPayment = async (req, res) => {
   const t = await sequelize.transaction();
-
   try {
     const { id } = req.params;
     const { payment_reference } = req.body;
 
-    const order = await Order.findByPk(id, { transaction: t });
+    console.log("============= PAYMENT CONFIRM START =============");
+
+    const order = await Order.findByPk(id, {
+      include: [{ model: OrderItem, as: "items" }], 
+      transaction: t
+    });
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
+      console.log("⛔ ORDER NOT FOUND — ROLLBACK");
+      await t.rollback();
+      return res.json({ success: false, message: "Order not found" });
     }
 
     if (order.payment_status === "paid") {
-      return res.status(400).json({
-        success: false,
-        message: "Order already marked as paid",
-      });
+      console.log("⛔ ORDER ALREADY PAID — NO POINTS ADDED");
+      await t.rollback();
+      return res.json({ success: false, message: "Order already confirmed" });
     }
 
+    // ===============================
+    // UPDATE ORDER STATUS
+    // ===============================
     order.payment_status = "paid";
     order.order_status = "confirmed";
+    if (payment_reference) order.payment_reference = payment_reference;
+    await order.save({ transaction: t });
+    console.log("🟢 ORDER UPDATED SUCCESSFULLY");
 
-    if (payment_reference) {
-      order.payment_reference = payment_reference;
+    // ===============================
+    // POINT CALCULATION
+    // ===============================
+    let pointsAwarded = 0;
+    console.log("🟡 ITEMS:", order.items?.length);
+
+    order.items.forEach(item => {
+      console.log(`➕ PRODUCT: ${item.product_name} | QTY: ${item.quantity}`);
+      pointsAwarded += item.quantity;
+    });
+
+    console.log("🟢 FINAL POINTS TO ADD =", pointsAwarded);
+
+    if (pointsAwarded <= 0) {
+      console.log("⚠ No points to award — but saving transaction anyway");
     }
 
-    await order.save({ transaction: t });
+    // ===============================
+    // UPDATE LOYALTY BALANCE
+    // ===============================
+    const loyalty = await LoyaltyAccount.findOne({
+      where: { customer_id: order.customer_id },
+      transaction: t
+    });
 
-    // 🔔 Create notification for customer
+    if (!loyalty) {
+      console.log("⛔ LOYALTY ACCOUNT NOT FOUND — ROLLBACK");
+      await t.rollback();
+      return res.json({ success: false, message: "No loyalty account found for user" });
+    }
+
+    loyalty.points_balance += pointsAwarded;
+    await loyalty.save({ transaction: t });
+    console.log("💰 UPDATED BALANCE =", loyalty.points_balance);
+
+    // ===============================
+    // LOG ACTIVITY — NOW WILL SAVE
+    // ===============================
+    
+
+//     await LoyaltyActivity.create({
+//   customer_id: order.customer_id,
+//   type: "earned",
+//   points: pointsAwarded,
+//   description: `Earned ${pointsAwarded} points from order ${order.order_number}`
+// }, { transaction: t });
+    await LoyaltyTransaction.create({
+  loyalty_account_id: account.id,
+  type: "redeem",
+  points: -reward.points_cost,
+ note: `Redeemed ${reward.title}`,
+description: `Redeemed reward: ${reward.title}`, // REQUIRED FIELD
+// note: `Redemption initiated`, // optional extra trace
+}, { transaction: t });
+
+
+    console.log("🔥 ACTIVITY LOGGED →", pointsAwarded);
+
+    // ===============================
+    // SEND NOTIFICATION
+    // ===============================
     await Notification.create({
       user_id: order.customer_id,
-      title: "Payment Confirmed ✅",
-      message: `Your payment for order ${order.order_number} has been confirmed.`,
+      title: "Payment Confirmed",
+      message: `You earned +${pointsAwarded} points`,
       order_id: order.id,
     }, { transaction: t });
 
+    // ===============================
+    // COMMIT (THE MOST IMPORTANT PART)
+    // ===============================
     await t.commit();
+    console.log("🎉 TRANSACTION COMMITTED — ACTIVITY SAVED");
+    console.log("================================================");
 
-    res.json({
+    return res.json({
       success: true,
-      message: "Payment confirmed successfully",
+      message: "Payment confirmed — points awarded",
+      points_awarded: pointsAwarded
     });
 
   } catch (err) {
     await t.rollback();
-    console.error("Confirm payment error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Failed to confirm payment",
-    });
+    console.log("❌ UNEXPECTED ERROR — ROLLBACK:", err);
+    return res.json({ success: false, message: "Failed to confirm payment" });
   }
 };
+
+
+
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -605,6 +737,7 @@ exports.getCustomerInvoices = async (req, res) => {
 
 const { generateInvoicePDF } = require("../utils/generateInvoicePDF");
 const { earnPointsForOrder, awardPointsForOrder } = require("./loyality");
+const LoyaltyActivity = require("../models/LoyaltyActivity");
 
 exports.downloadInvoicePDF = async (req, res) => {
   try {

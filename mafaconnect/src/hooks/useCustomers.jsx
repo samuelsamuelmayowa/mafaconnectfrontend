@@ -6,12 +6,17 @@ import axios from "axios";
  * (Replace the API URL with your backend route)
  */
 export function useCustomers() {
+  
+const token = localStorage.getItem("ACCESS_TOKEN");
   const apiBaseUrl = import.meta.env.VITE_HOME_OO; // example: "https://your-backend.com/api"
 
   const { data: customers, isLoading, error } = useQuery({
     queryKey: ["customers"],
     queryFn: async () => {
-      const response = await axios.get(`${apiBaseUrl}/customers`);
+      const response = await axios.get(`${apiBaseUrl}/customers`,{
+           headers: { Authorization: `Bearer ${token}` },
+    credentials: "include",
+      });
       return response.data; // expected to return [{ id, name, loyalty_accounts: [...] }, ...]
     },
   });

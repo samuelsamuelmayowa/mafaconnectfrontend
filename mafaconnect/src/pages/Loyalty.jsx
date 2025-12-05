@@ -82,19 +82,33 @@ export default function Loyalty() {
     setLastRedemptionCode(undefined);
   };
 
-  const handleRedeem = async (rewardId) => {
-    console.log("handleRedeem called with rewardId:", rewardId);
-    try {
-      const result = await redeemReward({ rewardId });
-      console.log("Redemption result:", result);
-      if (result && typeof result === "object" && "redemption_code" in result) {
-        setLastRedemptionCode(result.redemption_code);
-      }
-    } catch (error) {
-      console.error("Redemption failed in handleRedeem:", error);
-      setRewardToRedeem(null);
+  // const handleRedeem = async (rewardId) => {
+  //   console.log("handleRedeem called with rewardId:", rewardId);
+  //   try {
+  //     const result = await redeemReward({ rewardId });
+  //     console.log("Redemption result:", result);
+  //     if (result && typeof result === "object" && "redemption_code" in result) {
+  //       setLastRedemptionCode(result.redemption_code);
+  //     }
+  //   } catch (error) {
+  //     console.error("Redemption failed in handleRedeem:", error);
+  //     setRewardToRedeem(null);
+  //   }
+  // };
+const handleRedeem = async (rewardId) => {
+  try {
+    const result = await redeemReward({ rewardId });
+
+    if (result?.redemption?.redemption_code) {
+      setLastRedemptionCode(result.redemption.redemption_code);
     }
-  };
+
+    setShowRedeemDialog(false);
+
+  } catch (e) {
+    console.error(e);
+  }
+};
 
   const handleRedeemDialogChange = (open) => {
     setShowRedeemDialog(open);

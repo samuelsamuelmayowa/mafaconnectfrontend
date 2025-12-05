@@ -175,9 +175,29 @@ export function RedeemRewardDialog({
             >
               {isRedeeming ? "Redeeming..." : "Confirm Redemption"}
             </Button>
+
+            
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+
+
+// {redemptionCode ? (
+//   <div className="p-4 text-center space-y-2">
+//     <h2 className="text-xl font-bold text-green-600">Redemption Successful Pending Approval 🎉</h2>
+//     <p className="text-sm">Your approval code:</p>
+//     <code className="text-lg font-mono bg-muted px-3 py-2 rounded">
+//       {redemptionCode}
+//     </code>
+
+//     <p className="text-xs text-muted-foreground">
+//       Admin will verify & activate this reward.
+//     </p>
+//   </div>
+// ) : (
+//   // normal redeem UI
+// )}

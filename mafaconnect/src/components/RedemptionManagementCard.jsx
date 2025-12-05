@@ -40,16 +40,30 @@ export function RedemptionManagementCard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const filteredRedemptions = redemptions?.filter((r) => {
-    const matchesSearch =
-      r.redemption_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.reward?.title?.toLowerCase().includes(searchQuery.toLowerCase());
+  // const filteredRedemptions = redemptions?.filter((r) => {
+  //   const matchesSearch =
+  //     r.redemption_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //     r.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //     r.reward?.title?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || r.status === statusFilter;
+  //   const matchesStatus = statusFilter === "all" || r.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  });
+  //   return matchesSearch && matchesStatus;
+  // });
+const filteredRedemptions = redemptions?.filter((r) => {
+  const code = r?.redemption_code?.toLowerCase() || "";
+  const customer = r?.customer?.name?.toLowerCase() || "";
+  const reward = r?.reward?.title?.toLowerCase() || "";
+
+  const matchesSearch =
+    code.includes(searchQuery.toLowerCase()) ||
+    customer.includes(searchQuery.toLowerCase()) ||
+    reward.includes(searchQuery.toLowerCase());
+
+  const matchesStatus = statusFilter === "all" || r.status === statusFilter;
+
+  return matchesSearch && matchesStatus;
+});
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -138,7 +152,7 @@ export function RedemptionManagementCard() {
                       {redemption.redemption_code}
                     </TableCell>
 
-                    <TableCell>{redemption.customer?.name}</TableCell>
+                    <TableCell>{redemption.customer?.customer_id}</TableCell>
                     <TableCell>{redemption.reward?.title}</TableCell>
 
                     <TableCell>

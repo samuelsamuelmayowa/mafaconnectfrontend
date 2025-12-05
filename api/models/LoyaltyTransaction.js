@@ -26,7 +26,7 @@ const LoyaltyTransaction = sequelize.define("LoyaltyTransaction", {
 
   description: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
   },
 
   meta: {
