@@ -40,8 +40,8 @@ router.get(
 
 // GET all tiers
 router.get("/tiers",
-    authenticate,
-     requireRole("customer", "sales_person", "manager", "admin"),
+    // authenticate,
+    //  requireRole("customer", "sales_person", "manager", "admin"),
       getAllTiers);
 
 router.post("/rewards", authenticate, requireRole("customer", "sales_person", "manager", "admin"),  createReward);

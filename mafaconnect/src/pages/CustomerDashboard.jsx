@@ -51,7 +51,10 @@ export default function CustomerDashboard() {
   const { data: loyaltyAccount } = useQuery({
     queryKey: ["customer-loyalty", user?.id],
     queryFn: async () => {
-      const res = await axios.get(`${API_BASE}/loyalty/${user?.id}`, authHeaders);
+      const res = await axios.get(
+        `${API_BASE}/loyalty/${user?.id}`,
+        authHeaders
+      );
       return res.data.data;
     },
     enabled: !!user?.id,
@@ -63,7 +66,7 @@ export default function CustomerDashboard() {
   const { data: tiers = [] } = useQuery({
     queryKey: ["loyalty-tiers"],
     queryFn: async () => {
-      const res = await axios.get(`${API_BASE}/loyalty/tiers`, authHeaders);
+      const res = await axios.get(`${API_BASE}/tiers`, authHeaders);
       return res.data.data || [];
     },
   });
@@ -85,7 +88,10 @@ export default function CustomerDashboard() {
   const { data: recentOrders, isLoading: loadingOrders } = useQuery({
     queryKey: ["customer-recent-orders", user?.id],
     queryFn: async () => {
-      const res = await axios.get(`${API_BASE}/orders/user/${user?.id}`, authHeaders);
+      const res = await axios.get(
+        `${API_BASE}/orders/user/${user?.id}`,
+        authHeaders
+      );
       return res.data.data || [];
     },
     enabled: !!user?.id,
@@ -112,7 +118,10 @@ export default function CustomerDashboard() {
   const { data: orderStats } = useQuery({
     queryKey: ["customer-order-stats", user?.id],
     queryFn: async () => {
-      const res = await axios.get(`${API_BASE}/orders/stats/${user?.id}`, authHeaders);
+      const res = await axios.get(
+        `${API_BASE}/orders/stats/${user?.id}`,
+        authHeaders
+      );
       return res.data.data;
     },
     enabled: !!user?.id,
@@ -133,14 +142,15 @@ export default function CustomerDashboard() {
   const normalizedTiers = tiers.map((t) => ({
     ...t,
     benefits:
-      typeof t.benefits === "string" ? JSON.parse(t.benefits) : t.benefits || [],
+      typeof t.benefits === "string"
+        ? JSON.parse(t.benefits)
+        : t.benefits || [],
     multiplier: t.multiplier || 1,
     sort_order: t.sort_order ?? t.min_points ?? 0,
   }));
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
-
       {/* HEADER */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">
@@ -161,15 +171,28 @@ export default function CustomerDashboard() {
       )}
 
       {/* TIER PROGRESS */}
-
-
-          {loyaltyAccount && (
+{/* 
+      {loyaltyAccount && (
         <TierProgressCard
           tiers={normalizedTiers}
           currentPoints={loyaltyAccount.points_balance}
           currentTierName={loyaltyAccount.tier}
         />
-      )}
+      )} */}
+      {/* {loyaltyAccount && tiers && (
+  <TierProgressCard
+    tiers={tiers}
+    currentPoints={loyaltyAccount.points_balance}
+    currentTierName={loyaltyAccount.tier}
+  />
+)} */}
+{loyaltyAccount && tiers?.length > 0 && (
+  <TierProgressCard
+    tiers={tiers}
+    currentPoints={loyaltyAccount.points_balance}
+    currentTierName={loyaltyAccount.tier}
+  />
+)}
 
       {/* REWARDS CTA */}
       {loyaltyAccount && rewards?.length > 0 && (
@@ -182,7 +205,8 @@ export default function CustomerDashboard() {
                   Redeem Your Points
                 </CardTitle>
                 <CardDescription>
-                  You have {loyaltyAccount.points_balance.toLocaleString()} points available
+                  You have {loyaltyAccount.points_balance.toLocaleString()}{" "}
+                  points available
                 </CardDescription>
               </div>
 
@@ -258,7 +282,6 @@ export default function CustomerDashboard() {
 
       {/* STATS CARDS */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-
         {/* Total Orders */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -267,14 +290,18 @@ export default function CustomerDashboard() {
           </CardHeader>
 
           <CardContent>
-            <div className="text-2xl font-bold">{orderStats?.totalOrders || 0}</div>
+            <div className="text-2xl font-bold">
+              {orderStats?.totalOrders || 0}
+            </div>
           </CardContent>
         </Card>
 
         {/* Loyalty Points */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Loyalty Points</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Loyalty Points
+            </CardTitle>
             <Gift className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
 
@@ -293,24 +320,27 @@ export default function CustomerDashboard() {
           </CardHeader>
 
           <CardContent>
-            <div className="text-2xl font-bold">{loyaltyAccount?.tier || "Bronze"}</div>
+            <div className="text-2xl font-bold">
+              {loyaltyAccount?.tier || "Bronze"}
+            </div>
           </CardContent>
         </Card>
 
         {/* Pending Invoices */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders 
-              
+            <CardTitle className="text-sm font-medium">
+              Pending Orders
             </CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
 
           <CardContent>
-            <div className="text-2xl font-bold">{pendingInvoices?.length || 0}</div>
+            <div className="text-2xl font-bold">
+              {pendingInvoices?.length || 0}
+            </div>
           </CardContent>
         </Card>
-
       </div>
 
       {/* RECENT ORDERS */}
@@ -329,9 +359,7 @@ export default function CustomerDashboard() {
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
                   <div>
-                    <p className="font-medium">
-                     #{order.order_number}
-                    </p>
+                    <p className="font-medium">#{order.order_number}</p>
 
                     <p className="text-sm text-muted-foreground">
                       {format(new Date(order.createdAt), "MMM d, yyyy")}
@@ -1113,7 +1141,7 @@ export default function CustomerDashboard() {
 
 // // //       {/* TIER PROGRESS CARD */}
 // // //       {loyaltyAccount && (
-       
+
 // // //         <TierProgressCard
 // // //           tiers={normalizedTiers}
 // // //           currentPoints={loyaltyAccount.points_balance}
