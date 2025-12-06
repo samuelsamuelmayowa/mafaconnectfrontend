@@ -2698,7 +2698,7 @@ exports.getCurrentUser = async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
 
     const user = await User.findByPk(decoded.id, {
-      attributes: ["id", "name", "account_number", "email", "role", "kyc_status", "is_active", "customer_type"],
+      attributes: ["id", "name", "account_number", "email", "role", "kyc_status", "is_active", "customer_type", "phone"],
     });
 
     if (!user) return res.status(404).json({ message: "User not found" });

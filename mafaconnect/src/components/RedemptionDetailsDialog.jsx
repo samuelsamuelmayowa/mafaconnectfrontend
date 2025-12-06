@@ -129,7 +129,7 @@ export function RedemptionDetailsDialog({
           </div>
 
           {/* Actions */}
-          {redemption.status === "active" && (
+          {redemption.status === "pending" && (
             <>
               <Separator />
 

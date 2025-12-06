@@ -179,7 +179,7 @@ const filteredRedemptions = redemptions?.filter((r) => {
                           <Eye className="h-4 w-4" />
                         </Button>
 
-                        {redemption.status === "active" && (
+                        {redemption.status === "pending" && (
                           <>
                             <Button
                               variant="ghost"

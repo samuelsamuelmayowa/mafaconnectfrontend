@@ -25,8 +25,30 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/Card";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Loader2, User, Copy, Upload, AlertTriangle, Trash2, Lock, KeyRound, Eye, EyeOff, Shield, Check } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Loader2,
+  User,
+  Copy,
+  Upload,
+  AlertTriangle,
+  Trash2,
+  Lock,
+  KeyRound,
+  Eye,
+  EyeOff,
+  Shield,
+  Check,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 // import { Loader2, User, Copy, Upload, AlertTriangle, Trash2 } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -47,7 +69,10 @@ const profileSchema = z.object({
     .string()
     .min(3, "Username must be at least 3 characters")
     .max(30, "Username must be less than 30 characters")
-    .regex(/^[a-zA-Z0-9_-]+$/, "Username can only contain letters, numbers, hyphens, and underscores")
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      "Username can only contain letters, numbers, hyphens, and underscores"
+    )
     .optional()
     .or(z.literal("")),
   full_name: z
@@ -61,7 +86,7 @@ export default function ProfileSettings() {
   const { user, loading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-   const [showPasswordSection, setShowPasswordSection] = React.useState(false);
+  const [showPasswordSection, setShowPasswordSection] = React.useState(false);
   const [currentPassword, setCurrentPassword] = React.useState("");
   const [newPasswordValue, setNewPasswordValue] = React.useState("");
   const [confirmNewPassword, setConfirmNewPassword] = React.useState("");
@@ -84,6 +109,7 @@ export default function ProfileSettings() {
       username: "",
       full_name: "",
       phone: "",
+      
     },
   });
 
@@ -91,19 +117,20 @@ export default function ProfileSettings() {
   // FETCH PROFILE DATA (React Query)
   // ------------------------------
   const API_URL = import.meta.env.VITE_HOME_OO;
-const { data: profileData, isLoading: profileLoading } = useQuery({
-  queryKey: ["profile"],
-  enabled: !!user,
-  queryFn: async () => {
-    const res = await axios.get(`${API_URL}/auth/me`,{ headers: { Authorization: `Bearer ${token}` },
-    credentials: "include",});
-alert('load ')
-    console.log("PROFILE RESPONSE:", res.data);
+  const { data: profileData, isLoading: profileLoading } = useQuery({
+    queryKey: ["profile"],
+    enabled: !!user,
+    queryFn: async () => {
+      const res = await axios.get(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
+      });
+      alert("load ");
+      console.log("PROFILE RESPONSE:", res.data);
 
-    return res.data.user;
-  },
-});
-
+      return res.data.user;
+    },
+  });
 
   // ------------------------------
   // UPDATE PROFILE (React Query)
@@ -210,7 +237,6 @@ alert('load ')
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              
               {/* Avatar */}
               <div className="flex items-center gap-6">
                 <Avatar className="h-24 w-24">
@@ -230,7 +256,11 @@ alert('load ')
                     onChange={handleAvatarUpload}
                   />
 
-                  <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
                     <Upload className="h-4 w-4 mr-2" /> Upload Photo
                   </Button>
                 </div>
@@ -242,7 +272,9 @@ alert('load ')
                   <div className="flex justify-between">
                     <div>
                       <p className="text-sm font-medium">Account Number</p>
-                      <p className="text-2xl font-bold text-primary">MFC-{accountNumber}</p>
+                      <p className="text-2xl font-bold text-primary">
+                        MFC-{accountNumber}
+                      </p>
                     </div>
 
                     <Button variant="outline" onClick={copyAccountNumber}>
@@ -253,18 +285,18 @@ alert('load ')
               )}
 
               {/* User ID */}
-              <FormItem>
+              {/* <FormItem>
                 <FormLabel>User ID</FormLabel>
                 <FormControl>
                   <Input value={user?.id} disabled />
                 </FormControl>
-              </FormItem>
+              </FormItem> */}
 
               {/* Email */}
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-{/* <Input value={profileData?.email || ""} disabled /> */}
+                  {/* <Input value={profileData?.email || ""} disabled /> */}
                   <Input value={user?.email} disabled />
                 </FormControl>
               </FormItem>
@@ -277,7 +309,7 @@ alert('load ')
                   <FormItem>
                     <FormLabel>Username</FormLabel>
                     <FormControl>
-                        <Input value={user?.name} disabled />
+                      <Input value={user?.name} disabled />
                       {/* <Input placeholder="Enter username" {...field} /> */}
                     </FormControl>
                   </FormItem>
@@ -292,7 +324,8 @@ alert('load ')
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter full name" {...field} />
+                          <Input value={user?.name} disabled />
+                      {/* <Input placeholder="Enter full name" {...field} /> */}
                     </FormControl>
                   </FormItem>
                 )}
@@ -306,7 +339,8 @@ alert('load ')
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter phone" {...field} />
+                          <Input value={user?.phone} disabled />
+                      {/* <Input placeholder="Enter phone" {...field} /> */}
                     </FormControl>
                   </FormItem>
                 )}
@@ -320,187 +354,219 @@ alert('load ')
         </CardContent>
       </Card>
 
-  <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Lock className="h-6 w-6" />
-            <CardTitle>Security</CardTitle>
-          </div>
-        </div>
-        <CardDescription>
-          Manage your account security settings
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {!showPasswordSection ? (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Keep your account secure by using a strong, unique password.
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => setShowPasswordSection(true)}
-              className="w-full"
-            >
-              <KeyRound className="mr-2 h-4 w-4" />
-              Change Password
-            </Button>
-          </div>
-        ) : (
-          <form onSubmit={handleChangePassword} className="space-y-4">
-            <Alert>
-              <Shield className="h-4 w-4" />
-              <AlertTitle>Password Requirements</AlertTitle>
-              <AlertDescription className="text-xs">
-                Your password must be at least 6 characters long. We recommend using a mix of uppercase, lowercase, numbers, and special characters.
-              </AlertDescription>
-            </Alert>
-
-            {/* Current Password */}
-            <div className="space-y-2">
-              <Label htmlFor="current-password">Current Password</Label>
-              <div className="relative">
-                <Input
-                  id="current-password"
-                  type={showCurrentPassword ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
-                  required
-                  disabled={changingPassword}
-                  className="pr-10"
-                  autoComplete="current-password"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                  disabled={changingPassword}
-                >
-                  {showCurrentPassword ? (
-                    <EyeOff className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </Button>
-              </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Lock className="h-6 w-6" />
+              <CardTitle>Security</CardTitle>
             </div>
-
-            {/* New Password */}
+          </div>
+          <CardDescription>
+            Manage your account security settings
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!showPasswordSection ? (
             <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
-              <div className="relative">
+              <p className="text-sm text-muted-foreground">
+                Keep your account secure by using a strong, unique password.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => setShowPasswordSection(true)}
+                className="w-full"
+              >
+                <KeyRound className="mr-2 h-4 w-4" />
+                Change Password
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <Alert>
+                <Shield className="h-4 w-4" />
+                <AlertTitle>Password Requirements</AlertTitle>
+                <AlertDescription className="text-xs">
+                  Your password must be at least 6 characters long. We recommend
+                  using a mix of uppercase, lowercase, numbers, and special
+                  characters.
+                </AlertDescription>
+              </Alert>
+
+              {/* Current Password */}
+              <div className="space-y-2">
+                <Label htmlFor="current-password">Current Password</Label>
+                <div className="relative">
+                  <Input
+                    id="current-password"
+                    type={showCurrentPassword ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    required
+                    disabled={changingPassword}
+                    className="pr-10"
+                    autoComplete="current-password"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    disabled={changingPassword}
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* New Password */}
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <div className="relative">
+                  <Input
+                    id="new-password"
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPasswordValue}
+                    onChange={(e) => setNewPasswordValue(e.target.value)}
+                    placeholder="Enter new password"
+                    required
+                    minLength={6}
+                    disabled={changingPassword}
+                    className="pr-10"
+                    autoComplete="new-password"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    disabled={changingPassword}
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+
+                {/* Password Strength Indicator */}
+                {newPasswordValue && (
+                  <div className="space-y-1">
+                    <div className="flex gap-1">
+                      <div
+                        className={`h-1 flex-1 rounded ${
+                          newPasswordValue.length >= 6
+                            ? "bg-green-500"
+                            : "bg-muted"
+                        }`}
+                      />
+                      <div
+                        className={`h-1 flex-1 rounded ${
+                          newPasswordValue.length >= 10
+                            ? "bg-green-500"
+                            : "bg-muted"
+                        }`}
+                      />
+                      <div
+                        className={`h-1 flex-1 rounded ${
+                          /[A-Z]/.test(newPasswordValue) &&
+                          /[0-9]/.test(newPasswordValue)
+                            ? "bg-green-500"
+                            : "bg-muted"
+                        }`}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {newPasswordValue.length < 6 &&
+                        "Password too short (minimum 6 characters)"}
+                      {newPasswordValue.length >= 6 &&
+                        newPasswordValue.length < 10 &&
+                        "Good password"}
+                      {newPasswordValue.length >= 10 &&
+                        /[A-Z]/.test(newPasswordValue) &&
+                        /[0-9]/.test(newPasswordValue) &&
+                        "Strong password!"}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Confirm New Password */}
+              <div className="space-y-2">
+                <Label htmlFor="confirm-new-password">
+                  Confirm New Password
+                </Label>
                 <Input
-                  id="new-password"
+                  id="confirm-new-password"
                   type={showNewPassword ? "text" : "password"}
-                  value={newPasswordValue}
-                  onChange={(e) => setNewPasswordValue(e.target.value)}
-                  placeholder="Enter new password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="Confirm new password"
                   required
                   minLength={6}
                   disabled={changingPassword}
-                  className="pr-10"
                   autoComplete="new-password"
                 />
+                {confirmNewPassword &&
+                  newPasswordValue !== confirmNewPassword && (
+                    <p className="text-xs text-destructive">
+                      Passwords do not match
+                    </p>
+                  )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
                 <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                  disabled={changingPassword}
+                  type="submit"
+                  disabled={
+                    changingPassword ||
+                    !currentPassword ||
+                    !newPasswordValue ||
+                    !confirmNewPassword ||
+                    newPasswordValue !== confirmNewPassword ||
+                    newPasswordValue.length < 6
+                  }
+                  className="flex-1"
                 >
-                  {showNewPassword ? (
-                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  {changingPassword ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
                   ) : (
-                    <Eye className="h-4 w-4 text-muted-foreground" />
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      Update Password
+                    </>
                   )}
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowPasswordSection(false);
+                    setCurrentPassword("");
+                    setNewPasswordValue("");
+                    setConfirmNewPassword("");
+                  }}
+                  disabled={changingPassword}
+                >
+                  Cancel
+                </Button>
               </div>
-              
-              {/* Password Strength Indicator */}
-              {newPasswordValue && (
-                <div className="space-y-1">
-                  <div className="flex gap-1">
-                    <div className={`h-1 flex-1 rounded ${newPasswordValue.length >= 6 ? 'bg-green-500' : 'bg-muted'}`} />
-                    <div className={`h-1 flex-1 rounded ${newPasswordValue.length >= 10 ? 'bg-green-500' : 'bg-muted'}`} />
-                    <div className={`h-1 flex-1 rounded ${/[A-Z]/.test(newPasswordValue) && /[0-9]/.test(newPasswordValue) ? 'bg-green-500' : 'bg-muted'}`} />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {newPasswordValue.length < 6 && "Password too short (minimum 6 characters)"}
-                    {newPasswordValue.length >= 6 && newPasswordValue.length < 10 && "Good password"}
-                    {newPasswordValue.length >= 10 && /[A-Z]/.test(newPasswordValue) && /[0-9]/.test(newPasswordValue) && "Strong password!"}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Confirm New Password */}
-            <div className="space-y-2">
-              <Label htmlFor="confirm-new-password">Confirm New Password</Label>
-              <Input
-                id="confirm-new-password"
-                type={showNewPassword ? "text" : "password"}
-                value={confirmNewPassword}
-                onChange={(e) => setConfirmNewPassword(e.target.value)}
-                placeholder="Confirm new password"
-                required
-                minLength={6}
-                disabled={changingPassword}
-                autoComplete="new-password"
-              />
-              {confirmNewPassword && newPasswordValue !== confirmNewPassword && (
-                <p className="text-xs text-destructive">Passwords do not match</p>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <Button
-                type="submit"
-                disabled={
-                  changingPassword ||
-                  !currentPassword ||
-                  !newPasswordValue ||
-                  !confirmNewPassword ||
-                  newPasswordValue !== confirmNewPassword ||
-                  newPasswordValue.length < 6
-                }
-                className="flex-1"
-              >
-                {changingPassword ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <Check className="mr-2 h-4 w-4" />
-                    Update Password
-                  </>
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowPasswordSection(false);
-                  setCurrentPassword("");
-                  setNewPasswordValue("");
-                  setConfirmNewPassword("");
-                }}
-                disabled={changingPassword}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        )}
-      </CardContent>
-    </Card>
+            </form>
+          )}
+        </CardContent>
+      </Card>
       {/* -------------------- */}
       {/* DANGER ZONE */}
       {/* -------------------- */}
@@ -512,42 +578,45 @@ alert('load ')
             Danger Zone
           </CardTitle>
         </CardHeader> */}
-  <Card className="border-destructive">
-      <CardHeader>
-        <CardTitle className="text-destructive flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5" />
-          Danger Zone
-        </CardTitle>
-        <CardDescription>
-          Irreversible actions that will permanently affect your account
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Warning</AlertTitle>
-          <AlertDescription>
-            Account deletion is permanent and cannot be undone. This will:
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Delete your profile and personal information</li>
-              <li>Remove all your loyalty points</li>
-              <li>Delete all your messages and conversations</li>
-              <li>Clear your shopping cart</li>
-              <li>Anonymize (but not delete) order history for business records</li>
-            </ul>
-          </AlertDescription>
-        </Alert>
-        
-        <Button
-          variant="destructive"
-          onClick={() => setShowDeleteDialog(true)}
-          className="w-full"
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete My Account
-        </Button>
-      </CardContent>
-    </Card>
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Danger Zone
+            </CardTitle>
+            <CardDescription>
+              Irreversible actions that will permanently affect your account
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Warning</AlertTitle>
+              <AlertDescription>
+                Account deletion is permanent and cannot be undone. This will:
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Delete your profile and personal information</li>
+                  <li>Remove all your loyalty points</li>
+                  <li>Delete all your messages and conversations</li>
+                  <li>Clear your shopping cart</li>
+                  <li>
+                    Anonymize (but not delete) order history for business
+                    records
+                  </li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeleteDialog(true)}
+              className="w-full"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete My Account
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* <CardContent>
           <Button
@@ -564,7 +633,9 @@ alert('load ')
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-destructive">Delete Account?</AlertDialogTitle>
+            <AlertDialogTitle className="text-destructive">
+              Delete Account?
+            </AlertDialogTitle>
 
             <AlertDialogDescription>
               <p className="font-semibold">This action cannot be undone.</p>
@@ -596,7 +667,9 @@ alert('load ')
               className="bg-destructive"
               onClick={handleDeleteAccount}
             >
-              {deleteAccountMutation.isPending ? "Deleting..." : "Delete Account"}
+              {deleteAccountMutation.isPending
+                ? "Deleting..."
+                : "Delete Account"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

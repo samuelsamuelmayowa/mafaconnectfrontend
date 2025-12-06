@@ -44,12 +44,15 @@ import { PointsExpirationSchedule } from "@/components/PointsExpirationSchedule"
 import { LoyaltyAnalyticsCard } from "@/components/LoyaltyAnalyticsCard";
 import { TierProgressCard } from "@/components/TierProgressCard";
 import { format } from "date-fns";
+import { useActiveMembers } from "@/hooks/useActiveMembers";
 
 const API_BASE = import.meta.env.VITE_HOME_OO;
-
+const token = localStorage.getItem("ACCESS_TOKEN");
 export default function Loyalty() {
+  const { data: activeMembers } = useActiveMembers(API_BASE, token);
   const { rewards, isLoading, deleteReward, toggleRewardStatus } = useRewards();
-  const { stats } = useLoyaltyStats();
+  const { stats } = useLoyaltyStats(API_BASE, token);
+  //  useLoyaltyStats();
   const { user, isStaff } = useAuth();
   const { redemptions, redeemReward, isRedeeming } = useRewardRedemption();
   const { expiringPoints } = useExpiringPoints();
@@ -653,7 +656,7 @@ const {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {stats?.activeMembers || 0}
+                  {activeMembers || 0}
                 </div>
               </CardContent>
             </Card>

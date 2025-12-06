@@ -694,7 +694,7 @@ const rejectReward = async (req, res) => {
 };
 
 
-const getRecentRedemptions = async (req, res) => {
+const  getRecentRedemptions = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit, 10) || 5;
 
@@ -732,7 +732,54 @@ const getRecentRedemptions = async (req, res) => {
 
 
 
+const markRedemptionAsUsed = async (req, res) => {
+  try {
+    const { id } = req.params;
 
+    const redemption = await RewardRedemption.findByPk(id);
+    if (!redemption) return res.status(404).json({ message: "Redemption not found" });
+
+    if (redemption.status !== "pending")
+      return res.status(400).json({ message: "Only pending redemptions can be marked as used" });
+
+    redemption.status = "used";
+    await redemption.save();
+
+    return res.json({ success: true, message: "Redemption marked as used" });
+  } catch (err) {
+    res.status(500).json({ message: err.message || "Server error" });
+  }
+};
+
+// ============================================================
+// CANCEL + REFUND CUSTOMER POINTS
+// ============================================================
+exports.cancelRedemptionAndRefund = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const redemption = await RewardRedemption.findByPk(id);
+    if (!redemption) return res.status(404).json({ message: "Redemption not found" });
+
+    if (redemption.status !== "pending")
+      return res.status(400).json({ message: "Redemption cannot be cancelled" });
+
+    const loyaltyAccount = await LoyaltyAccount.findByPk(redemption.loyalty_account_id);
+    if (!loyaltyAccount)
+      return res.status(404).json({ message: "Customer loyalty account not found" });
+
+    // refund points
+    loyaltyAccount.points_balance += redemption.points_spent;
+    await loyaltyAccount.save();
+
+    redemption.status = "cancelled";
+    await redemption.save();
+
+    return res.json({ success: true, message: "Redemption cancelled + points refunded" });
+  } catch (err) {
+    res.status(500).json({ message: err.message || "Server error" });
+  }
+};
 
 
 
@@ -1391,6 +1438,32 @@ try {
 
 
 
+const cancelRedemptionAndRefund = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const redemption = await RewardRedemption.findByPk(id);
+    if (!redemption) return res.status(404).json({ message: "Redemption not found" });
+
+    if (redemption.status !== "pending")
+      return res.status(400).json({ message: "Redemption cannot be cancelled" });
+
+    const loyaltyAccount = await LoyaltyAccount.findByPk(redemption.loyalty_account_id);
+    if (!loyaltyAccount)
+      return res.status(404).json({ message: "Customer loyalty account not found" });
+
+    // refund points
+    loyaltyAccount.points_balance += redemption.points_spent;
+    await loyaltyAccount.save();
+
+    redemption.status = "cancelled";
+    await redemption.save();
+
+    return res.json({ success: true, message: "Redemption cancelled + points refunded" });
+  } catch (err) {
+    res.status(500).json({ message: err.message || "Server error" });
+  }
+};
 
 module.exports = {
   getLoyaltyActivity,
@@ -1410,7 +1483,7 @@ module.exports = {
   deleteReward,
   toggleStatus,
   redeemReward,
-  getRecentRedemptions,
+  // getRecentRedemptions,
 
   // Tiers
   getAllTiers,
@@ -1418,4 +1491,7 @@ module.exports = {
   updateTier,
   deleteTier,
   toggleTierStatus,
+  cancelRedemptionAndRefund,
+
+  getRecentRedemptions,markRedemptionAsUsed
 };
