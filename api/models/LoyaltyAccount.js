@@ -24,13 +24,21 @@ const LoyaltyAccount = sequelize.define("LoyaltyAccount", {
     allowNull: false,
     defaultValue: 0,
   },
-
+tier_id: {
+  type: DataTypes.INTEGER.UNSIGNED,
+  allowNull: true,
+  references: { model: "loyalty_tiers", key: "id" },
+  onUpdate: "CASCADE",
+  onDelete: "SET NULL",
+},
   tier: {
     type: DataTypes.STRING,
     defaultValue: "Bronze",
   },
 
-}, {
+},
+
+{
   tableName: "loyalty_accounts",
   timestamps: true,
 });

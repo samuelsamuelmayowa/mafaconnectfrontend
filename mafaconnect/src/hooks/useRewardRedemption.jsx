@@ -17,9 +17,10 @@ export function useRewardRedemption() {
     queryKey: ["reward-redemptions", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-
       const { data } = await axios.get(
         `${API_BASE}/loyalty/redemptions/${user.id}`,
+        // /redemptions/me
+         `${API_BASE}/redemptions/me`,
         { headers: { Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}` } }
       );
 

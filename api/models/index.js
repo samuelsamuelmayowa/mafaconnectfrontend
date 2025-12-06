@@ -15,6 +15,7 @@ const { LoyaltyTransaction } = require("./LoyaltyTransaction");
 const { Reward } = require("./Reward");
 const { RewardRedemption } = require("./RewardRedemption");
 const LoyaltyActivity = require("./LoyaltyActivity");
+const { LoyaltyTier } = require("./LoyaltyTier");
 
 /* ========================================================================
    MODULE EXPORTS
@@ -37,6 +38,27 @@ module.exports = {
   LoyaltyActivity,
   RewardRedemption,
 }
+
+// Redeemed reward info
+RewardRedemption.belongsTo(Reward, {
+  foreignKey: "reward_id",
+  as: "rewardInfo" // <--- FIXED HERE
+});
+
+// Customer loyalty account
+RewardRedemption.belongsTo(LoyaltyAccount, {
+  foreignKey: "loyalty_account_id",
+  as: "account",
+});
+
+// Loyalty tier through the account
+LoyaltyAccount.belongsTo(LoyaltyTier, {
+  foreignKey: "tier_id",
+  as: "loyaltyTier"
+});
+
+
+
 // RewardRedemption <-> Customer
 RewardRedemption.belongsTo(User, {
   foreignKey: "customer_id",

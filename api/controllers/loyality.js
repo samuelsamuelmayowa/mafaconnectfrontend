@@ -88,7 +88,7 @@ const { calculatePointsFromOrderItems, calculatePointsFromOrder } = require("./c
 //       include: [
 //         {
 //           model: OrderItem,
-    
+
 //           as: "items",
 //           include: [{ model: Product, as: "product" }]
 //         }
@@ -217,19 +217,19 @@ async function awardPointsForOrder(orderInput) {
     //   const qty = item.quantity || 0;
     //   totalPoints += KG * qty;
     // });
-fullOrder.items.forEach(item => {
-  console.log("ITEM LOG =>", {
-    product_id: item.product_id,
-    product_name: item.product?.name,
-    bag_size_kg: item.product?.bag_size_kg,
-    quantity: item.quantity
-  });
+    fullOrder.items.forEach(item => {
+      console.log("ITEM LOG =>", {
+        product_id: item.product_id,
+        product_name: item.product?.name,
+        bag_size_kg: item.product?.bag_size_kg,
+        quantity: item.quantity
+      });
 
-  const KG = item.product?.bag_size_kg || 0;
-  const qty = item.quantity || 0;
+      const KG = item.product?.bag_size_kg || 0;
+      const qty = item.quantity || 0;
 
-  totalPoints += KG * qty;
-});
+      totalPoints += KG * qty;
+    });
     let account = await LoyaltyAccount.findOne({
       where: { customer_id: fullOrder.customer_id }
     });
@@ -531,7 +531,7 @@ const earnPointsForOrder = async (orderArg) => {
 //    GET /api/loyalty/redemptions/recent?limit=5
 // ===================================================
 const redeemReward = async (req, res) => {
-  const customerId = req.user?.id; 
+  const customerId = req.user?.id;
   const { rewardId } = req.body;
 
   if (!customerId || !rewardId) {
@@ -595,7 +595,7 @@ const redeemReward = async (req, res) => {
 
         // 🔥 HERE IS THE CHANGE
         status: "pending",  // WAITING FOR ADMIN APPROVAL ❗
-        
+
         expires_at: null  // you can enable expiry later
       },
       { transaction: t }
@@ -610,7 +610,7 @@ const redeemReward = async (req, res) => {
       redemption: {
         id: redemption.id,
         status: "pending",
-        redemption_code:redemptionCode,
+        redemption_code: redemptionCode,
         points_spent: redemption.points_spent,
         created_at: redemption.createdAt,
         reward: {
@@ -636,21 +636,21 @@ const approveReward = async (req, res) => {
     const { id } = req.params;
 
     const redemption = await RewardRedemption.findByPk(id, {
-      include:[{ model: Reward }]
+      include: [{ model: Reward }]
     });
 
-    if (!redemption) return res.status(404).json({ message:"Not found" });
+    if (!redemption) return res.status(404).json({ message: "Not found" });
     if (redemption.status !== "pending")
-      return res.status(400).json({ message:"Already processed" });
+      return res.status(400).json({ message: "Already processed" });
 
     redemption.status = "active";        // 🔥 Admin approves
     redemption.used_at = null;           // will be filled when collected
     await redemption.save();
 
-    return res.json({ message:"Approved!", redemption });
-  } catch(e) {
+    return res.json({ message: "Approved!", redemption });
+  } catch (e) {
     console.log(e);
-    return res.status(500).json({ message:"Failed approval" });
+    return res.status(500).json({ message: "Failed approval" });
   }
 };
 
@@ -659,42 +659,42 @@ const rejectReward = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const redemption = await RewardRedemption.findByPk(id, { transaction:t });
-    if (!redemption) return res.json({ message:"Not found" });
+    const redemption = await RewardRedemption.findByPk(id, { transaction: t });
+    if (!redemption) return res.json({ message: "Not found" });
     if (redemption.status !== "pending")
-      return res.json({ message:"Already approved/rejected" });
+      return res.json({ message: "Already approved/rejected" });
 
     // refund points
     const account = await LoyaltyAccount.findByPk(
       redemption.loyalty_account_id,
-      { transaction:t }
+      { transaction: t }
     );
     account.points_balance += redemption.points_spent;
-    await account.save({ transaction:t });
+    await account.save({ transaction: t });
 
     redemption.status = "rejected";
-    await redemption.save({ transaction:t });
+    await redemption.save({ transaction: t });
 
     await LoyaltyTransaction.create(
       {
         loyalty_account_id: account.id,
-        type:"refund",
+        type: "refund",
         points: redemption.points_spent,
-        note:`Refund for rejected redemption`
+        note: `Refund for rejected redemption`
       },
-      { transaction:t }
+      { transaction: t }
     );
 
     await t.commit();
-    return res.json({ message:"Redemption rejected — points refunded" });
-  } catch(e) {
+    return res.json({ message: "Redemption rejected — points refunded" });
+  } catch (e) {
     await t.rollback();
-    return res.json({ message:"Error rejecting redemption" });
+    return res.json({ message: "Error rejecting redemption" });
   }
 };
 
 
-const  getRecentRedemptions = async (req, res) => {
+const getRecentRedemptions = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit, 10) || 5;
 
@@ -703,7 +703,7 @@ const  getRecentRedemptions = async (req, res) => {
       limit,
       include: [
         { model: Reward, attributes: ["title", "description"] },
-        { model:User, attributes: ["name"] },
+        { model: User, attributes: ["name"] },
       ],
     });
 
@@ -731,6 +731,87 @@ const  getRecentRedemptions = async (req, res) => {
 };
 
 
+// const markRedemptionAsUsed = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const redemption = await RewardRedemption.findByPk(id);
+//     if (!redemption) return res.status(404).json({ message: "Redemption not found" });
+
+//     if (redemption.status !== "pending")
+//       return res.status(400).json({ message: "Only pending redemptions can be marked as used" });
+
+//     // Update status
+//     redemption.status = "used";
+//     await redemption.save();
+
+//     // ------ 🔥 UPDATE TIER AFTER POINT DEDUCTION ------
+//     const loyaltyAccount = await LoyaltyAccount.findByPk(redemption.loyalty_account_id);
+//     await assignTierAutomatically(loyaltyAccount, LoyaltyTier);
+
+//     return res.json({ 
+//       success: true, 
+//       message: "Redemption marked as used + tier recalculated" 
+//     });
+
+//   } catch (err) {
+//     res.status(500).json({ message: err.message || "Server error" });
+//   }
+// };
+
+// const markRedemptionAsUsed = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const redemption = await RewardRedemption.findByPk(id);
+//     if (!redemption) return res.status(404).json({ message: "Redemption not found" });
+
+//     if (redemption.status !== "pending")
+//       return res.status(400).json({ message: "Only pending redemptions can be marked as used" });
+
+//     redemption.status = "used";
+//     await redemption.save();
+
+//     return res.json({ success: true, message: "Redemption marked as used" });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message || "Server error" });
+//   }
+// };
+
+// ============================================================
+// CANCEL + REFUND CUSTOMER POINTS
+// ============================================================
+
+
+// exports.cancelRedemptionAndRefund = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const redemption = await RewardRedemption.findByPk(id);
+//     if (!redemption) return res.status(404).json({ message: "Redemption not found" });
+
+//     if (redemption.status !== "pending")
+//       return res.status(400).json({ message: "Redemption cannot be cancelled" });
+
+//     const loyaltyAccount = await LoyaltyAccount.findByPk(redemption.loyalty_account_id);
+//     if (!loyaltyAccount)
+//       return res.status(404).json({ message: "Customer loyalty account not found" });
+
+//     // refund points
+//     loyaltyAccount.points_balance += redemption.points_spent;
+//     await loyaltyAccount.save();
+
+//     redemption.status = "cancelled";
+//     await redemption.save();
+
+//     return res.json({ success: true, message: "Redemption cancelled + points refunded" });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message || "Server error" });
+//   }
+// };
+
+
+
 
 const markRedemptionAsUsed = async (req, res) => {
   try {
@@ -742,47 +823,28 @@ const markRedemptionAsUsed = async (req, res) => {
     if (redemption.status !== "pending")
       return res.status(400).json({ message: "Only pending redemptions can be marked as used" });
 
-    redemption.status = "used";
-    await redemption.save();
-
-    return res.json({ success: true, message: "Redemption marked as used" });
-  } catch (err) {
-    res.status(500).json({ message: err.message || "Server error" });
-  }
-};
-
-// ============================================================
-// CANCEL + REFUND CUSTOMER POINTS
-// ============================================================
-exports.cancelRedemptionAndRefund = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const redemption = await RewardRedemption.findByPk(id);
-    if (!redemption) return res.status(404).json({ message: "Redemption not found" });
-
-    if (redemption.status !== "pending")
-      return res.status(400).json({ message: "Redemption cannot be cancelled" });
-
+    // 🔥 Deduct points from loyalty account
     const loyaltyAccount = await LoyaltyAccount.findByPk(redemption.loyalty_account_id);
-    if (!loyaltyAccount)
-      return res.status(404).json({ message: "Customer loyalty account not found" });
-
-    // refund points
-    loyaltyAccount.points_balance += redemption.points_spent;
+    loyaltyAccount.points_balance -= redemption.points_spent;
+    if (loyaltyAccount.points_balance < 0) loyaltyAccount.points_balance = 0; // safety
     await loyaltyAccount.save();
 
-    redemption.status = "cancelled";
+    // 🔥 Update tier after deduction
+    await assignTierAutomatically(loyaltyAccount, LoyaltyTier);
+
+    redemption.status = "used";
+    redemption.used_at = new Date();
     await redemption.save();
 
-    return res.json({ success: true, message: "Redemption cancelled + points refunded" });
+    return res.json({
+      success: true,
+      message: "Redemption used — points deducted + tier updated",
+    });
+
   } catch (err) {
     res.status(500).json({ message: err.message || "Server error" });
   }
 };
-
-
-
 
 async function getOrCreateLoyaltyAccount(customerId, t = null) {
   let account = await LoyaltyAccount.findOne({
@@ -841,6 +903,7 @@ async function recalculateTierForAccount(account, t = null) {
 // ===================================================
 const tiers = require("../config/tierLevels");
 const LoyaltyActivity = require("../models/LoyaltyActivity");
+const assignTierAutomatically = require("./updateTire");
 const getLoyaltyAccount = async (req, res) => {
   // try {
   //   const { customerId } = req.params;
@@ -922,7 +985,7 @@ const getLoyaltyAccount = async (req, res) => {
   // }
 
 
-   try {
+  try {
     const { customerId } = req.params;
 
     const account = await LoyaltyAccount.findOne({ where: { customer_id: customerId } });
@@ -932,7 +995,7 @@ const getLoyaltyAccount = async (req, res) => {
     }
 
     // 🔥 Detect tier dynamically based on points
-    const currentTier = tiers.find(t => 
+    const currentTier = tiers.find(t =>
       account.points_balance >= t.min && account.points_balance <= t.max
     );
 
@@ -1407,7 +1470,7 @@ const getRecentPaidOrders = async (req, res) => {
   //   console.error("❌ Recent paid orders error:", err);
   //   res.status(500).json({ success: false, message: "Failed to fetch paid orders" });
   // }
-try {
+  try {
     const sales = await Order.findAll({
       where: { payment_status: "paid" },
 
@@ -1438,32 +1501,57 @@ try {
 
 
 
+// const cancelRedemptionAndRefund = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const redemption = await RewardRedemption.findByPk(id);
+//     if (!redemption) return res.status(404).json({ message: "Redemption not found" });
+
+//     if (redemption.status !== "pending")
+//       return res.status(400).json({ message: "Redemption cannot be cancelled" });
+
+//     const loyaltyAccount = await LoyaltyAccount.findByPk(redemption.loyalty_account_id);
+//     if (!loyaltyAccount)
+//       return res.status(404).json({ message: "Customer loyalty account not found" });
+
+//     // refund points
+//     loyaltyAccount.points_balance += redemption.points_spent;
+//     await loyaltyAccount.save();
+
+//     redemption.status = "cancelled";
+//     await redemption.save();
+
+//     return res.json({ success: true, message: "Redemption cancelled + points refunded" });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message || "Server error" });
+//   }
+// };
 const cancelRedemptionAndRefund = async (req, res) => {
   try {
     const { id } = req.params;
-
+    // markRedemptionAsUsed
     const redemption = await RewardRedemption.findByPk(id);
     if (!redemption) return res.status(404).json({ message: "Redemption not found" });
 
-    if (redemption.status !== "pending")
-      return res.status(400).json({ message: "Redemption cannot be cancelled" });
-
     const loyaltyAccount = await LoyaltyAccount.findByPk(redemption.loyalty_account_id);
-    if (!loyaltyAccount)
-      return res.status(404).json({ message: "Customer loyalty account not found" });
 
-    // refund points
     loyaltyAccount.points_balance += redemption.points_spent;
     await loyaltyAccount.save();
+
+    // 🔥 update tier automatically
+    await assignTierAutomatically(loyaltyAccount, LoyaltyTier);
 
     redemption.status = "cancelled";
     await redemption.save();
 
-    return res.json({ success: true, message: "Redemption cancelled + points refunded" });
+    return res.json({ success: true, message: "Redemption cancelled + refunded + tier updated" });
+
   } catch (err) {
-    res.status(500).json({ message: err.message || "Server error" });
+    res.status(500).json({ message: err.message });
   }
 };
+
 
 module.exports = {
   getLoyaltyActivity,
@@ -1493,5 +1581,5 @@ module.exports = {
   toggleTierStatus,
   cancelRedemptionAndRefund,
 
-  getRecentRedemptions,markRedemptionAsUsed
+  getRecentRedemptions, markRedemptionAsUsed
 };

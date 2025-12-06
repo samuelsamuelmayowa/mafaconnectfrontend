@@ -1,5 +1,11 @@
 import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import {
@@ -45,10 +51,15 @@ import { LoyaltyAnalyticsCard } from "@/components/LoyaltyAnalyticsCard";
 import { TierProgressCard } from "@/components/TierProgressCard";
 import { format } from "date-fns";
 import { useActiveMembers } from "@/hooks/useActiveMembers";
+import { useCustomerRedemptions } from "@/hooks/useCustomerRedemptions";
 
 const API_BASE = import.meta.env.VITE_HOME_OO;
 const token = localStorage.getItem("ACCESS_TOKEN");
 export default function Loyalty() {
+  const { data: redemptioning, isLoadingR } = useCustomerRedemptions(
+    API_BASE,
+    token
+  );
   const { data: activeMembers } = useActiveMembers(API_BASE, token);
   const { rewards, isLoading, deleteReward, toggleRewardStatus } = useRewards();
   const { stats } = useLoyaltyStats(API_BASE, token);
@@ -59,7 +70,8 @@ export default function Loyalty() {
   const { tiers } = useLoyaltyTiers();
 
   const [showRewardDialog, setShowRewardDialog] = React.useState(false);
-  const [showTransactionDialog, setShowTransactionDialog] = React.useState(false);
+  const [showTransactionDialog, setShowTransactionDialog] =
+    React.useState(false);
   const [showRedeemDialog, setShowRedeemDialog] = React.useState(false);
   const [selectedReward, setSelectedReward] = React.useState(null);
   const [rewardToDelete, setRewardToDelete] = React.useState(null);
@@ -98,20 +110,19 @@ export default function Loyalty() {
   //     setRewardToRedeem(null);
   //   }
   // };
-const handleRedeem = async (rewardId) => {
-  try {
-    const result = await redeemReward({ rewardId });
+  const handleRedeem = async (rewardId) => {
+    try {
+      const result = await redeemReward({ rewardId });
 
-    if (result?.redemption?.redemption_code) {
-      setLastRedemptionCode(result.redemption.redemption_code);
+      if (result?.redemption?.redemption_code) {
+        setLastRedemptionCode(result.redemption.redemption_code);
+      }
+
+      setShowRedeemDialog(false);
+    } catch (e) {
+      console.error(e);
     }
-
-    setShowRedeemDialog(false);
-
-  } catch (e) {
-    console.error(e);
-  }
-};
+  };
 
   const handleRedeemDialogChange = (open) => {
     setShowRedeemDialog(open);
@@ -141,35 +152,31 @@ const handleRedeem = async (rewardId) => {
   //   enabled: !!user?.id && !isStaff,
   // });
 
-const {
-  data: loyaltyAccount,
-  isLoading: loadingAccount,
-  error: accountError,
-} = useQuery({
-  queryKey: ["customer-loyalty-account", user?.id],
-  queryFn: async () => {
-    try {
-      console.log("Fetching loyalty account for user:", user?.id);
+  const {
+    data: loyaltyAccount,
+    isLoading: loadingAccount,
+    error: accountError,
+  } = useQuery({
+    queryKey: ["customer-loyalty-account", user?.id],
+    queryFn: async () => {
+      try {
+        console.log("Fetching loyalty account for user:", user?.id);
 
-      const { data } = await axios.get(
-        `${API_BASE}/loyalty/${user?.id}`,
-        {
+        const { data } = await axios.get(`${API_BASE}/loyalty/${user?.id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`,
           },
-        }
-      );
+        });
 
-      console.log("Loyalty response:", data);
-      return data.data;
-    } catch (err) {
-      console.error("LOYALTY ACCOUNT ERROR RESPONSE:", err.response);
-      throw err;
-    }
-  },
-  enabled: !!user?.id && !isStaff,
-});
-
+        console.log("Loyalty response:", data);
+        return data.data;
+      } catch (err) {
+        console.error("LOYALTY ACCOUNT ERROR RESPONSE:", err.response);
+        throw err;
+      }
+    },
+    enabled: !!user?.id && !isStaff,
+  });
 
   // =======================
   // CUSTOMER TRANSACTIONS
@@ -191,7 +198,9 @@ const {
   const { data: recentRedemptions } = useQuery({
     queryKey: ["recent-redemptions"],
     queryFn: async () => {
-      const { data } = await axios.get(`${API_BASE}/loyalty/redemptions/recent?limit=5`);
+      const { data } = await axios.get(
+        `${API_BASE}/loyalty/redemptions/recent?limit=5`
+      );
       return data;
     },
     enabled: isStaff,
@@ -216,7 +225,9 @@ const {
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <AlertCircle className="h-12 w-12 text-destructive" />
         <div className="text-center">
-          <h2 className="text-xl font-semibold">Error Loading Loyalty Account</h2>
+          <h2 className="text-xl font-semibold">
+            Error Loading Loyalty Account
+          </h2>
           <p className="text-muted-foreground">
             Failed to load your loyalty information. Please try again later.
           </p>
@@ -234,9 +245,12 @@ const {
         <div className="flex flex-col items-center justify-center h-64 space-y-4">
           <ShieldAlert className="h-12 w-12 text-muted-foreground" />
           <div className="text-center">
-            <h2 className="text-xl font-semibold">Loyalty Program Not Available</h2>
+            <h2 className="text-xl font-semibold">
+              Loyalty Program Not Available
+            </h2>
             <p className="text-muted-foreground">
-              Your loyalty account is not available at the moment. Please contact support.
+              Your loyalty account is not available at the moment. Please
+              contact support.
             </p>
           </div>
         </div>
@@ -247,7 +261,9 @@ const {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Loyalty & Rewards</h1>
-          <p className="text-muted-foreground">Earn points and redeem rewards</p>
+          <p className="text-muted-foreground">
+            Earn points and redeem rewards
+          </p>
         </div>
 
         {expiringPoints && expiringPoints.total > 0 && (
@@ -257,7 +273,11 @@ const {
           />
         )}
 
-        <Tabs value={customerTab} onValueChange={setCustomerTab} className="w-full">
+        <Tabs
+          value={customerTab}
+          onValueChange={setCustomerTab}
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="rewards">Rewards</TabsTrigger>
@@ -270,20 +290,26 @@ const {
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Points Balance</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Points Balance
+                  </CardTitle>
                   <Award className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {loyaltyAccount?.points_balance?.toLocaleString() || 0}
                   </div>
-                  <p className="text-xs text-muted-foreground">Available points</p>
+                  <p className="text-xs text-muted-foreground">
+                    Available points
+                  </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Current Tier</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Current Tier
+                  </CardTitle>
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -296,7 +322,9 @@ const {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Total Earned
+                  </CardTitle>
                   <Gift className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -306,7 +334,9 @@ const {
                       .reduce((sum, t) => sum + t.points, 0)
                       .toLocaleString() || 0}
                   </div>
-                  <p className="text-xs text-muted-foreground">Lifetime points</p>
+                  <p className="text-xs text-muted-foreground">
+                    Lifetime points
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -324,7 +354,9 @@ const {
             <Card>
               <CardHeader>
                 <CardTitle>Loyalty Tiers</CardTitle>
-                <CardDescription>Benefits and requirements for each tier</CardDescription>
+                <CardDescription>
+                  Benefits and requirements for each tier
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -332,7 +364,9 @@ const {
                     <Card
                       key={tier.id}
                       className={
-                        tier.name === loyaltyAccount?.tier ? "border-primary" : ""
+                        tier.name === loyaltyAccount?.tier
+                          ? "border-primary"
+                          : ""
                       }
                     >
                       <CardHeader>
@@ -458,7 +492,7 @@ const {
                   View and manage your redeemed rewards
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              {/* <CardContent>
                 {redemptions && redemptions.length > 0 ? (
                   <div className="space-y-4">
                     {redemptions.map((redemption) => (
@@ -559,6 +593,37 @@ const {
                     </Button>
                   </div>
                 )}
+              </CardContent> */}
+              Marking
+              <CardContent>
+                {redemptioning?.map((item, i) => (
+                  <div key={i} className="p-4 border rounded-lg mb-3">
+                    <h3 className="text-xl font-bold">{item.tier}</h3>
+                    <p className="text-md mt-1">
+                      {item.quantity}x of {item.rewardName}
+                    </p>
+
+                    <span
+                      className={`mt-2 inline-block px-3 py-1 rounded text-sm 
+      ${
+        item.status === "used"
+          ? "bg-green-500 text-white"
+          : item.status === "cancelled"
+          ? "bg-red-500 text-white"
+          : "bg-yellow-400 text-black"
+      }`}
+                    >
+                      {item.status}
+                    </span>
+
+                    <div className="mt-3 text-sm text-gray-600">
+                      Redemption Code:{" "}
+                      <span className="font-semibold">
+                        {item.redemptionCode}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </TabsContent>
@@ -655,9 +720,7 @@ const {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {activeMembers || 0}
-                </div>
+                <div className="text-2xl font-bold">{activeMembers || 0}</div>
               </CardContent>
             </Card>
           </div>
@@ -756,53 +819,52 @@ const {
             </CardContent>
           </Card> */}
           <Card>
-  <CardHeader>
-    <CardTitle>Loyalty Tiers</CardTitle>
-  </CardHeader>
+            <CardHeader>
+              <CardTitle>Loyalty Tiers</CardTitle>
+            </CardHeader>
 
-  <CardContent>
-    <div className="grid gap-4 md:grid-cols-4">
-      {tiers
-        ?.filter((t) => t.active)
-        .map((tier) => (
-          <div
-            key={tier.id}
-            className="border rounded-lg p-4 space-y-3"
-          >
-            <div className={`text-lg font-semibold ${tier.color}`}>
-              {tier.name}
-            </div>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-4">
+                {tiers
+                  ?.filter((t) => t.active)
+                  .map((tier) => (
+                    <div
+                      key={tier.id}
+                      className="border rounded-lg p-4 space-y-3"
+                    >
+                      <div className={`text-lg font-semibold ${tier.color}`}>
+                        {tier.name}
+                      </div>
 
-            <p className="text-sm text-muted-foreground">
-              {tier.min_points.toLocaleString()} -{" "}
-              {tier.max_points
-                ? tier.max_points.toLocaleString()
-                : "∞"}{" "}
-              pts
-            </p>
+                      <p className="text-sm text-muted-foreground">
+                        {tier.min_points.toLocaleString()} -{" "}
+                        {tier.max_points
+                          ? tier.max_points.toLocaleString()
+                          : "∞"}{" "}
+                        pts
+                      </p>
 
-            <p className="text-sm">
-              <span className="font-medium">Multiplier:</span>{" "}
-              {tier.multiplier}x
-            </p>
+                      <p className="text-sm">
+                        <span className="font-medium">Multiplier:</span>{" "}
+                        {tier.multiplier}x
+                      </p>
 
-            {/* ✅ BENEFITS SECTION */}
-            {tier.benefits && tier.benefits.length > 0 && (
-              <ul className="text-sm space-y-1 pt-2 border-t">
-                {tier.benefits.map((benefit, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <span className="text-primary">•</span>
-                    <span>{benefit}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
-    </div>
-  </CardContent>
-</Card>
-
+                      {/* ✅ BENEFITS SECTION */}
+                      {tier.benefits && tier.benefits.length > 0 && (
+                        <ul className="text-sm space-y-1 pt-2 border-t">
+                          {tier.benefits.map((benefit, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <span className="text-primary">•</span>
+                              <span>{benefit}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Analytics */}
@@ -954,7 +1016,6 @@ const {
     </div>
   );
 }
-
 
 // import React, { useState } from "react";
 // import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";

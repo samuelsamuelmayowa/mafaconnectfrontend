@@ -48,10 +48,10 @@ const RewardRedemption = sequelize.define(
         //     defaultValue: "pending",
         // },
         status: {
-  type: DataTypes.ENUM("pending", "used", "cancelled"),
-  defaultValue: "pending"
-},
-// points_spent: { type: DataTypes.INTEGER, allowNull: false },
+            type: DataTypes.ENUM("pending", "used", "cancelled"),
+            defaultValue: "pending"
+        },
+        // points_spent: { type: DataTypes.INTEGER, allowNull: false },
 
         expires_at: {
             type: DataTypes.DATE,
