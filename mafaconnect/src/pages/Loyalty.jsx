@@ -644,7 +644,7 @@ export default function Loyalty() {
           redemptionCode={lastRedemptionCode}
         />
       </div>
-    );
+    )
   }
 
   // =======================

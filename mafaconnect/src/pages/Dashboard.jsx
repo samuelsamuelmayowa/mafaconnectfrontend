@@ -8,9 +8,9 @@ import {
 } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { 
-  DollarSign, 
-  ShoppingBag, 
-  Users, 
+  // DollarSign, 
+  // ShoppingBag, 
+  // Users, 
   TrendingUp,
   ArrowRight
 } from "lucide-react";
@@ -18,8 +18,15 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 import { useSales } from "@/hooks/useSales";
 import { useProducts } from "@/hooks/useProducts";
 import { format } from "date-fns";
-
+import { DollarSign, ShoppingBag, Users, Award } from "lucide-react";
+import { useAdminDashboard } from "@/hooks/useAdminDashboard";
 export default function Dashboard() {
+   
+
+  const token = localStorage.getItem("ACCESS_TOKEN");
+  const { data } = useAdminDashboard(token);
+
+ 
   const { analytics, isLoading: analyticsLoading } = useAnalytics();
   const { sales, isLoading: salesLoading } = useSales();
   const { products, isLoading: productsLoading } = useProducts();
@@ -70,7 +77,7 @@ export default function Dashboard() {
           Welcome back! Here's what's happening with your business today.
         </p>
       </div>
-
+{/* 
       <div className="grid gap-3 sm:gap-6 grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Total Revenue"
@@ -104,7 +111,22 @@ export default function Dashboard() {
           icon={TrendingUp}
           iconColor="text-warning"
         />
-      </div>
+      </div> */}
+
+     
+    <div className="grid md:grid-cols-4 gap-4">
+
+      <CardStat icon={<DollarSign />} label="Total Revenue" value={`₦${data?.revenue?.toLocaleString() || 0}`} />
+
+      <CardStat icon={<ShoppingBag />} label="Total Sales" value={data?.totalSales || 0} />
+
+      <CardStat icon={<Users />} label="Active Customers" value={data?.activeCustomers || 0} />
+
+      <CardStat icon={<Award />} label="Loyalty Points (Month)" value={`${data?.loyaltyDistributed?.toLocaleString() || 0} pts`} />
+    </div>
+  );
+
+
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         {/* Recent Sales */}
@@ -184,6 +206,19 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+      </div>
+    </div>
+  );
+}
+
+
+function CardStat({ icon, label, value }) {
+  return (
+    <div className="p-5 rounded-xl bg-white dark:bg-neutral-900 border shadow-sm flex items-start gap-3">
+      <div className="p-3 rounded-lg bg-primary/10 text-primary">{icon}</div>
+      <div>
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="text-2xl font-bold">{value}</p>
       </div>
     </div>
   );

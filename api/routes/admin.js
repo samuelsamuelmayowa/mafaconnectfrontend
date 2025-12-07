@@ -38,6 +38,7 @@ const { Location } = require("../models");
 const { getCompletedTransactions } = require("../controllers/Transaction");
 const { getCustomerStatement } = require("../controllers/Statement");
 const { getRecentPaidOrders } = require("../controllers/loyality");
+const { getAdminOverviewStats } = require("../controllers/adminOverview");
 
 // working api for admin side
 router.get('/allusers',authenticate, requireRole( "admin"), showAllUser)
@@ -208,6 +209,15 @@ router.post("/logout", logout);
 // Only admins can access dashboard
 router.get("/dashboard", authenticate, requireRole("admin"), getDashboard);
 // router.get("/dashboard", getDashboard);
+
+
+// admin overview 
+router.get(
+  "/admin/overview/stats",
+  authenticate,
+  requireRole("admin","manager"),
+  getAdminOverviewStats
+);
 
 module.exports = router;
 
