@@ -19,14 +19,7 @@ const fs = require("fs");
 const path = require("path");
 const { sendEmail } = require("../utils/sendEmail");
 // const { Op } = require("sequelize");
-exports.getCustomerStatement = async (req, res) => {
-  try {
-    const customer_id = req.user.id; // using logged-in customer
-    const { from, to } = req.query;
-
-    let transactions = [];
-
-    // ------------------------------
+// / ------------------------------
     // 1️⃣ FETCH INVOICES → DEBIT
     // ------------------------------
     // const invoices = await Invoice.findAll({
@@ -36,39 +29,92 @@ exports.getCustomerStatement = async (req, res) => {
     //   },
     //   order: [["issue_date", "ASC"]]
     // });
+exports.getCustomerStatement = async (req, res) => {
+  try {
+    const customer_id = req.user.id; // using logged-in customer
+    const { from, to } = req.query;
 
-    const invoices = await Invoice.findAll({
+    let transactions = [];
+
+  
+
+//     const invoices = await Invoice.findAll({
+//   where: {
+//     customer_id,
+//     [Op.or]: [
+//       { issue_date: { [Op.between]: [from, to] } },
+//       { 
+//         issue_date: null,
+//         createdAt: { [Op.between]: [from, to] }
+//       }
+//     ]
+//   },
+//   order: [
+//     ["issue_date", "ASC"],
+//     ["createdAt", "ASC"]
+//   ]
+// });
+const invoices = await Invoice.findAll({
   where: {
     customer_id,
     [Op.or]: [
       { issue_date: { [Op.between]: [from, to] } },
-      { 
-        issue_date: null,
-        createdAt: { [Op.between]: [from, to] }
-      }
+      { issue_date: null, createdAt: { [Op.between]: [from, to] } }
     ]
   },
+  include: [
+    {
+      model: Order,
+      as: "order",
+      include: [
+        {
+          model: OrderItem,
+          as: "items",
+          include: [{ model: Product, as: "product" }]
+        }
+      ]
+    }
+  ],
   order: [
     ["issue_date", "ASC"],
     ["createdAt", "ASC"]
   ]
 });
 
-    invoices.forEach(inv => {
-      transactions.push({
-        date: inv.issue_date || inv.createdAt,
 
-        // date: inv.issue_date,
-        description: `Invoice ${inv.invoice_number}`,
-        reference: inv.invoice_number,
-        debit: Number(inv.total_amount),
-        credit: 0
-      });
-    });
+    // invoices.forEach(inv => {
+    //   transactions.push({
+    //     date: inv.issue_date || inv.createdAt,
+
+    //     // date: inv.issue_date,
+    //     description: `Invoice ${inv.invoice_number}`,
+    //     reference: inv.invoice_number,
+    //     debit: Number(inv.total_amount),
+    //     credit: 0
+    //   });
+    // });
 
     // ------------------------------
     // 2️⃣ FETCH CONFIRMED PICKUPS → CREDIT
     // ------------------------------
+ invoices.forEach(inv => {
+  // const itemList = inv.items
+  //   ?.map(i => `${i.product?.name} (x${i.quantity})`)
+  //   .join(", ");
+
+    const itemList = inv.order?.items
+  ?.map(i => `${i.product?.name} (x${i.quantity})`)
+  .join(", ");
+
+  transactions.push({
+    date: inv.issue_date || inv.createdAt,
+    description: itemList || `Invoice ${inv.invoice_number}`,  // ⬅ SHOW ITEMS HERE
+    reference: inv.invoice_number,
+    debit: Number(inv.total_amount),
+    credit: 0
+  });
+});
+ 
     const orders = await Order.findAll({
       where: {
         customer_id,
