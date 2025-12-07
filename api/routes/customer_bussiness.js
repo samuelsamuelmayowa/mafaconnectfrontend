@@ -21,7 +21,7 @@ router.get("/invoices/:customerId", authenticate,  requireRole("admin", "manager
 router.get("/orders/stats/:customerId", authenticate,  requireRole("admin", "manager","customer"),getCustomerOrderStats);
 
 router.get("/customer/orders", 
-  authenticate, requireRole("admin", "manager","customer"),
+  authenticate, requireRole("customer"),  // admin was here before 
    getCustomerOrders);
 router.get("/users/:id", authenticate, getSingleUser);
 router.post("/login/user", login);

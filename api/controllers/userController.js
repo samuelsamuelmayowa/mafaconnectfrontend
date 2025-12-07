@@ -6,13 +6,7 @@ const { Product, LoyaltyAccount } = require("../models");
 const assignTierAutomatically = require("./updateTire");
 const { LoyaltyTier } = require("../models/LoyaltyTier");
 
-
-exports.getCustomerOrders = async (req, res) => {
-
-  try {
-    const userId = req.user.id; // or req.params.id
-
-    // const orders = await Order.findAll({
+// const orders = await Order.findAll({
     //   where: { customer_id: userId },
     //   order: [["createdAt", "DESC"]],
     //   include: [
@@ -28,6 +22,11 @@ exports.getCustomerOrders = async (req, res) => {
     //     },
     //   ],
     // });
+exports.getCustomerOrders = async (req, res) => {
+
+  try {
+    const userId = req.user.id; // or req.params.id
+
     const orders = await Order.findAll({
       where: { customer_id: userId },
       order: [["createdAt", "DESC"]],

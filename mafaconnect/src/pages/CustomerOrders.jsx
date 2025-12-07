@@ -148,7 +148,7 @@ export default function CustomerOrders() {
                           </CardTitle>
                          
                           <CardDescription className="text-xs sm:text-sm">
-                            {formatSafeDate(order.created_at)}
+                            {formatSafeDate(order.createdAt)}
                           </CardDescription>
                         </div>
 
@@ -183,7 +183,7 @@ export default function CustomerOrders() {
                             className="flex justify-between text-sm"
                           >
                             <span>
-                              {item.product_name} (x{item.quantity})
+                              {item.product?.name} (x{item.quantity})
                             </span>
                             <span className="font-medium">
                               ₦{Number(item.total_price).toLocaleString()}
