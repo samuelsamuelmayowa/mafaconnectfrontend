@@ -31,10 +31,10 @@ tier_id: {
   onUpdate: "CASCADE",
   onDelete: "SET NULL",
 },
-  tier: {
-    type: DataTypes.STRING,
-    defaultValue: "Bronze",
-  },
+  // tier: {
+  //   type: DataTypes.STRING,
+  //   defaultValue: "Bronze",
+  // },
 
 },
 

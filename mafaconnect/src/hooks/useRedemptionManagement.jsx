@@ -14,7 +14,8 @@ const token = localStorage.getItem("ACCESS_TOKEN");
         headers: { Authorization: `Bearer ${token}` },
         credentials: "include",
       });
-      return res.data;
+        return res.data.data;
+      // return res.data;
     },
   });
 
@@ -91,6 +92,7 @@ const markAsUsed = useMutation({
   onError: (err) => {
     const msg = err?.response?.data?.message || "Failed to cancel redemption";
     toast.error(msg);
+    
   },
 });
 

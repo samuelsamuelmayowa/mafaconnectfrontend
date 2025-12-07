@@ -7,7 +7,9 @@ const {getAllRedemptions ,markRedemptionUsed,cancelRedemption} =  require("../co
 const { createReward, getAllRewards, updateReward, deleteReward, toggleStatus, getAllTiers, createTier, updateTier, deleteTier, toggleTierStatus, getRecentRedemptions, redeemReward, getAccountTransactions, getLoyaltyAccount, getLoyaltyActivity, markRedemptionAsUsed, cancelRedemptionAndRefund,
 
 } = require("../controllers/loyality");
-const { getLoyaltyStats, getActiveMembers, getCustomerRedemptions } = require("../controllers/GlobalAsjustment.js");
+const { getLoyaltyStats, getActiveMembers, getCustomerRedemptions, 
+  
+ } = require("../controllers/GlobalAsjustment.js");
 //user side 
 // Match your frontend: `${API_BASE}/api/loyalty/${user?.id}`
 router.get(
@@ -26,7 +28,13 @@ router.get(
   requireRole("customer"),     // Only customers should see their own history
   getCustomerRedemptions
 );
+router.get(
+  "/loyalty/accounts/:accountId/transactions",
+  authenticate, requireRole("customer", "sales_person", "manager", "admin"),
+  getAccountTransactions
+);
 
+//  user side is up 
 
 
 router.get(
@@ -37,17 +45,13 @@ router.get(
 );
 
 // `${API_BASE}/api/loyalty/accounts/${loyaltyAccount?.id}/transactions?limit=10`
-router.get(
-  "/loyalty/accounts/:accountId/transactions",
-  authenticate, requireRole("customer", "sales_person", "manager", "admin"),
-  getAccountTransactions
-);
+
 // admin side 
 router.get("/dashboard/stats", authenticate, requireRole("admin", "manager"), getLoyaltyStats);
 
 router.get(
   "/loyalty/redemptions/admin",
-  // authenticate, requireRole("customer", "sales_person", "manager", "admin"),
+  authenticate, requireRole("customer", "sales_person", "manager", "admin"),
   getRecentRedemptions
 );
 

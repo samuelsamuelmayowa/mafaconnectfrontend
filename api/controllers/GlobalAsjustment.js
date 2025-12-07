@@ -147,38 +147,70 @@ exports.getActiveMembers = async (req, res) => {
 // };
 
 
+// exports.getCustomerRedemptions = async (req, res) => {
+//   try {
+//     const account = await LoyaltyAccount.findOne({
+//       where: { customer_id: req.user.id }
+//     });
+
+//     if (!account) return res.status(404).json({ message: "No loyalty account found" });
+
+//     const redemptions = await RewardRedemption.findAll({
+//       where: { loyalty_account_id: account.id },
+//       include: [
+//         { model: Reward, as: "rewardInfo" }, // <--- updated alias
+//         {
+//           model: LoyaltyAccount,
+//           as: "account",
+//           include: [{ model: LoyaltyTier, as: "loyaltyTier" }],
+//         },
+//       ],
+//       order: [["createdAt", "DESC"]]
+//     });
+
+//     const formatted = redemptions.map(r => ({
+//       tier: r.account?.loyaltyTier?.name || "No Tier",
+//       rewardName: r.rewardInfo?.title || "Reward",
+//       quantity: r.quantity || 1,
+//       status: r.status,
+//       redemptionCode: r.redemption_code,
+//       date: r.createdAt
+//     }));
+
+//     res.json({ success: true, data: formatted });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
+
 exports.getCustomerRedemptions = async (req, res) => {
   try {
     const account = await LoyaltyAccount.findOne({
-      where: { customer_id: req.user.id }
+      where: { customer_id: req.user.id },
+      include: [{ model: LoyaltyTier, as: "tier" }] // <-- THIS is the fix
     });
 
     if (!account) return res.status(404).json({ message: "No loyalty account found" });
 
     const redemptions = await RewardRedemption.findAll({
       where: { loyalty_account_id: account.id },
-      include: [
-        { model: Reward, as: "rewardInfo" }, // <--- updated alias
-        {
-          model: LoyaltyAccount,
-          as: "account",
-          include: [{ model: LoyaltyTier, as: "loyaltyTier" }],
-        },
-      ],
+      include: [{ model: Reward, as: "reward" }],
       order: [["createdAt", "DESC"]]
     });
 
     const formatted = redemptions.map(r => ({
-      tier: r.account?.loyaltyTier?.name || "No Tier",
-      rewardName: r.rewardInfo?.title || "Reward",
+      tier: account.tier?.name || "No Tier",         // 👈 FIXED
+      rewardName: r.reward?.title || "Reward",
       quantity: r.quantity || 1,
       status: r.status,
       redemptionCode: r.redemption_code,
       date: r.createdAt
     }));
 
-    res.json({ success: true, data: formatted });
+    return res.json({ success: true, data: formatted });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: err.message });
   }
 };

@@ -694,41 +694,41 @@ const rejectReward = async (req, res) => {
 };
 
 
-const getRecentRedemptions = async (req, res) => {
-  try {
-    const limit = parseInt(req.query.limit, 10) || 5;
+// const getRecentRedemptions = async (req, res) => {
+//   try {
+//     const limit = parseInt(req.query.limit, 10) || 5;
 
-    const redemptions = await RewardRedemption.findAll({
-      order: [["createdAt", "DESC"]],
-      limit,
-      include: [
-        { model: Reward, attributes: ["title", "description"] },
-        { model: User, attributes: ["name"] },
-      ],
-    });
+//     const redemptions = await RewardRedemption.findAll({
+//       order: [["createdAt", "DESC"]],
+//       limit,
+//       include: [
+//         { model: Reward, attributes: ["title", "description"] },
+//         { model: User, attributes: ["name"] },
+//       ],
+//     });
 
-    const formatted = redemptions.map((r) => ({
-      id: r.id,
-      status: r.status,
-      points_spent: r.points_spent,
-      created_at: r.createdAt,
-      expires_at: r.expires_at,
-      used_at: r.used_at,
-      reward: r.Reward
-        ? {
-          title: r.Reward.title,
-          description: r.Reward.description,
-        }
-        : null,
-      customer: r.Customer ? { name: r.Customer.name } : null,
-    }));
+//     const formatted = redemptions.map((r) => ({
+//       id: r.id,
+//       status: r.status,
+//       points_spent: r.points_spent,
+//       created_at: r.createdAt,
+//       expires_at: r.expires_at,
+//       used_at: r.used_at,
+//       reward: r.Reward
+//         ? {
+//           title: r.Reward.title,
+//           description: r.Reward.description,
+//         }
+//         : null,
+//       customer: r.Customer ? { name: r.Customer.name } : null,
+//     }));
 
-    return res.json(formatted);
-  } catch (err) {
-    console.error("GET RECENT REDEMPTIONS ERROR:", err);
-    return res.status(500).json({ message: "Failed to load redemptions" });
-  }
-};
+//     return res.json(formatted);
+//   } catch (err) {
+//     console.error("GET RECENT REDEMPTIONS ERROR:", err);
+//     return res.status(500).json({ message: "Failed to load redemptions" });
+//   }
+// };
 
 
 // const markRedemptionAsUsed = async (req, res) => {
@@ -810,6 +810,54 @@ const getRecentRedemptions = async (req, res) => {
 //   }
 // };
 
+const getRecentRedemptions = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit, 10) || 5;
+
+    const redemptions = await RewardRedemption.findAll({
+      order: [["createdAt", "DESC"]],
+      limit,
+      include: [
+        { model: Reward, as: "reward" }, // reward alias
+        {
+          model: LoyaltyAccount,
+          as: "account",
+          include: [
+            { model: LoyaltyTier, as: "tier" } // tier alias
+          ]
+        },
+        { model: User, as: "customer", attributes: ["id", "name"] } // add customer
+      ]
+    });
+
+    const formatted = redemptions.map((r) => ({
+      id: r.id,
+      status: r.status,
+      points_spent: r.points_spent,
+      created_at: r.createdAt,
+      expires_at: r.expires_at,
+      used_at: r.used_at,
+
+      reward: r.reward ? {
+        title: r.reward.title,
+        description: r.reward.description
+      } : null,
+
+      customer: r.customer ? {
+        id: r.customer.id,
+        name: r.customer.name
+      } : null,
+
+      tier: r.account?.tier?.name || "No Tier",
+    }));
+
+    return res.json({ success: true, data: formatted });
+
+  } catch (err) {
+    console.error("GET RECENT REDEMPTIONS ERROR:", err);
+    return res.status(500).json({ message: "Failed to load redemptions" });
+  }
+};
 
 
 
@@ -831,6 +879,7 @@ const markRedemptionAsUsed = async (req, res) => {
 
     // 🔥 Update tier after deduction
     await assignTierAutomatically(loyaltyAccount, LoyaltyTier);
+   
 
     redemption.status = "used";
     redemption.used_at = new Date();
@@ -845,6 +894,7 @@ const markRedemptionAsUsed = async (req, res) => {
     res.status(500).json({ message: err.message || "Server error" });
   }
 };
+
 
 async function getOrCreateLoyaltyAccount(customerId, t = null) {
   let account = await LoyaltyAccount.findOne({

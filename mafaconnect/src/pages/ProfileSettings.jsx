@@ -267,13 +267,13 @@ export default function ProfileSettings() {
               </div>
 
               {/* Account Number */}
-              {accountNumber && (
+              {user?.account_number && (
                 <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
                   <div className="flex justify-between">
                     <div>
                       <p className="text-sm font-medium">Account Number</p>
                       <p className="text-2xl font-bold text-primary">
-                        MFC-{accountNumber}
+                        MFC-{user?.account_number}
                       </p>
                     </div>
 

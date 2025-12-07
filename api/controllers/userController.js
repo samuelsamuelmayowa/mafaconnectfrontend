@@ -3,6 +3,8 @@ const { User } = require("../models/user");
 const { Order } = require("../models/Order");
 const OrderItem = require("../models/OrderItem");
 const { Product, LoyaltyAccount } = require("../models");
+const assignTierAutomatically = require("./updateTire");
+const { LoyaltyTier } = require("../models/LoyaltyTier");
 
 
 exports.getCustomerOrders = async (req, res) => {
@@ -261,6 +263,8 @@ exports.register = async (req, res) => {
 
     // Step 3: Save the account number
     user.account_number = accountNumber;
+    // 🔥 set initial tier at registration
+    await assignTierAutomatically(LoyaltyAccount, LoyaltyTier);
     await user.save();
 
     return res.status(201).json({

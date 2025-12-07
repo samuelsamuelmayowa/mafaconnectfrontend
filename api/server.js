@@ -22,3 +22,11 @@ ADD COLUMN tier_id INT UNSIGNED NULL AFTER points_balance;
 UPDATE loyalty_accounts SET tier_id = 1 WHERE points_balance BETWEEN 1 AND 500;
 UPDATE loyalty_accounts SET tier_id = 2 WHERE points_balance BETWEEN 501 AND 1000;
 UPDATE loyalty_accounts SET tier_id = 3 WHERE points_balance >= 1001;
+
+
+
+UPDATE loyalty_tiers SET min_points = 0, max_points = 500 WHERE id = 1;
+UPDATE loyalty_tiers SET min_points = 0, max_points = 500 WHERE id = 1;
+
+
+ALTER TABLE loyalty_accounts DROP COLUMN tier;

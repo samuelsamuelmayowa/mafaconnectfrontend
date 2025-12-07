@@ -24,12 +24,51 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 
 export function PointsHistoryCard({ accountId }) {
+   const { user, isStaff } = useAuth();
   const [typeFilter, setTypeFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
+const {
+    data: loyaltyAccount,
+    isLoading: loadingAccount,
+    error: accountError,
+  } = useQuery({
+    queryKey: ["customer-loyalty-account", user?.id],
+    queryFn: async () => {
+      try {
+        console.log("Fetching loyalty account for user:", user?.id);
+
+        const { data } = await axios.get(`${API_BASE}/loyalty/${user?.id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`,
+          },
+        });
+
+        console.log("Loyalty response:", data);
+        return data.data;
+      } catch (err) {
+        console.error("LOYALTY ACCOUNT ERROR RESPONSE:", err.response);
+        throw err;
+      }
+    },
+    enabled: !!user?.id && !isStaff,
+  });
+
+   const { data: recentTransactions } = useQuery({
+      queryKey: ["customer-loyalty-transactions", loyaltyAccount?.id],
+      queryFn: async () => {
+        const { data } = await axios.get(
+          `${API_BASE}/loyalty/accounts/${loyaltyAccount?.id}/transactions?limit=10`
+        );
+        return data;
+      },
+      enabled: !!loyaltyAccount?.id && !isStaff,
+    });
 
   // Build filters
   const filters = useMemo(() => {
@@ -113,7 +152,11 @@ export function PointsHistoryCard({ accountId }) {
               <span className="text-sm font-medium text-success">Total Earned</span>
             </div>
             <p className="text-2xl font-bold">
-              {summary.totalEarned.toLocaleString()}
+                {recentTransactions
+                      ?.filter((t) => t.type === "earn")
+                      .reduce((sum, t) => sum + t.points, 0)
+                      .toLocaleString() || 0}
+              {/* {summary.totalEarned.toLocaleString()} */}
             </p>
           </div>
 

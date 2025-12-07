@@ -50,7 +50,22 @@ export function RedemptionManagementCard() {
 
   //   return matchesSearch && matchesStatus;
   // });
-const filteredRedemptions = redemptions?.filter((r) => {
+// const filteredRedemptions = redemptions?.filter((r) => {
+//   const code = r?.redemption_code?.toLowerCase() || "";
+//   const customer = r?.customer?.name?.toLowerCase() || "";
+//   const reward = r?.reward?.title?.toLowerCase() || "";
+
+//   const matchesSearch =
+//     code.includes(searchQuery.toLowerCase()) ||
+//     customer.includes(searchQuery.toLowerCase()) ||
+//     reward.includes(searchQuery.toLowerCase());
+
+//   const matchesStatus = statusFilter === "all" || r.status === statusFilter;
+
+//   return matchesSearch && matchesStatus;
+// });
+
+const filteredRedemptions = (redemptions ?? []).filter((r) => {
   const code = r?.redemption_code?.toLowerCase() || "";
   const customer = r?.customer?.name?.toLowerCase() || "";
   const reward = r?.reward?.title?.toLowerCase() || "";
@@ -60,10 +75,12 @@ const filteredRedemptions = redemptions?.filter((r) => {
     customer.includes(searchQuery.toLowerCase()) ||
     reward.includes(searchQuery.toLowerCase());
 
-  const matchesStatus = statusFilter === "all" || r.status === statusFilter;
+  const matchesStatus =
+    statusFilter === "all" || r.status === statusFilter;
 
   return matchesSearch && matchesStatus;
 });
+
 
   const getStatusColor = (status) => {
     switch (status) {
