@@ -43,7 +43,7 @@ export default function Auth() {
   // RESET STATES
   const [resetEmail, setResetEmail] = useState("");
   const [resetError, setResetError] = useState("");
-  const API_URL = import.meta.env.VITE_HOME_OO
+  const API_URL = import.meta.env.VITE_HOME_OO;
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -99,7 +99,7 @@ export default function Auth() {
         name: signupFullName,
         email: signupEmail,
         phone: signupPhone,
-        customer_type:customerType,
+        customer_type: customerType,
         password: signupPassword,
         // customer_type: customerType,
       });
@@ -116,9 +116,9 @@ export default function Auth() {
       //   document.querySelector('[data-state="login"]')?.click();
       // }, 2500);
       setTimeout(() => {
-  setShowSuccessPopup(false);
-  setActiveTab("login");   //  Switch to login tab
-}, 2000);
+        setShowSuccessPopup(false);
+        setActiveTab("login"); //  Switch to login tab
+      }, 2000);
 
       setSignupEmail("");
       setSignupPassword("");
@@ -180,7 +180,6 @@ export default function Auth() {
   // ------------------------------------------------------------
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">
-
       {/* Theme Toggle */}
       <Button
         variant="ghost"
@@ -188,7 +187,11 @@ export default function Auth() {
         onClick={toggleTheme}
         className="fixed top-4 right-4"
       >
-        {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+        {theme === "light" ? (
+          <Moon className="h-5 w-5" />
+        ) : (
+          <Sun className="h-5 w-5" />
+        )}
       </Button>
 
       {/* Auth Card */}
@@ -204,8 +207,12 @@ export default function Auth() {
         </CardHeader>
 
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* <Tabs defaultValue="login" className="w-full"> */}
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            {/* <Tabs defaultValue="login" className="w-full"> */}
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -217,7 +224,6 @@ export default function Auth() {
             ------------------------------------------------------ */}
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
-
                 <div className="space-y-2">
                   <Label>Email / Account Number</Label>
                   <Input
@@ -242,8 +248,18 @@ export default function Auth() {
                   />
                 </div>
 
-                <Button className="w-full bg-gradient-primary" disabled={loading}>
-                  {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Logging in...</> : "Login"}
+                <Button
+                  className="w-full bg-gradient-primary"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Logging in...
+                    </>
+                  ) : (
+                    "Login"
+                  )}
                 </Button>
               </form>
             </TabsContent>
@@ -253,7 +269,6 @@ export default function Auth() {
             ------------------------------------------------------ */}
             <TabsContent value="signup">
               <form onSubmit={handleSignup} className="space-y-4">
-
                 {/* Account Type */}
                 <div className="space-y-2">
                   <Label>Account Type</Label>
@@ -286,12 +301,19 @@ export default function Auth() {
 
                 <div className="space-y-2">
                   <Label>Full Name</Label>
-                  <Input value={signupFullName} onChange={(e) => setSignupFullName(e.target.value)} required />
+                  <Input
+                    value={signupFullName}
+                    onChange={(e) => setSignupFullName(e.target.value)}
+                    required
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label>Phone (Optional)</Label>
-                  <Input value={signupPhone} onChange={(e) => setSignupPhone(e.target.value)} />
+                  <Input
+                    value={signupPhone}
+                    onChange={(e) => setSignupPhone(e.target.value)}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -318,7 +340,10 @@ export default function Auth() {
                   />
                 </div>
 
-                <Button className="w-full bg-gradient-primary" disabled={loading}>
+                <Button
+                  className="w-full bg-gradient-primary"
+                  disabled={loading}
+                >
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -336,7 +361,6 @@ export default function Auth() {
             ------------------------------------------------------ */}
             <TabsContent value="reset">
               <form onSubmit={handleResetPassword} className="space-y-4">
-
                 <div className="space-y-2">
                   <Label>Email</Label>
                   <Input
@@ -350,7 +374,10 @@ export default function Auth() {
                   )}
                 </div>
 
-                <Button className="w-full bg-gradient-primary" disabled={loading}>
+                <Button
+                  className="w-full bg-gradient-primary"
+                  disabled={loading}
+                >
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -362,7 +389,6 @@ export default function Auth() {
                 </Button>
               </form>
             </TabsContent>
-
           </Tabs>
         </CardContent>
       </Card>
@@ -372,7 +398,7 @@ export default function Auth() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-[90%] max-w-sm shadow-xl text-center border">
             <h2 className="text-2xl font-bold text-green-600 dark:text-green-400">
-               Sign-Up Successful!
+              Sign-Up Successful!
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
               Redirecting to login...
@@ -384,11 +410,9 @@ export default function Auth() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
-
 
 // import React, { useState } from "react";
 // import { useNavigate } from "react-router-dom";

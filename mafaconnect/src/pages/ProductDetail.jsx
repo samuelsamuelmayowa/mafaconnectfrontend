@@ -207,7 +207,6 @@ export default function ProductDetail() {
                 +
               </Button>
             </div>
-
             <AddToCartButton product={product}   defaultQuantity={quantity} stockQty={product.stock_qty} />
 
             {/* <AddToCartButton

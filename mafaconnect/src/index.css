@@ -3,6 +3,24 @@
 @tailwind utilities;
 
 
+
+/* ---------- FIX INPUT VISIBILITY ON DARK MODE ---------- */
+.dark input,
+.dark .input,
+.dark [type="text"],
+.dark [type="email"],
+.dark [type="password"] {
+  background-color: #1e1e1e !important; /* darker field */
+  color: #fff !important;                /* white text */
+  border-color: #444 !important;         /* visible border */
+}
+
+.dark input::placeholder {
+  color: #9ca3af !important; /* soft grey placeholder */
+}
+
+
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
