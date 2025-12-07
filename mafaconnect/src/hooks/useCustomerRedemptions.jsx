@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
-
 export function useCustomerRedemptions(API_BASE, token) {
   return useQuery({
     queryKey: ["customer-redemptions"],
@@ -10,8 +9,9 @@ export function useCustomerRedemptions(API_BASE, token) {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
-        return res.data.data || []; // return array only
-    //   return res.data; // returns formatted array
-    }
+      console.log("data from here ........... ",res.data.data)
+      return res.data.data || []; // return array only
+      //   return res.data; // returns formatted array
+    },
   });
 }

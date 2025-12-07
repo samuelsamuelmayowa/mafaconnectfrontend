@@ -7,7 +7,7 @@ const {getAllRedemptions ,markRedemptionUsed,cancelRedemption} =  require("../co
 const { createReward, getAllRewards, updateReward, deleteReward, toggleStatus, getAllTiers, createTier, updateTier, deleteTier, toggleTierStatus, getRecentRedemptions, redeemReward, getAccountTransactions, getLoyaltyAccount, getLoyaltyActivity, markRedemptionAsUsed, cancelRedemptionAndRefund,
 
 } = require("../controllers/loyality");
-const { getLoyaltyStats, getActiveMembers, getCustomerRedemptions, 
+const { getLoyaltyStats, getActiveMembers, getCustomerRedemptions, getCustomerLoyaltyOverview, 
   
  } = require("../controllers/GlobalAsjustment.js");
 //user side 
@@ -17,6 +17,8 @@ router.get(
   authenticate, requireRole("customer"),
   getLoyaltyAccount
 );
+router.get("/loyalty/customer/overview", authenticate, requireRole("customer"), getCustomerLoyaltyOverview);
+
 /// user side 
 router.post("/loyalty/redeem", authenticate, requireRole("customer"), redeemReward)
 // REDEMPTIONS

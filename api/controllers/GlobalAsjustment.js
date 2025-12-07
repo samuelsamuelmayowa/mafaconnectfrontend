@@ -214,3 +214,77 @@ exports.getCustomerRedemptions = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 };
+
+
+
+
+exports.getCustomerLoyaltyOverview = async (req, res) => {
+  try {
+    const { status, startDate, endDate } = req.query;
+
+    const account = await LoyaltyAccount.findOne({
+      where: { customer_id: req.user.id },
+      include: [{ model: LoyaltyTier, as: "tier" }]
+    });
+
+    if (!account) return res.status(404).json({ message: "No loyalty account found" });
+
+    // --- FILTER SECTION ------------------------------------------
+    const where = { loyalty_account_id: account.id };
+
+    if (status && status !== "all") where.status = status;
+
+    if (startDate && endDate) {
+      where.createdAt = {
+        [Op.between]: [new Date(startDate), new Date(endDate)]
+      };
+    }
+
+    // --- REDEMPTIONS RECORDS --------------------------------------
+    const redemptions = await RewardRedemption.findAll({
+      where,
+      include: [{ model: Reward, as: "reward" }],
+      order: [["createdAt", "DESC"]]
+    });
+
+    // --- SUMMARY -------------------------------------------------
+    const totalUsed = await RewardRedemption.sum('points_spent', {
+      where: { loyalty_account_id: account.id, status: "used" }
+    }) || 0;
+
+    const totalExpired = await RewardRedemption.count({
+      where: { loyalty_account_id: account.id, status: "expired" }
+    });
+
+    const totalCancelled = await RewardRedemption.count({
+      where: { loyalty_account_id: account.id, status: "cancelled" }
+    });
+
+    const totalRedeemed = await RewardRedemption.count({
+      where: { loyalty_account_id: account.id, status: "used" }
+    });
+
+    return res.json({
+      success: true,
+      summary: {
+        totalSpent: totalUsed,
+        expired: totalExpired,
+        redeemed: totalRedeemed,
+        cancelled: totalCancelled,
+        currentTier: account.tier?.name,
+        currentPoints: account.points_balance,
+      },
+      data: redemptions.map(r => ({
+        reward: r.reward?.title,
+        points: r.points_spent,
+        status: r.status,
+        code: r.redemption_code,
+        date: r.createdAt
+      }))
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};

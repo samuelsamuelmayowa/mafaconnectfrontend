@@ -151,7 +151,7 @@ export default function Loyalty() {
   //   },
   //   enabled: !!user?.id && !isStaff,
   // });
-const {
+  const {
     data: loyaltyAccount,
     isLoading: loadingAccount,
     error: accountError,
@@ -185,6 +185,11 @@ const {
     queryFn: async () => {
       const { data } = await axios.get(
         `${API_BASE}/loyalty/accounts/${loyaltyAccount?.id}/transactions?limit=10`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`,
+          },
+        }
       );
       return data;
     },
@@ -200,8 +205,8 @@ const {
       const { data } = await axios.get(
         `${API_BASE}/loyalty/redemptions/recent?limit=5`
       );
-  
-      return data.data
+
+      return data.data;
     },
     enabled: isStaff,
   });
