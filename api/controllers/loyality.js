@@ -859,27 +859,23 @@ const getRecentRedemptions = async (req, res) => {
   }
 };
 
-
-
 const markRedemptionAsUsed = async (req, res) => {
   try {
     const { id } = req.params;
 
     const redemption = await RewardRedemption.findByPk(id);
-    if (!redemption) return res.status(404).json({ message: "Redemption not found" });
+    if (!redemption) {
+      return res.status(404).json({ message: "Redemption not found" });
+    }
 
-    if (redemption.status !== "pending")
-      return res.status(400).json({ message: "Only pending redemptions can be marked as used" });
+    if (redemption.status !== "pending") {
+      return res
+        .status(400)
+        .json({ message: "Only pending redemptions can be marked as used" });
+    }
 
-    // 🔥 Deduct points from loyalty account
-    const loyaltyAccount = await LoyaltyAccount.findByPk(redemption.loyalty_account_id);
-    loyaltyAccount.points_balance -= redemption.points_spent;
-    if (loyaltyAccount.points_balance < 0) loyaltyAccount.points_balance = 0; // safety
-    await loyaltyAccount.save();
-
-    // 🔥 Update tier after deduction
-    await assignTierAutomatically(loyaltyAccount, LoyaltyTier);
-   
+    // ❌ DO NOT TOUCH POINTS HERE
+    // Points were already deducted in redeemReward
 
     redemption.status = "used";
     redemption.used_at = new Date();
@@ -887,13 +883,50 @@ const markRedemptionAsUsed = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Redemption used — points deducted + tier updated",
+      message: "Redemption marked as used (no extra points deducted)",
     });
-
   } catch (err) {
+    console.error("markRedemptionAsUsed error:", err);
     res.status(500).json({ message: err.message || "Server error" });
   }
 };
+
+
+//// this is the real function belwow 
+// const markRedemptionAsUsed = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const redemption = await RewardRedemption.findByPk(id);
+//     if (!redemption) return res.status(404).json({ message: "Redemption not found" });
+
+//     if (redemption.status !== "pending")
+//       return res.status(400).json({ message: "Only pending redemptions can be marked as used" });
+
+//     // 🔥 Deduct points from loyalty account
+//     const loyaltyAccount = await LoyaltyAccount.findByPk(redemption.loyalty_account_id);
+//     loyaltyAccount.points_balance -= redemption.points_spent;
+//     if (loyaltyAccount.points_balance < 0) loyaltyAccount.points_balance = 0; // safety
+//     await loyaltyAccount.save();
+
+//     // 🔥 Update tier after deduction
+//     await assignTierAutomatically(loyaltyAccount, LoyaltyTier);
+   
+
+//     redemption.status = "used";
+//     redemption.used_at = new Date();
+//     await redemption.save();
+
+//     return res.json({
+//       success: true,
+//       message: "Redemption used — points deducted + tier updated",
+//     });
+
+//   } catch (err) {
+//     res.status(500).json({ message: err.message || "Server error" });
+//   }
+// };
+
 
 
 async function getOrCreateLoyaltyAccount(customerId, t = null) {
@@ -1577,15 +1610,28 @@ const getRecentPaidOrders = async (req, res) => {
 //     res.status(500).json({ message: err.message || "Server error" });
 //   }
 // };
+
+
 const cancelRedemptionAndRefund = async (req, res) => {
   try {
     const { id } = req.params;
-    // markRedemptionAsUsed
+
     const redemption = await RewardRedemption.findByPk(id);
-    if (!redemption) return res.status(404).json({ message: "Redemption not found" });
+    if (!redemption) {
+      return res.status(404).json({ message: "Redemption not found" });
+    }
 
-    const loyaltyAccount = await LoyaltyAccount.findByPk(redemption.loyalty_account_id);
+    if (redemption.status !== "pending") {
+      return res
+        .status(400)
+        .json({ message: "Only pending redemptions can be cancelled & refunded" });
+    }
 
+    const loyaltyAccount = await LoyaltyAccount.findByPk(
+      redemption.loyalty_account_id
+    );
+
+    // ✅ Refund points (because we deducted at redeem time)
     loyaltyAccount.points_balance += redemption.points_spent;
     await loyaltyAccount.save();
 
@@ -1593,14 +1639,44 @@ const cancelRedemptionAndRefund = async (req, res) => {
     await assignTierAutomatically(loyaltyAccount, LoyaltyTier);
 
     redemption.status = "cancelled";
+    redemption.cancelled_at = new Date();
     await redemption.save();
 
-    return res.json({ success: true, message: "Redemption cancelled + refunded + tier updated" });
-
+    return res.json({
+      success: true,
+      message: "Redemption cancelled + refunded + tier updated",
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("cancelRedemptionAndRefund error:", err);
+    res.status(500).json({ message: err.message || "Server error" });
   }
 };
+
+/// this is the real code below 
+// const cancelRedemptionAndRefund = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     // markRedemptionAsUsed
+//     const redemption = await RewardRedemption.findByPk(id);
+//     if (!redemption) return res.status(404).json({ message: "Redemption not found" });
+
+//     const loyaltyAccount = await LoyaltyAccount.findByPk(redemption.loyalty_account_id);
+
+//     loyaltyAccount.points_balance += redemption.points_spent;
+//     await loyaltyAccount.save();
+
+//     // 🔥 update tier automatically
+//     await assignTierAutomatically(loyaltyAccount, LoyaltyTier);
+
+//     redemption.status = "cancelled";
+//     await redemption.save();
+
+//     return res.json({ success: true, message: "Redemption cancelled + refunded + tier updated" });
+
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
 
 
 module.exports = {
