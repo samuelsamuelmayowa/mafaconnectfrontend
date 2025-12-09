@@ -16,7 +16,6 @@ export function useProducts() {
       const res = await axios.get(`${apiBaseUrl}/products`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       // Your backend returns: { success, message, data }
       return res.data.data; 
     },

@@ -25,7 +25,7 @@ const {
   getSingleLocation,
   createOrder,
   getOrderById,
-  getAdminOrders,confirmOrderPayment, updateOrderStatus,
+  getAdminOrders, confirmOrderPayment, updateOrderStatus,
   getCustomerInvoices,
   downloadInvoice,
   confirmPayment,
@@ -41,10 +41,10 @@ const { getRecentPaidOrders } = require("../controllers/loyality");
 const { getAdminOverviewStats } = require("../controllers/adminOverview");
 
 // working api for admin side
-router.get('/allusers',authenticate, requireRole( "admin"), showAllUser)
+router.get('/allusers', authenticate, requireRole("admin"), showAllUser)
 router.get("/auth/me", authenticate, requireRole("customer", "sales_person", "manager", "admin"), getCurrentUser);
-router.get('/users/:userId/approval',authenticate, requireRole( "admin"), approveUser)
-router.post('/users/:userId/roles',authenticate, requireRole( "admin"),assignRole)
+router.get('/users/:userId/approval', authenticate, requireRole("admin"), approveUser)
+router.post('/users/:userId/roles', authenticate, requireRole("admin"), assignRole)
 router.post(
   "/products",
   authenticate,
@@ -80,14 +80,14 @@ router.get("/customer/invoice/:invoice_number/pdf", authenticate, downloadInvoic
 router.get("/customer/statement", authenticate, getCustomerStatement);
 
 // router.get("/statements/:customerId", 
-  // authenticate,
-  //  getCustomerStatement);
+// authenticate,
+//  getCustomerStatement);
 
 
 //transaction
-router.get("/orders/transactions", 
-  authenticate, 
-   requireRole("admin", "manager","customer","sales_agent"),
+router.get("/orders/transactions",
+  authenticate,
+  requireRole("admin", "manager", "customer", "sales_agent"),
   getCompletedTransactions)
 
 // sarch for product for both admin and everyone 
@@ -97,15 +97,15 @@ router.get("/products/search", searchProducts);
 router.get(
   "/products",
   authenticate,
-  requireRole("admin", "manager","customer","sales_agent"),
+  requireRole("admin", "manager", "customer", "sales_agent"),
   getAllProducts
 );
 
 
 /// order api 
 router.get("/orders/:orderId",
-//   //  authenticate, requireRole("admin", "manager", "customer"), 
-   getOrderById);
+  //   //  authenticate, requireRole("admin", "manager", "customer"), 
+  getOrderById);
 router.post("/orders/create", authenticate, requireRole("admin", "manager", "customer"), createOrder);
 
 
@@ -113,7 +113,7 @@ router.post("/orders/create", authenticate, requireRole("admin", "manager", "cus
 router.get(
   "/products/:productid",
   authenticate,
-  requireRole("admin", "manager",  "customer", "sale_agents"),
+  requireRole("admin", "manager", "customer", "sale_agents"),
   getSingleProduct
 )
 router.get(
@@ -133,8 +133,8 @@ router.put(
 
 
 // Create new depot
-router.post("/locations", 
-  authenticate, requireRole("admin","manager"), 
+router.post("/locations",
+  authenticate, requireRole("admin", "manager"),
   createLocation);
 router.get(
   "/locations/stats",
@@ -148,13 +148,13 @@ router.put("/locations/:id",
   updateLocation
 );
 
-router.get("/locations/:id", authenticate, requireRole("customer", "manager","admin"), getSingleLocation);
+router.get("/locations/:id", authenticate, requireRole("customer", "manager", "admin"), getSingleLocation);
 
 // Add stock to depot
-router.post("/locations/stock", 
-  authenticate, 
+router.post("/locations/stock",
+  authenticate,
   requireRole("admin", "manager"),
-   addProductStock);
+  addProductStock);
 
 router.get(
   "/users/managers",
@@ -163,36 +163,36 @@ router.get(
   getManagers
 );
 router.get("/locations", authenticate,
-  requireRole("admin", "manager", "customer"),async (req, res) => {
-  try {
-    const locations = await Location.findAll({
-      order: [["createdAt", "DESC"]],
-    });
+  requireRole("admin", "manager", "customer"), async (req, res) => {
+    try {
+      const locations = await Location.findAll({
+        order: [["createdAt", "DESC"]],
+      });
 
-    res.status(200).json({
-      success: true,
-      count: locations.length,
-      data: locations,
-    });
-  } catch (error) {
-    console.error("❌ Get locations error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch locations",
-    });
-  }
-});
+      res.status(200).json({
+        success: true,
+        count: locations.length,
+        data: locations,
+      });
+    } catch (error) {
+      console.error("❌ Get locations error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch locations",
+      });
+    }
+  });
 
 
 /// location infomation 
-router.get("/locations/:locationId/stats",  authenticate,
+router.get("/locations/:locationId/stats", authenticate,
   requireRole("admin", "manager"), getSingleLocationStats);
 // view stock
 router.get("/product-locations", authenticate,
   requireRole("admin", "manager"), getProductLocations);
 
 
-  router.get(
+router.get(
   "/locations/:id/bank-details",
   authenticate,
   requireRole("admin", "manager"),
@@ -215,7 +215,7 @@ router.get("/dashboard", authenticate, requireRole("admin"), getDashboard);
 router.get(
   "/admin/overview/stats",
   authenticate,
-  requireRole("admin","manager"),
+  requireRole("admin", "manager"),
   getAdminOverviewStats
 );
 
@@ -225,7 +225,7 @@ module.exports = router;
 // router.post(
 //   "/products",
 //   authenticate,
-//   requireRole("admin", "manager"),   
-//   upload.array("images"),        
+//   requireRole("admin", "manager"),
+//   upload.array("images"),
 //   createProduct
 // );

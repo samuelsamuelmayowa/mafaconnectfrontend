@@ -95,7 +95,7 @@ export function DashboardLayout({ children }) {
   const { theme, toggleTheme } = useTheme();
   const { getUnreadCount } = useConversations();
   // const [accountNumber, setAccountNumber] = React.useState("");
-  console.log("✅ Auth data:", { user, roles });
+  // console.log("✅ Auth data:", { user, roles });
   React.useEffect(() => {
     // Dummy API call simulation — replace with your Node API later
     const fetchAccountNumber = async () => {

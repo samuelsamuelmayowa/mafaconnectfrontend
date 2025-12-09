@@ -1,5 +1,6 @@
-MAFA CONNECT REAMINS FUNCTION
-
-1) DashBaord insight for Admin 
-
-2) Loyality for user ,
+1) Remove users passwords from request 
+2) Add protection to each routes 
+3) Add kyc status page
+4) perform pagination on each loop on the web app and backend 
+5) more strict passwords 
+6) display kyc to admin approve 

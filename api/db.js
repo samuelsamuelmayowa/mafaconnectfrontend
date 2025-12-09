@@ -9,9 +9,9 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
   dialect: 'mysql',       // keep 'mysql' here
   dialectModule: require('mysql2'), // <- explicitly tell Sequelize to use mysql2
   logging: false,
-  dialectOptions: {
-    ssl: { rejectUnauthorized: false } // if needed for remote DB like Render
-  },
+  // dialectOptions: {
+    // ssl: { rejectUnauthorized: false } // if needed for remote DB like Render
+  // },
   logging: false
 });
 
@@ -29,5 +29,6 @@ sequelize.authenticate()
 //     logging: false,
 //   }
 // );
+
 
 module.exports = { sequelize };

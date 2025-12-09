@@ -12,7 +12,7 @@ const getToken = () => {
   }
   return token;
 };
-console.log("Token used:", getToken());
+// console.log("Token used:", getToken());
 
 /* ===================== 🟩 FETCH: KYC STATUS ===================== */
 export function useKYCStatus() {
@@ -23,8 +23,8 @@ export function useKYCStatus() {
       const res = await axios.get(`${API_BASE}/kyc/status`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("kyc status ->>> ",res.data)
-      return res.data.data;
+      // console.log("kyc status ->>> ",res.data)
+      return res.data;
     },
     staleTime: 1000 * 60, // 1 minute cache
     retry: 1,
