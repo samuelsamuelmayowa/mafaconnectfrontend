@@ -13,16 +13,7 @@ import {
   useApproveKYC, 
   useRejectKYC 
 } from "@/hooks/useKYCAdmin";
-function parseJSON(value, fallback = null) {
-  if (!value) return fallback;
-  if (typeof value === "object") return value;
 
-  try {
-    return JSON.parse(value);
-  } catch (e) {
-    return fallback;
-  }
-}
 export function KYCManagement() {
   const { data: kycList, isLoading } = useKYCSubmissions();
   const approveKYC = useApproveKYC();
@@ -32,50 +23,20 @@ export function KYCManagement() {
   const [notes, setNotes] = useState("");
   const [viewingDoc, setViewingDoc] = useState(null);
 
-  // const handleApprove = async (userId) => {
-  //   await approveKYC.mutateAsync({ userId, notes });
-  //   setSelectedUser(null);
-  // };
-  const handleApprove = async () => {
-  try {
-    await approveKYC.mutateAsync({
-      userId: selectedUser.user_id,
-      notes
-    });
-
-    toast.success("KYC Approved");
+  const handleApprove = async (userId) => {
+    await approveKYC.mutateAsync({ userId, notes });
     setSelectedUser(null);
-  } catch {
-    toast.error("Failed to approve KYC");
-  }
-};
+  };
 
-
-  // const handleReject = async (userId) => {
-  //   if (!notes.trim()) {
-  //     toast.error("Please provide rejection notes before rejecting.");
-  //     return;
-  //   }
-  //   await rejectKYC.mutateAsync({ userId, notes });
-  //   setSelectedUser(null);
-  // };
-const handleReject = async () => {
-  if (!notes.trim()) {
-    return toast.error("Please provide a rejection reason");
-  }
-
-  try {
-    await rejectKYC.mutateAsync({
-      userId: selectedUser.user_id,
-      notes
-    });
-
-    toast.error("KYC Rejected");
+  const handleReject = async (userId) => {
+    if (!notes.trim()) {
+      toast.error("Please provide rejection notes before rejecting.");
+      return;
+    }
+    await rejectKYC.mutateAsync({ userId, notes });
     setSelectedUser(null);
-  } catch {
-    toast.error("Failed to reject KYC");
-  }
-};
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
       case "pending":
@@ -187,17 +148,7 @@ const handleReject = async () => {
         <Button
           variant="outline"
           size="sm"
-    onClick={() => {
-  const fixed = {
-    ...submission,
-    documents: parseJSON(submission.documents, []),
-    representative: parseJSON(submission.representative, {}),
-    directors: parseJSON(submission.directors, []),
-  };
-  setSelectedUser(fixed);
-}}
-          
-          // onClick={() => setSelectedUser(submission)}
+          onClick={() => setSelectedUser(submission)}
         >
           <Eye className="h-4 w-4 mr-1" /> Review
         </Button>
@@ -218,143 +169,50 @@ const handleReject = async () => {
           <DialogHeader>
             <DialogTitle>KYC Review</DialogTitle>
           </DialogHeader>
-{selectedUser && (
-  <div className="space-y-6">
 
-    {/* USER DETAILS */}
-    <div className="grid gap-4">
-      <div>
-        <p className="text-sm font-medium text-muted-foreground">Customer Name</p>
-        <p className="font-semibold">{selectedUser.user?.name}</p>
-      </div>
-
-      <div>
-        <p className="text-sm font-medium text-muted-foreground">Email</p>
-        <p>{selectedUser.user?.email || "N/A"}</p>
-      </div>
-
-      <div>
-        <p className="text-sm font-medium text-muted-foreground">Phone</p>
-        <p>{selectedUser.user?.phone || "N/A"}</p>
-      </div>
-
-      <div>
-        <p className="text-sm font-medium text-muted-foreground">Customer Type</p>
-        <p className="flex items-center gap-2 capitalize">
-          {selectedUser.customer_type === "corporate" ? (
+          {selectedUser && (
             <>
-              <Building2 className="h-4 w-4" /> Corporate
-            </>
-          ) : (
-            <>
-              <User className="h-4 w-4" /> Individual
+              <p className="font-medium text-lg mb-2">
+                {selectedUser.customer_type === "individual" 
+                  ? selectedUser.representative?.nin 
+                  : selectedUser.company_name}
+              </p>
+
+              {/* DOCUMENT LIST */}
+              <div>
+                <p className="text-sm font-medium mb-2">Documents</p>
+                {selectedUser.documents?.map((doc, i) => (
+                  <Button
+                    key={i}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewingDoc(doc)}
+                  >
+                    <Eye className="h-4 w-4 mr-1" /> {doc.type}
+                  </Button>
+                ))}
+              </div>
+
+              <div className="mt-4">
+                <label className="text-sm font-medium">Review Notes</label>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Add notes about this review..."
+                  className="mt-2"
+                />
+              </div>
+
+              <DialogFooter className="gap-2 mt-4">
+                <Button variant="destructive" onClick={() => handleReject(selectedUser.user_id)}>
+                  <XCircle className="h-4 w-4 mr-2" /> Reject
+                </Button>
+                <Button onClick={() => handleApprove(selectedUser.user_id)}>
+                  <CheckCircle className="h-4 w-4 mr-2" /> Approve
+                </Button>
+              </DialogFooter>
             </>
           )}
-        </p>
-      </div>
-    </div>
-
-    {/* INDIVIDUAL VIEW */}
-    {selectedUser.customer_type === "individual" && (
-      <div>
-        <p className="text-sm font-medium text-muted-foreground mb-2">NIN</p>
-        <p className="font-mono text-lg">
-          {selectedUser.representative?.nin || "Not provided"}
-        </p>
-
-        {/* DOCUMENTS */}
-        <p className="text-sm font-medium text-muted-foreground mt-4">Photo</p>
-        {selectedUser.documents?.map((doc, i) => (
-          <img
-            key={i}
-            src={doc.url}
-            alt="KYC"
-            className="w-40 h-40 rounded-lg border object-cover mt-2"
-          />
-        ))}
-      </div>
-    )}
-
-    {/* CORPORATE VIEW */}
-    {selectedUser.customer_type === "corporate" && (
-      <>
-        {/* CAC DOCUMENTS */}
-        <div>
-          <p className="text-sm font-medium mb-2">CAC Documents</p>
-          {selectedUser.documents?.map((doc, i) => (
-            <Button
-              key={i}
-              variant="outline"
-              size="sm"
-              onClick={() => setViewingDoc(doc)}
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              {doc.fileName}
-            </Button>
-          ))}
-        </div>
-
-        {/* DIRECTORS */}
-        <div>
-          <p className="text-sm font-medium mb-2">Directors</p>
-          {(selectedUser.directors || []).map((dir, i) => (
-            <Card key={i} className="p-3 mb-2">
-              <p className="font-medium">{dir.full_name}</p>
-              <p className="text-sm text-muted-foreground">NIN: {dir.nin}</p>
-              <p className="text-sm text-muted-foreground">
-                {dir.email} • {dir.phone}
-              </p>
-            </Card>
-          ))}
-        </div>
-
-        {/* REPRESENTATIVE */}
-        <div>
-          <p className="text-sm font-medium mb-2">Company Representative</p>
-          <Card className="p-3">
-            <p className="font-medium">{selectedUser.representative?.full_name}</p>
-            <p className="text-sm text-muted-foreground">
-              NIN: {selectedUser.representative?.nin}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {selectedUser.representative?.email} • {selectedUser.representative?.phone}
-            </p>
-          </Card>
-        </div>
-      </>
-    )}
-
-    {/* NOTES */}
-    <div>
-      <label className="text-sm font-medium">Review Notes</label>
-      <Textarea
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder="Add review notes..."
-        className="mt-2"
-      />
-    </div>
-  </div>
-)}
-
-<DialogFooter className="gap-2 mt-4">
-
-  <Button 
-    variant="destructive" 
-    onClick={handleReject}
-  >
-    <XCircle className="h-4 w-4 mr-2" /> Reject
-  </Button>
-
-  <Button 
-    onClick={handleApprove}
-    className="bg-green-600 hover:bg-green-700 text-white"
-  >
-    <CheckCircle className="h-4 w-4 mr-2" /> Approve
-  </Button>
-
-</DialogFooter>
-
         </DialogContent>
       </Dialog>
 

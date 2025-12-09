@@ -31,6 +31,13 @@ const User = sequelize.define("User", {
   ]
 });
 
+User.associate = (models) => {
+  User.hasOne(models.KYCSubmission, {
+    foreignKey: "user_id",
+    as: "kyc",
+  });
+};
+// module.exports = User;
 
 module.exports = { User };
 

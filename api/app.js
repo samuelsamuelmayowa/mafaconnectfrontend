@@ -2,12 +2,13 @@ const express = require("express");
 const app = express();
 const dotenv = require("dotenv");
 const cors = require("cors");
+
 const { sequelize } = require("./db.js");
 const messageroutes =  require("./routes/messages.js");
 const adminRoutes = require("./routes/admin");
 const loyatityroutes= require('./routes/loyatityroutes.js')
 const customer_bussiness = require("./routes/customer_bussiness.js");
-
+const kycroute = require('./routes/kycRoutes.js')
 dotenv.config();
 app.use(express.json());
 
@@ -31,6 +32,7 @@ app.use(
 
 
 // ROUTES
+app.use('/api/v1',  kycroute);
 app.use("/api/v1", adminRoutes);
 app.use("/api/v1", customer_bussiness);
 app.use("/api/v1", messageroutes);
@@ -64,12 +66,12 @@ const PORT = process.env.PORT || 9000;
   try {
     await sequelize.authenticate();
     // await sequelize.sync();  
-    // sequelize.sync({ alter: false, force: false });
+    sequelize.sync({ alter: false, force: false });
 
     // sequelize.sync({ alter: false, force: false });
 
     // ✅ TEMPORARY: Auto-create missing tables on first production run
-    await sequelize.sync({ alter: true });
+    // await sequelize.sync({ alter: true });
 
     console.log("✅ Connected to MySQL & Tables Synced");
 

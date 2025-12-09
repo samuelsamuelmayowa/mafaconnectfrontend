@@ -23,8 +23,8 @@ export function useKYCStatus() {
       const res = await axios.get(`${API_BASE}/kyc/status`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // console.log("kyc status ->>> ",res.data)
-      return res.data;
+      console.log("kyc status ->>> ",res.data)
+      return res.data.data
     },
     staleTime: 1000 * 60, // 1 minute cache
     retry: 1,
@@ -36,8 +36,7 @@ export function useKYCDocuments() {
     queryKey: ["kyc-documents"],
     queryFn: async () => {
       const token = getToken();
-
-      const res = await axios.get(`${API_BASE}/api/kyc/documents`, {
+      const res = await axios.get(`${API_BASE}/kyc/documents`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -73,7 +72,6 @@ export function useRepresentative() {
       const res = await axios.get(`${API_BASE}/api/kyc/representative`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       return res.data;
     },
   });
@@ -92,7 +90,7 @@ export function useUploadKYCDocument() {
       formData.append("category", category);
 
       const res = await axios.post(
-        `${API_BASE}/api/kyc/upload`,
+        `${API_BASE}/kyc/upload`,
         formData,
         {
           headers: {
@@ -131,7 +129,7 @@ export function useSubmitIndividualKYC() {
       formData.append("photo", photoFile);
 
       const res = await axios.post(
-        `${API_BASE}/api/kyc/submit-individual`,
+        `${API_BASE}/kyc/submit-individual`,
         formData,
         {
           headers: {
@@ -263,6 +261,45 @@ export function useRejectKYC() {
     },
   });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // import axios from "axios";
