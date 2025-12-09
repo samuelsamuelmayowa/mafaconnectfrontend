@@ -280,7 +280,7 @@ exports.register = async (req, res) => {
     });
   } catch (err) {
     console.error("Signup error:", err);
-    res.status(500).json({ message: "Server error during registration." });
+    res.status(500).json({ message: "We couldn’t process your request securely. Please try again." });
   }
 };
 

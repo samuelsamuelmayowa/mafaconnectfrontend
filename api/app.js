@@ -11,6 +11,24 @@ const customer_bussiness = require("./routes/customer_bussiness.js");
 const kycroute = require('./routes/kycRoutes.js')
 dotenv.config();
 app.use(express.json());
+const rateLimit = require("express-rate-limit");
+
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 120, // limit each IP to 120 requests per minute
+  message: {
+    success: false,
+    message: "Too many requests — slow down.",
+  },
+});
+const loginLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 5, // only 5 attempts allowed
+  message: {
+    success: false,
+    message: "Too many login attempts. Try again later.",
+  },
+});
 
 // CORS
 app.use(

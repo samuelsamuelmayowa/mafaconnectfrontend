@@ -36,7 +36,7 @@ exports.login = async (req, res) => {
 
     console.log(" Login attempt for:", identifier);
 
-    // Find user by account_number OR email
+    // Find usper by account_number OR email
     const user = await User.findOne({
       where: {
         [Op.or]: [{ account_number: identifier }, { email: identifier }],
@@ -44,12 +44,12 @@ exports.login = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found." });
+      return res.status(404).json({ message: "We couldn’t process your request securely. Please try again" });
     }
 
     // Verify password
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({ message: "Invalid password." });
+    if (!valid) return res.status(401).json({ message: "We couldn’t process your request securely. Please try again" });
 
     // Generate token
     const token = generateAccessToken(user);
