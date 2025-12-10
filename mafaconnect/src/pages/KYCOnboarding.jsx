@@ -181,7 +181,8 @@ export default function KYCOnboarding() {
         <CardHeader>
           <CardTitle>KYC Verification</CardTitle>
           <CardDescription>
-            Complete your {isIndividual ? "individual" : "corporate"} verification
+            Complete your {isIndividual ? "individual" : "corporate"}{" "}
+            verification
           </CardDescription>
           <Progress value={progress} className="mt-4" />
           <p className="text-sm text-muted-foreground mt-2">
@@ -246,7 +247,7 @@ export default function KYCOnboarding() {
           )}
 
           {/* CORPORATE – STEP 1 (CAC DOCS) */}
-          {!isIndividual && step === 1 && (
+          {/* {!isIndividual && step === 1 && (
             <div className="space-y-3">
               <Label>Upload CAC Documents</Label>
               <Input
@@ -266,10 +267,55 @@ export default function KYCOnboarding() {
                 </div>
               )}
             </div>
+          )} */}
+
+          {/* CORPORATE – STEP 1 (CAC DOCS) */}
+          {!isIndividual && step === 1 && (
+            <div className="space-y-4">
+              <Label>Upload CAC Documents (Max 4 files, 10MB each)</Label>
+
+              <Input
+                type="file"
+                multiple
+                accept=".pdf, image/*"
+                onChange={(e) => {
+                  const files = [...e.target.files];
+
+                  // LIMIT COUNT
+                  if (files.length > 4) {
+                    toast.error("You can upload a maximum of 4 CAC documents.");
+                    return;
+                  }
+
+                  // LIMIT SIZE
+                  for (let file of files) {
+                    if (file.size > 10 * 1024 * 1024) {
+                      toast.error(`${file.name} exceeds 10MB file size limit.`);
+                      return;
+                    }
+                  }
+
+                  setCacDocuments(files);
+                }}
+              />
+
+              {cacDocuments.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">
+                    Selected files:
+                  </p>
+                  {cacDocuments.map((file, i) => (
+                    <p key={i} className="text-xs text-green-600">
+                      ✔ {file.name} ({Math.round(file.size / 1024 / 1024)}MB)
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* CORPORATE – STEP 2 (DIRECTORS) */}
-          {!isIndividual && step === 2 && (
+          {/* {!isIndividual && step === 2 && (
             <>
               <div className="flex justify-between items-center mb-2">
                 <h3 className="font-bold">Directors</h3>
@@ -344,10 +390,105 @@ export default function KYCOnboarding() {
                 ))}
               </div>
             </>
+          )} */}
+          {/* CORPORATE – STEP 2 (DIRECTORS) */}
+          {!isIndividual && step === 2 && (
+            <>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-bold">Directors</h3>
+                <Button onClick={addDirector} size="sm">
+                  <Plus className="h-4 w-4 mr-1" /> Add Director
+                </Button>
+              </div>
+
+              {directors.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No directors added yet.
+                </p>
+              )}
+
+              <div className="space-y-3">
+                {directors.map((d, index) => (
+                  <Card key={index} className="p-4 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <p className="font-medium text-sm">
+                        Director #{index + 1}
+                      </p>
+                      <Button
+                        onClick={() => removeDirector(index)}
+                        variant="destructive"
+                        size="icon"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <Input
+                      placeholder="Full Name"
+                      value={d.full_name}
+                      onChange={(e) =>
+                        updateDirector(index, "full_name", e.target.value)
+                      }
+                    />
+
+                    <Input
+                      placeholder="NIN"
+                      value={d.nin}
+                      onChange={(e) =>
+                        updateDirector(index, "nin", e.target.value)
+                      }
+                    />
+
+                    <Input
+                      placeholder="Email"
+                      value={d.email}
+                      onChange={(e) =>
+                        updateDirector(index, "email", e.target.value)
+                      }
+                    />
+
+                    <Input
+                      placeholder="Phone"
+                      value={d.phone}
+                      onChange={(e) =>
+                        updateDirector(index, "phone", e.target.value)
+                      }
+                    />
+
+                    <Input
+                      placeholder="Address"
+                      value={d.address}
+                      onChange={(e) =>
+                        updateDirector(index, "address", e.target.value)
+                      }
+                    />
+
+                    <div className="space-y-1">
+                      <Label className="text-xs">Photo (optional)</Label>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          handleDirectorPhoto(index, file);
+                        }}
+                      />
+
+                      {d.photoPreview && (
+                        <img
+                          src={d.photoPreview}
+                          className="h-20 w-20 object-cover rounded-md border mt-2"
+                        />
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </>
           )}
 
           {/* CORPORATE – STEP 3 (REPRESENTATIVE) */}
-          {!isIndividual && step === 3 && (
+          {/* {!isIndividual && step === 3 && (
             <div className="space-y-3">
               <h3 className="font-bold">Company Representative</h3>
 
@@ -392,6 +533,65 @@ export default function KYCOnboarding() {
                 }
               />
             </div>
+          )} */}
+
+          {/* CORPORATE – STEP 3 (REPRESENTATIVE) */}
+          {!isIndividual && step === 3 && (
+            <div className="space-y-3">
+              <h3 className="font-bold">Company Representative</h3>
+
+              <Input
+                placeholder="Full Name"
+                value={representative.full_name}
+                onChange={(e) =>
+                  setRepresentative({
+                    ...representative,
+                    full_name: e.target.value,
+                  })
+                }
+              />
+
+              <Input
+                placeholder="NIN"
+                value={representative.nin}
+                onChange={(e) =>
+                  setRepresentative({ ...representative, nin: e.target.value })
+                }
+              />
+
+              <Input
+                placeholder="Email"
+                value={representative.email}
+                onChange={(e) =>
+                  setRepresentative({
+                    ...representative,
+                    email: e.target.value,
+                  })
+                }
+              />
+
+              <Input
+                placeholder="Phone"
+                value={representative.phone}
+                onChange={(e) =>
+                  setRepresentative({
+                    ...representative,
+                    phone: e.target.value,
+                  })
+                }
+              />
+
+              <Input
+                placeholder="Address"
+                value={representative.address}
+                onChange={(e) =>
+                  setRepresentative({
+                    ...representative,
+                    address: e.target.value,
+                  })
+                }
+              />
+            </div>
           )}
 
           {/* CORPORATE – STEP 4 (SUBMIT) */}
@@ -426,9 +626,6 @@ export default function KYCOnboarding() {
     </div>
   );
 }
-
-
-
 
 // import React, { useState } from "react";
 // import { useNavigate } from "react-router-dom";

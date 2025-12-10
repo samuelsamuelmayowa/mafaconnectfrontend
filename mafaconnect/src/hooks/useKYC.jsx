@@ -186,7 +186,7 @@ export function useSubmitCorporateKYC() {
       });
 
       const res = await axios.post(
-        `${API_BASE}/api/kyc/submit-corporate`,
+        `${API_BASE}/kyc/submit-corporate`,
         formData,
         {
           headers: {

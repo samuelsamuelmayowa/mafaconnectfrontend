@@ -13,6 +13,7 @@ const { authenticate, requireRole } = require("../middlewares/authMiddleware");
 const { getCustomerRecentOrders, getCustomerPendingInvoices, getCustomerOrderStats } = require("../controllers/Ordercontroller");
 const KYCController = require("../controllers/KYCController");
 const upload = require("../middlewares/multerUpload");
+const { submitCorporate } = require("../controllers/CoporateKYcontoroller");
 // const { uploader } = require("../cloudinary");
 // const upload = require("../middlewares/cloundary");
 router.post("/register", register);
@@ -34,7 +35,8 @@ router.post(
   "/kyc/submit-corporate",
   authenticate,
   upload.any(), // 👈 Accepts multiple files (CAC + Directors)
-  KYCController.submitCorporate
+  // KYCController.submitCorporate
+  submitCorporate
 );
 
 // router.post("/api/kyc/submit-individual", authenticate, KYCController.submitIndividual);
