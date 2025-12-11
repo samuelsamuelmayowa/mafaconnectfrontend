@@ -71,6 +71,10 @@ module.exports = {
 
 /* ===== LOYALTY FINAL CLEAN BUILD ===== */
 
+Order.belongsTo(User, { as: "customers", foreignKey: "customer_id" });
+Order.belongsTo(Location, { as: "locations", foreignKey: "location_id" });
+Order.hasMany(OrderItem, { as: "order_items", foreignKey: "order_id" });
+
 // Each user has one loyalty account
 User.hasOne(LoyaltyAccount, { foreignKey: "customer_id", as: "loyalty_account" });
 LoyaltyAccount.belongsTo(User, { foreignKey: "customer_id", as: "customer" });

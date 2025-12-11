@@ -86,8 +86,8 @@ router.get("/customer/statement", authenticate, getCustomerStatement);
 
 //transaction
 router.get("/orders/transactions",
-  authenticate,
-  requireRole("admin", "manager", "customer", "sales_agent"),
+  // authenticate,
+  // requireRole("admin", "manager",  "sales_agent"),
   getCompletedTransactions)
 
 // sarch for product for both admin and everyone 

@@ -70,28 +70,86 @@ exports.getTransactionDetails = async (req, res) => {
   }
 };
 
+
+
+
 exports.getCompletedTransactions = async (req, res) => {
   try {
     const orders = await Order.findAll({
-    //   where: {
-        where: { order_status: ["completed", "paid", "confirmed"] },
+      where: {
+        order_status: {
+          [Op.in]: ["completed", "paid", "confirmed"]
+        }
+      },
 
-        // status: ["completed", "paid", "confirmed"],
-    //   },
       include: [
-        { model: User, as: "customers" },
-        { model: Location, as: "locations" },
-        { model: OrderItem, as: "order_items" },
+        {
+          model: User,
+          as: "customer",
+          attributes: ["id", "name", "email", "phone"]
+        },
+        {
+          model: User,
+          as: "sales_agent",
+          attributes: ["id", "name"]
+        },
+        {
+          model: Location,
+          as: "location",
+          attributes: ["id", "name"]
+        },
+        {
+          model: OrderItem,
+          as: "items",
+          include: [
+            {
+              model: Product,
+              as: "product",
+              attributes: ["id", "productid", "name", "bag_size_kg", "sale_price"]
+            }
+          ]
+        }
       ],
+
       order: [["createdAt", "DESC"]],
     });
 
     return res.json({ success: true, data: orders });
+
   } catch (error) {
     console.error("Error fetching transactions:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Could not fetch transaction orders",
     });
   }
 };
+
+
+
+
+// exports.getCompletedTransactions = async (req, res) => {
+//   try {
+//     const orders = await Order.findAll({
+//     //   where: {
+//         where: { order_status: ["completed", "paid", "confirmed"] },
+
+//         // status: ["completed", "paid", "confirmed"],
+//     //   },
+//       include: [
+//         { model: User, as: "customers" },
+//         { model: Location, as: "locations" },
+//         { model: OrderItem, as: "order_items" },
+//       ],
+//       order: [["createdAt", "DESC"]],
+//     });
+
+//     return res.json({ success: true, data: orders });
+//   } catch (error) {
+//     console.error("Error fetching transactions:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Could not fetch transaction orders",
+//     });
+//   }
+// };

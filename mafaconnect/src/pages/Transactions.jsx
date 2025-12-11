@@ -64,7 +64,8 @@ export default function Transactions() {
           <ShieldAlert className="mx-auto h-12 w-12 text-muted-foreground" />
           <h2 className="text-2xl font-semibold">Access Denied</h2>
           <p className="text-muted-foreground max-w-md">
-            You do not have permission to view transactions. Staff access is required.
+            You do not have permission to view transactions. Staff access is
+            required.
           </p>
         </div>
       </div>
@@ -132,56 +133,62 @@ export default function Transactions() {
         </Card>
       ) : (
         <div className="space-y-4">
-         {filteredTransactions.map((transaction) => {
-  return (
-    <Card
-      key={transaction.id}
-      className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={() => handleViewDetails(transaction)}
-    >
-      <div className="flex justify-between items-start">
-        <div className="space-y-2 flex-1">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h3 className="font-semibold text-lg">
-              {transaction.order_number || `Transaction #${transaction.id}`}
-            </h3>
+          {filteredTransactions.map((transaction) => {
+            return (
+             <Card
+  key={transaction.id}
+  className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+  onClick={() => handleViewDetails(transaction)}
+>
+  <div className="space-y-2">
+    
+    {/* Header Line */}
+    <h3 className="text-xl font-semibold">
+      Transaction #{transaction.order_number || transaction.id}
+    </h3>
 
-            {/* STATUS BADGE FIXED */}
-            <Badge className="capitalize">
-              {transaction.order_status || "No status"}
-            </Badge>
-          </div>
+    {/* Payment Method & Status */}
+    <div className="flex items-center gap-3 flex-wrap">
+      <Badge variant="secondary" className="capitalize">
+        {transaction.payment_method || "Cash Sale"}
+      </Badge>
+      <Badge className="capitalize">
+        {transaction.order_status || "Completed"}
+      </Badge>
+    </div>
 
-          <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
-            {transaction.customers && (
-              <span>Customer: {transaction.customers.name}</span>
-            )}
-            {transaction.locations && (
-              <span>Location: {transaction.locations.name}</span>
-            )}
-            <span>
-              Date: {format(new Date(transaction.createdAt), "MMM dd, yyyy")}
-            </span>
-          </div>
-        </div>
+    {/* Customer + Location + Date */}
+    <div className="text-sm text-muted-foreground space-y-1">
+      {transaction.customer && (
+        <p>Customer: {transaction.customer.name}</p>
+      )}
+      {transaction.location && (
+        <p>Location: {transaction.location.name}</p>
+      )}
+      <p>
+        Date: {format(new Date(transaction.createdAt), "MMM dd, yyyy")}
+      </p>
+    </div>
 
-        <div className="text-right">
-          <div className="text-2xl font-bold">
-            {formatCurrency(transaction.total_amount)}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {transaction.order_items?.length || 0} items
-          </div>
-        </div>
+    {/* Amount + Item Count */}
+    <div className="flex justify-between items-center pt-3 border-t">
+      <div className="text-xl font-bold">
+        {formatCurrency(transaction.total_amount)}
       </div>
-    </Card>
-  );
-})}
+      <div className="text-sm text-muted-foreground">
+        {transaction.items?.length || 0} items
+      </div>
+    </div>
 
+  </div>
+</Card>
+
+            );
+          })}
         </div>
       )}
 
-{/*      
+      {/*      
       {showDialog && (
         <TransactionDialog open={showDialog} onOpenChange={setShowDialog} />
       )}
@@ -194,21 +201,17 @@ export default function Transactions() {
         />
       )} */}
       {/* Create Transaction Dialog */}
-<TransactionDialog
-  open={showDialog}
-  onOpenChange={setShowDialog}
-/>
+      <TransactionDialog open={showDialog} onOpenChange={setShowDialog} />
 
-{/* View Transaction Details */}
-<TransactionDetailsDialog
-  open={showDetailsDialog}
-  onOpenChange={(isOpen) => {
-    setShowDetailsDialog(isOpen);
-    if (!isOpen) setSelectedTransaction(null); // reset when closed
-  }}
-  transaction={selectedTransaction}
-/>
-
+      {/* View Transaction Details */}
+      <TransactionDetailsDialog
+        open={showDetailsDialog}
+        onOpenChange={(isOpen) => {
+          setShowDetailsDialog(isOpen);
+          if (!isOpen) setSelectedTransaction(null); // reset when closed
+        }}
+        transaction={selectedTransaction}
+      />
     </div>
   );
 }
@@ -352,7 +355,6 @@ export default function Transactions() {
 //               // STATUS_CONFIG[transaction.order_status] || STATUS_CONFIG.default;
 //               const rawStatus = transaction.order_status?.toLowerCase();
 // const statusCfg = STATUS_CONFIG[rawStatus] ?? STATUS_CONFIG.__fallback;
-
 
 //             return (
 //               <Card
