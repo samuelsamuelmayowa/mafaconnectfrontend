@@ -280,126 +280,192 @@ function calculateExpiry(payment_method) {
 // };
 
 
-
 exports.confirmOrderPayment = async (req, res) => {
   const t = await sequelize.transaction();
   try {
-    console.log("\n=========== PAYMENT CONFIRM DEBUG ==========");
+    console.log("\n=========== CONFIRM ORDER PAYMENT ===========");
 
     const { id } = req.params;
     const { payment_reference } = req.body;
 
-    console.log("STEP 1: Fetching order with items...");
-
+    // 1️⃣ Fetch Order with items
     const order = await Order.findByPk(id, {
       include: [{ model: OrderItem, as: "items" }],
       transaction: t
     });
 
     if (!order) {
-      console.log("STOP ❌ ORDER NOT FOUND");
+      console.log("❌ Order not found");
       await t.rollback();
       return res.json({ success: false, message: "Order not found" });
     }
 
-    console.log("STEP 2: ORDER FOUND:", order.order_number);
-    console.log("STEP 3: Items Count =", order.items?.length);
+    if (order.payment_status === "paid") {
+      console.log("⚠ Order already paid");
+      await t.rollback();
+      return res.json({ success: false, message: "Order already confirmed" });
+    }
 
-    // 🔥 Debug items structure (this is CRITICAL)
-    console.log("ORDER ITEMS RAW:", JSON.stringify(order.items, null, 2));
+    console.log("🟢 ORDER FOUND:", order.order_number);
+    console.log("🛒 ITEMS COUNT:", order.items?.length);
+    console.log("📍 ORDER LOCATION:", order.location_id);
 
+    // 2️⃣ Update Order Status
     order.payment_status = "paid";
     order.order_status = "confirmed";
     if (payment_reference) order.payment_reference = payment_reference;
     await order.save({ transaction: t });
+    console.log("🟢 ORDER STATUS UPDATED");
 
-    console.log("STEP 4: ORDER STATUS UPDATED");
-
-    // =================== POINTS ====================
+    // 3️⃣ Calculate points
     let pointsAwarded = 0;
-
-    for (const item of order.items) {
-      console.log(`POINT CALC → ${item.product_name} x${item.quantity}`);
+    order.items.forEach(item => {
       pointsAwarded += item.quantity;
-    }
+      console.log(`➕ POINT CALC → ${item.product_name} x${item.quantity}`);
+    });
+    console.log("💰 POINTS TO AWARD:", pointsAwarded);
 
-    console.log("STEP 5: POINTS TO ADD =", pointsAwarded);
-
+    // 4️⃣ Update Loyalty Wallet
     const loyalty = await LoyaltyAccount.findOne({
       where: { customer_id: order.customer_id },
-      transaction: t,
+      transaction: t
     });
 
     if (!loyalty) {
-      console.log("STOP ❌ LOYALTY NOT FOUND");
       await t.rollback();
-      return res.json({ success: false, message: "No loyalty account" });
+      return res.json({ success: false, message: "Loyalty account not found" });
     }
 
     loyalty.points_balance += pointsAwarded;
     await loyalty.save({ transaction: t });
+    console.log("💳 LOYALTY UPDATED →", loyalty.points_balance);
 
-    console.log("STEP 6: LOYALTY UPDATED ->", loyalty.points_balance);
-
+    // 5️⃣ Log loyalty transaction (earned)
     await LoyaltyTransaction.create({
       loyalty_account_id: loyalty.id,
       type: "earned",
       points: pointsAwarded,
       source: "order",
-      note: `Earned from Order #${order.order_number}`,
+      note: `Earned from Order #${order.order_number}`
     }, { transaction: t });
 
-    console.log("STEP 7: TRANSACTION LOGGED");
+    console.log("🟢 LOYALTY TRANSACTION LOGGED");
 
-    // =================== 🔥 STOCK DEDUCTION 🔥 ====================
-    console.log("STEP 8: STOCK DEDUCTION STARTING");
+    // 6️⃣ LOCATION-BASED STOCK DEDUCTION
+    console.log("📦 START STOCK DEDUCTION...");
 
     for (const item of order.items) {
-      console.log("ITEM STRUCTURE:", item);
+      console.log("\nITEM STRUCTURE:", item);
 
-      // ❗ check if field name is product_id or productId or something else
-      const pid = item.product_id ?? item.productId ?? item.ProductId;
-      console.log("PRODUCT ID RESOLVED AS →", pid);
+      const productUUID = item.product_id; // UUID stored in OrderItem
+      const locationId = order.location_id;
 
-      const product = await Product.findByPk(pid, { transaction: t });
+      console.log("→ PRODUCT UUID:", productUUID);
+      console.log("→ LOCATION ID:", locationId);
 
-      if (!product) {
-        console.log("STOP ❌ PRODUCT NOT FOUND →", pid);
+      // Fetch product at location
+      const locationStock = await ProductLocationStock.findOne({
+        where: { product_id: productUUID, location_id: locationId },
+        transaction: t
+      });
+
+      if (!locationStock) {
+        console.log("❌ Stock record missing for this product at this location");
         await t.rollback();
-        return res.json({ success: false, message: "Product not found" });
+        return res.json({
+          success: false,
+          message: `Stock not set at selected location`
+        });
       }
 
-      console.log(`STOCK BEFORE → ${product.name}: ${product.stock_qty}`);
-      product.stock_qty -= item.quantity;
-      await product.save({ transaction: t });
-      console.log(`STOCK AFTER  → ${product.name}: ${product.stock_qty}`);
+      console.log(`STOCK BEFORE (${item.product_name}) = ${locationStock.stock_qty}`);
+
+      if (locationStock.stock_qty < item.quantity) {
+        await t.rollback();
+        return res.json({
+          success: false,
+          message: `Not enough stock for ${item.product_name} at this location`
+        });
+      }
+
+      locationStock.stock_qty -= item.quantity;
+      await locationStock.save({ transaction: t });
+
+      console.log(`STOCK AFTER  (${item.product_name}) = ${locationStock.stock_qty}`);
     }
 
-    console.log("STEP 9: STOCK UPDATED SUCCESSFULLY");
+    console.log("🟢 STOCK DEDUCTION SUCCESSFUL");
 
+    // 7️⃣ Create notification
     await Notification.create({
       user_id: order.customer_id,
       title: "Payment Confirmed",
-      message: `You earned +${pointsAwarded} points`,
-      order_id: order.id,
+      message: `You earned +${pointsAwarded} loyalty points`,
+      order_id: order.id
     }, { transaction: t });
 
-    console.log("STEP 10: NOTIFICATION SAVED");
+    console.log("🔔 NOTIFICATION SENT");
 
+    // 8️⃣ Commit Everything
     await t.commit();
-    console.log("=========== SUCCESS — TRANSACTION COMMITTED ==========\n");
+    console.log("🎉 TRANSACTION COMMITTED SUCCESSFULLY\n");
 
-    return res.json({ success: true, message: "Payment confirmed" });
+    return res.json({
+      success: true,
+      message: "Payment confirmed and stock deducted successfully",
+      points_awarded: pointsAwarded
+    });
 
   } catch (err) {
-    console.log("🔥 ERROR TRACE:", err);
+    console.log("❌ ERROR TRACE:", err);
     await t.rollback();
-    return res.json({ success: false, message: err.message || "Failed to confirm" });
+    return res.json({
+      success: false,
+      message: err.message || "Failed to confirm payment"
+    });
   }
 };
 
 
+// exports.updateOrderStatus = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { new_status, notes } = req.body;
 
+//     const order = await Order.findByPk(id);
+
+//     if (!order) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Order not found",
+//       });
+//     }
+
+//     order.order_status = new_status;
+
+//     await order.save();
+
+//     // 🔔 Send notification to customer
+//     await Notification.create({
+//       user_id: order.customer_id,
+//       title: "Order Status Updated 🔄",
+//       message: `Your order ${order.order_number} status is now "${new_status}". ${notes || ""}`,
+//       order_id: order.id,
+//     });
+
+//     res.json({
+//       success: true,
+//       message: "Order status updated successfully",
+//     });
+
+//   } catch (err) {
+//     console.error("Update order status error:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to update order status",
+//     });
+//   }
+// };
 
 exports.updateOrderStatus = async (req, res) => {
   try {
@@ -603,65 +669,9 @@ exports.getAdminOrders = async (req, res) => {
 //   }
 // };
 
-exports.confirmPayment = async (req, res) => {
-  const { id } = req.params;
-  const { payment_reference } = req.body;
 
-  try {
-    const order = await Order.findByPk(id, {
-      include: [
-        {
-          model: OrderItem,
-          as: "items",
-          include: [{ model: Product, as: "product" }]
-        }
-      ]
-    });
+/// confirmPayment i will comment this below 
 
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-
-    // If already paid, no need to award twice
-    const isAlreadyPaid = order.payment_status === "paid";
-
-    // Save payment
-    order.payment_reference = payment_reference;
-    order.payment_status = "paid";
-    await order.save();
-
-    // Generate invoice if missing
-    const existingInvoice = await Invoice.findOne({
-      where: { order_id: order.id }
-    });
-
-    if (!existingInvoice) {
-      await Invoice.create({
-        invoice_number: `INV-${Date.now()}`,
-        order_id: order.id,
-        customer_id: order.customer_id,
-        total_amount: order.total_amount,
-        payment_method: order.payment_method,
-        payment_reference,
-        issued_at: new Date(),
-      });
-    }
-
-    // ⭐ Award points ONLY if not already awarded before
-    if (!isAlreadyPaid) {
-      await awardPointsForOrder(order);
-    }
-
-    return res.json({
-      success: true,
-      message: "Payment confirmed, invoice created, and points awarded."
-    });
-
-  } catch (error) {
-    console.error("CONFIRM PAYMENT ERROR:", error);
-    return res.status(500).json({ message: "Payment confirmation failed" });
-  }
-};
 
 
 
@@ -1275,7 +1285,9 @@ exports.getInvoiceDetails = async (req, res) => {
 //     });
 //   }
 // };
+// ths 
 
+//this is my real  create order funcuton 
 exports.createOrder = async (req, res) => {
   const t = await sequelize.transaction();
 
@@ -1401,16 +1413,16 @@ exports.createOrder = async (req, res) => {
     // ✅ CREATE ORDER ITEMS + DEDUCT STOCK
     for (let item of items) {
       if (delivery_type === "pickup") {
-        await ProductLocationStock.decrement(   // i chnage this part
-          { stock_qty: item.quantity },
-          {
-            where: {
-              location_id,
-              product_id: item.product_id,
-            },
-            transaction: t,
-          }
-        );
+        // await ProductLocationStock.decrement(   // i chnage this part
+        //   { stock_qty: item.quantity },
+        //   {
+        //     where: {
+        //       location_id,
+        //       product_id: item.product_id,
+        //     },
+        //     transaction: t,
+        //   }
+        // );
       }
 
       await OrderItem.create(
@@ -1427,36 +1439,7 @@ exports.createOrder = async (req, res) => {
     // await earnPointsForOrder(order.id, t);
     // await awardPointsForOrder(order,t)
     await t.commit();
-    // const customer = await User.findByPk(customer_id);
-    // if (customer?.email || customer && customer.email) {
-    //   try {
-    //     await sendEmail({
-    //       to: customer.email,
-    //       subject: "Your Order Was Placed Successfully",
-    //       html: `
-    //     <div style="font-family: Arial, sans-serif;">
-    //       <h2>Thank you for your order!</h2>
-    //       <p>Your order has been successfully created.</p>
-
-    //       <h3>Order Details</h3>
-    //       <p><strong>Order Number:</strong> ${order_number}</p>
-    //       <p><strong>Total Amount:</strong> ₦${total_amount.toLocaleString()}</p>
-    //       <p><strong>Payment Method:</strong> ${payment_method}</p>
-    //       <p><strong>Status:</strong> Pending Payment</p>
-
-    //       <p>Please complete your payment to avoid order cancellation.</p>
-
-    //       <br/>
-    //       <p>Thanks for choosing MafaConnect!</p>
-    //     </div>
-    //   `,
-    //     });
-
-    //     console.log("Order email sent to:", customer.email);
-    //   } catch (err) {
-    //     console.error("Failed to send email:", err);
-    //   }
-    // }
+   
     return res.json({
       success: true,
       message: "Order created successfully",
@@ -1476,6 +1459,362 @@ exports.createOrder = async (req, res) => {
     });
   }
 };
+
+
+// this is mt real onfirm payent
+// exports.confirmPayment = async (req, res) => {
+//   const { id } = req.params;
+//   const { payment_reference } = req.body;
+
+//   try {
+//     const order = await Order.findByPk(id, {
+//       include: [
+//         {
+//           model: OrderItem,
+//           as: "items",
+//           include: [{ model: Product, as: "product" }]
+//         }
+//       ]
+//     });
+
+//     if (!order) {
+//       return res.status(404).json({ message: "Order not found" });
+//     }
+
+//     // If already paid, no need to award twice
+//     const isAlreadyPaid = order.payment_status === "paid";
+
+//     // Save payment
+//     order.payment_reference = payment_reference;
+//     order.payment_status = "paid";
+//     await order.save();
+
+//     // Generate invoice if missing
+//     const existingInvoice = await Invoice.findOne({
+//       where: { order_id: order.id }
+//     });
+
+//     if (!existingInvoice) {
+//       await Invoice.create({
+//         invoice_number: `INV-${Date.now()}`,
+//         order_id: order.id,
+//         customer_id: order.customer_id,
+//         total_amount: order.total_amount,
+//         payment_method: order.payment_method,
+//         payment_reference,
+//         issued_at: new Date(),
+//       });
+//     }
+
+//     // ⭐ Award points ONLY if not already awarded before
+//     if (!isAlreadyPaid) {
+//       await awardPointsForOrder(order);
+//     }
+
+//     return res.json({
+//       success: true,
+//       message: "Payment confirmed, invoice created, and points awarded."
+//     });
+
+//   } catch (error) {
+//     console.error("CONFIRM PAYMENT ERROR:", error);
+//     return res.status(500).json({ message: "Payment confirmation failed" });
+//   }
+// };
+
+
+exports.confirmPayment = async (req, res) => {
+  const t = await sequelize.transaction();
+  const { id } = req.params;
+  const { payment_reference } = req.body;
+
+  try {
+    // 1️⃣ Load order with items
+    const order = await Order.findByPk(id, {
+      include: [
+        {
+          model: OrderItem,
+          as: "items",
+        }
+      ],
+      transaction: t,
+      lock: t.LOCK.UPDATE,
+    });
+
+    if (!order) {
+      await t.rollback();
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Prevent double processing
+    if (order.payment_status === "paid") {
+      await t.rollback();
+      return res.status(400).json({ message: "Order already paid" });
+    }
+
+    // 2️⃣ Mark order as paid
+    // order.payment_status = "paid";
+    // order.payment_reference = payment_reference;
+    // await order.save({ transaction: t });
+ // If already paid, no need to award twice
+    // const isAlreadyPaid = order.payment_status === "paid";
+    // Prevent double processing
+if (order.payment_status === "paid") {
+  await t.rollback();
+  return res.status(400).json({ message: "Order already paid" });
+}
+
+// ⭐ CHECK BEFORE UPDATE
+const isAlreadyPaid = order.payment_status === "paid";
+
+// Mark order as paid
+order.payment_status = "paid";
+order.payment_reference = payment_reference;
+await order.save({ transaction: t });
+
+// ⭐ Award points ONLY once
+if (!isAlreadyPaid) {
+  await awardPointsForOrder(order);
+}
+
+    // 3️⃣ Deduct stock (LOCATION + GLOBAL)
+    for (const item of order.items) {
+      const productId = item.product_id; // INTEGER
+      const qty = item.quantity;
+
+      // 🔹 A. Deduct from LOCATION stock
+      if (order.location_id) {
+        const locationStock = await ProductLocationStock.findOne({
+          where: {
+            product_id: productId,
+            location_id: order.location_id,
+          },
+          transaction: t,
+          lock: t.LOCK.UPDATE,
+        });
+
+        if (!locationStock || locationStock.stock_qty < qty) {
+          await t.rollback();
+          return res.status(400).json({
+            message: "Not enough stock at this location",
+          });
+        }
+
+        locationStock.stock_qty -= qty;
+        await locationStock.save({ transaction: t });
+      }
+
+      // 🔹 B. Deduct from GLOBAL product stock
+      const product = await Product.findByPk(productId, {
+        transaction: t,
+        lock: t.LOCK.UPDATE,
+      });
+
+      if (!product || product.stock_qty < qty) {
+        await t.rollback();
+        return res.status(400).json({
+          message: "Not enough global stock",
+        });
+      }
+
+      product.stock_qty -= qty;
+      await product.save({ transaction: t });
+    }
+
+    // 4️⃣ Generate invoice if missing
+    const existingInvoice = await Invoice.findOne({
+      where: { order_id: order.id },
+      transaction: t,
+    });
+
+    if (!existingInvoice) {
+      await Invoice.create({
+        invoice_number: `INV-${Date.now()}`,
+        order_id: order.id,
+        customer_id: order.customer_id,
+        total_amount: order.total_amount,
+        payment_method: order.payment_method,
+        payment_reference,
+        issued_at: new Date(),
+      }, { transaction: t });
+    }
+    
+    // ⭐ Award points ONLY if not already awarded before
+    // if (!isAlreadyPaid) {
+    //   await awardPointsForOrder(order);
+    // }
+
+    await t.commit();
+
+    return res.json({
+      success: true,
+      message: "Payment confirmed and stock deducted successfully",
+    });
+
+  } catch (error) {
+    await t.rollback();
+    console.error("CONFIRM PAYMENT ERROR:", error);
+    return res.status(500).json({ message: "Payment confirmation failed" });
+  }
+};
+
+
+
+// exports.confirmPayment = async (req, res) => {
+//   const t = await sequelize.transaction();
+//   const { id } = req.params;
+//   const { payment_reference } = req.body;
+
+//   try {
+//     const order = await Order.findByPk(id, {
+//       include: [
+//         {
+//           model: OrderItem,
+//           as: "items",
+//           include: [{ model: Product, as: "product" }]
+//         }
+//       ],
+//       transaction: t,
+//       lock: t.LOCK.UPDATE
+//     });
+
+//     if (!order) {
+//       await t.rollback();
+//       return res.status(404).json({ message: "Order not found" });
+//     }
+
+//     // ⛔ Prevent double confirmation
+//     if (order.payment_status === "paid") {
+//       await t.rollback();
+//       return res.status(400).json({ message: "Order already paid" });
+//     }
+
+//     // 1️⃣ Mark order as paid
+//     order.payment_status = "paid";
+//     order.payment_reference = payment_reference;
+//     await order.save({ transaction: t });
+
+//     // 2️⃣ Deduct stock (LOCATION + GLOBAL)
+//     // for (const item of order.items) {
+//     //   const productUUID = item.product_id;
+//     //   const qty = item.quantity;
+
+//     //   // 🔹 Deduct from location stock
+//     //   if (order.location_id) {
+//     //     const locationStock = await ProductLocationStock.findOne({
+//     //       where: {
+//     //         location_id: order.location_id,
+//     //         product_id: productUUID
+//     //       },
+//     //       transaction: t,
+//     //       lock: t.LOCK.UPDATE
+//     //     });
+
+//     //     if (!locationStock || locationStock.stock_qty < qty) {
+//     //       await t.rollback();
+//     //       return res.status(400).json({
+//     //         message: `Insufficient stock at location for ${item.product?.name}`
+//     //       });
+//     //     }
+
+//     //     locationStock.stock_qty -= qty;
+//     //     await locationStock.save({ transaction: t });
+//     //   }
+
+//     //   // 🔹 Deduct from GLOBAL product stock
+//     //   const product = await Product.findOne({
+//     //     where: { productid: productUUID },
+//     //     transaction: t,
+//     //     lock: t.LOCK.UPDATE
+//     //   });
+
+//     //   if (!product || product.stock_qty < qty) {
+//     //     await t.rollback();
+//     //     return res.status(400).json({
+//     //       message: `Insufficient global stock for ${item.product?.name}`
+//     //     });
+//     //   }
+
+//     //   product.stock_qty -= qty;
+//     //   await product.save({ transaction: t });
+//     // }
+
+    
+//     for (const item of order.items) {
+//   const qty = item.quantity;
+//   const productUUID = item.product_id;
+
+//   // 1️⃣ Deduct from LOCATION stock (already works)
+//   if (order.location_id) {
+//     const locationStock = await ProductLocationStock.findOne({
+//       where: {
+//         location_id: order.location_id,
+//         product_id: productUUID,
+//       },
+//       transaction: t,
+//       lock: t.LOCK.UPDATE,
+//     });
+
+//     if (!locationStock || locationStock.stock_qty < qty) {
+//       await t.rollback();
+//       return res.status(400).json({
+//         message: `Not enough stock at location`,
+//       });
+//     }
+
+//     locationStock.stock_qty -= qty;
+//     await locationStock.save({ transaction: t });
+//   }
+
+//   // 2️⃣ 🔥 FIX: Deduct from GLOBAL Product table using productid (UUID)
+//   const product = await Product.findOne({
+//     where: { productid: productUUID }, // ✅ UUID → UUID
+//     transaction: t,
+//     lock: t.LOCK.UPDATE,
+//   });
+
+//   if (!product || product.stock_qty < qty) {
+//     await t.rollback();
+//     return res.status(400).json({
+//       message: `Not enough global stock`,
+//     });
+//   }
+
+//   product.stock_qty -= qty;
+//   await product.save({ transaction: t });
+// }
+
+//     // 3️⃣ Generate invoice (if not exists)
+//     const existingInvoice = await Invoice.findOne({
+//       where: { order_id: order.id },
+//       transaction: t
+//     });
+
+//     if (!existingInvoice) {
+//       await Invoice.create({
+//         invoice_number: `INV-${Date.now()}`,
+//         order_id: order.id,
+//         customer_id: order.customer_id,
+//         total_amount: order.total_amount,
+//         payment_method: order.payment_method,
+//         payment_reference,
+//         issued_at: new Date(),
+//       }, { transaction: t });
+//     }
+
+//     await t.commit();
+
+//     return res.json({
+//       success: true,
+//       message: "Payment confirmed and stock deducted successfully"
+//     });
+
+//   } catch (error) {
+//     await t.rollback();
+//     console.error("CONFIRM PAYMENT ERROR:", error);
+//     return res.status(500).json({ message: "Payment confirmation failed" });
+//   }
+// };
 
 
 exports.getOrderById = async (req, res) => {

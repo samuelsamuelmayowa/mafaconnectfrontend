@@ -30,3 +30,33 @@ UPDATE loyalty_tiers SET min_points = 0, max_points = 500 WHERE id = 1;
 
 
 ALTER TABLE loyalty_accounts DROP COLUMN tier;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+UPDATE products p
+JOIN (
+  SELECT product_id, SUM(stock_qty) AS total_allocated
+  FROM product_location_stocks
+  GROUP BY product_id
+) pls ON pls.product_id = p.id
+SET p.stock_qty = pls.total_allocated;
