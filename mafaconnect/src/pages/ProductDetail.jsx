@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function ProductDetail() {
   const { productid } = useParams();
+  console.log('ddd')
   const { isStaff } = useAuth();
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
