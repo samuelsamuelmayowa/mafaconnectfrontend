@@ -34,9 +34,9 @@ const loginLimiter = rateLimit({
 app.use(
   cors({
     origin: [
-      "https://mafaconnectfrontend-5d7q.vercel.app",
-      "https://mafaconnectfrontend-ltyc.vercel.app",
-      "https://mafaconnectfrontend.vercel.app",
+      //"https://mafaconnectfrontend-5d7q.vercel.app",
+     // "https://mafaconnectfrontend-ltyc.vercel.app",
+     // "https://mafaconnectfrontend.vercel.app",
       "http://localhost:8081",
       "http://127.0.0.1:8081",
       "http://localhost:8080",
@@ -44,6 +44,7 @@ app.use(
       "http://www.mafaconnect.com",
       "https://www.mafaconnect.com",
       "http://127.0.0.1:8080",
+      "http://localhost:8081/auth"
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
