@@ -63,6 +63,7 @@ function generatePageNumbers(currentPage, totalPages) {
 }
 
 export default function Products() {
+console.log('hello ')
   const [showDialog, setShowDialog] = useState(false);
   const [showLocationDialog, setShowLocationDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
