@@ -44,7 +44,9 @@ router.get("/customer/orders",
 router.get("/users/:id", authenticate, getSingleUser);
 
 
-router.post("/login/user", loginLimiter, login);
+router.post("/login/user", 
+  // loginLimiter,
+   login);
 module.exports = router;
 
 
