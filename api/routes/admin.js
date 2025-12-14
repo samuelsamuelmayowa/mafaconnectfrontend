@@ -42,13 +42,13 @@ const { getAdminOverviewStats } = require("../controllers/adminOverview");
 
 // working api for admin side
 router.get('/allusers', authenticate, requireRole("admin"), showAllUser)
-router.get("/auth/me", authenticate, requireRole("customer", "sales_person", "manager", "admin"), getCurrentUser);
+router.get("/auth/me", authenticate, requireRole("customer", "sales_person", "manager", "admin","superuser"), getCurrentUser);
 router.get('/users/:userId/approval', authenticate, requireRole("admin"), approveUser)
 router.post('/users/:userId/roles', authenticate, requireRole("admin"), assignRole)
 router.post(
   "/products",
   authenticate,
-  requireRole("admin", "manager"),
+  requireRole("admin", "manager", "superuser"),
   upload.array("images"),
   createProduct
 );
@@ -97,7 +97,7 @@ router.get("/products/search", searchProducts);
 router.get(
   "/products",
   // authenticate,
-  // requireRole("admin", "manager", "customer", "sales_agent"),
+  requireRole("admin", "manager", "customer", "sales_agent",  "superuser"),
   getAllProducts
 );
 
@@ -106,7 +106,7 @@ router.get(
 router.get("/orders/:orderId",
   //   //  authenticate, requireRole("admin", "manager", "customer"), 
   getOrderById);
-router.post("/orders/create", authenticate, requireRole("admin", "manager", "customer"), createOrder);
+router.post("/orders/create", authenticate, requireRole("admin", "manager", "customer",  "superuser"), createOrder);
 
 
 // admin and manager and all   logged-in can view products

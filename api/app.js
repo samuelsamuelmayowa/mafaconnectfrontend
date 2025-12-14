@@ -43,6 +43,7 @@ app.use(
       "http://www.mafaconnect.com/auth",
       "http://www.mafaconnect.com",
       "https://www.mafaconnect.com",
+      "mafaconnect.com",
       "http://127.0.0.1:8080",
       "http://localhost:8081/auth"
     ],

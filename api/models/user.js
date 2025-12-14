@@ -1,35 +1,85 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../db");
-const User = sequelize.define("User", {
-  id: {
-    type: DataTypes.INTEGER.UNSIGNED,
-    // type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
+
+const User = sequelize.define(
+  "User",
+  {
+    id: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+
+    customer_type: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+
+    account_number: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    phone: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+
+    location_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+
+    role: {
+      type: DataTypes.ENUM(
+        "superuser",
+        "admin",
+        "manager",
+        "sales_agent",
+        "customer"
+      ),
+      defaultValue: "customer",
+    },
+
+    // 🔥 Optional but powerful
+    role_level: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 5, // customer
+    },
+
+    kyc_status: {
+      type: DataTypes.ENUM("pending", "approved", "rejected"),
+      defaultValue: "pending",
+    },
+
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+    },
   },
-  name: { type: DataTypes.STRING, allowNull: false },
-  email: { type: DataTypes.STRING, allowNull: false, unique: true },
-  customer_type: { type: DataTypes.STRING, allowNull: false },
-  account_number: { type: DataTypes.STRING, allowNull: true },
-  phone: { type: DataTypes.STRING, allowNull: true },
-  password: { type: DataTypes.STRING, allowNull: false },
-  location_id: { type: DataTypes.INTEGER, allowNull: true },
-  role: {
-    type: DataTypes.ENUM("admin", "manager", "sales_agent", "customer"),
-    defaultValue: "customer",
-  },
-  kyc_status: {
-    type: DataTypes.ENUM("pending", "approved", "rejected"),
-    defaultValue: "pending",
-  },
-  is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
-}, {
-  tableName: "users",
-  timestamps: true,
-  indexes: [
-    { fields: ["account_number"] },
-  ]
-});
+  {
+    tableName: "users",
+    timestamps: true,
+    indexes: [{ fields: ["account_number"] }],
+  }
+);
 
 User.associate = (models) => {
   User.hasOne(models.KYCSubmission, {
@@ -37,9 +87,65 @@ User.associate = (models) => {
     as: "kyc",
   });
 };
-// module.exports = User;
 
 module.exports = { User };
+
+// 
+// const { DataTypes } = require("sequelize");
+// const { sequelize } = require("../db");
+// const User = sequelize.define("User", {
+//   id: {
+//     type: DataTypes.INTEGER.UNSIGNED,
+//     // type: DataTypes.INTEGER,
+//     autoIncrement: true,
+//     primaryKey: true,
+//   },
+//   name: { type: DataTypes.STRING, allowNull: false },
+//   email: { type: DataTypes.STRING, allowNull: false, unique: true },
+//   customer_type: { type: DataTypes.STRING, allowNull: false },
+//   account_number: { type: DataTypes.STRING, allowNull: true },
+//   phone: { type: DataTypes.STRING, allowNull: true },
+//   password: { type: DataTypes.STRING, allowNull: false },
+//   location_id: { type: DataTypes.INTEGER, allowNull: true },
+//   role: {
+//     type: DataTypes.ENUM("admin", "manager", "sales_agent", "customer"),
+//     defaultValue: "customer",
+//   },
+//   kyc_status: {
+//     type: DataTypes.ENUM("pending", "approved", "rejected"),
+//     defaultValue: "pending",
+//   },
+//   is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
+// }, {
+//   tableName: "users",
+//   timestamps: true,
+//   indexes: [
+//     { fields: ["account_number"] },
+//   ]
+// });
+
+// User.associate = (models) => {
+//   User.hasOne(models.KYCSubmission, {
+//     foreignKey: "user_id",
+//     as: "kyc",
+//   });
+// };
+// // module.exports = User;
+
+// module.exports = { User };
+
+// the one up is have been using before 
+
+
+
+
+
+
+
+
+
+
+
 
 
 // const { sequelize } = require("../db");

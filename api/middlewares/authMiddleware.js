@@ -1,30 +1,85 @@
 const jwt = require("jsonwebtoken");
 const { User } = require("../models/user");
 require("dotenv").config();
+
+const ROLE_LEVELS = {
+  superuser: 1,
+  admin: 2,
+  manager: 3,
+  sales_agent: 4,
+  customer: 5,
+};
+
 exports.authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers["authorization"];
-    if (!authHeader) return res.status(401).json({ message: "No token provided" });
+    if (!authHeader)
+      return res.status(401).json({ message: "No token provided" });
 
     const token = authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Token missing" });
+    if (!token)
+      return res.status(401).json({ message: "Token missing" });
 
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
 
     const user = await User.findByPk(decoded.id, {
-      attributes: ["id", "name", "account_number", "role", "is_active","kyc_status","customer_type"],
+      attributes: [
+        "id",
+        "name",
+        "account_number",
+        "role",
+        "is_active",
+        "kyc_status",
+        "customer_type",
+      ],
     });
 
     if (!user) return res.status(404).json({ message: "User not found" });
-    if (!user.is_active) return res.status(403).json({ message: "User inactive" });
+    if (!user.is_active)
+      return res.status(403).json({ message: "User inactive" });
 
-    req.user = user; // attach to request
+    // 🔥 ADD THIS
+    const roleLevel = ROLE_LEVELS[user.role] || 5;
+
+    req.user = {
+      ...user.toJSON(),
+      role_level: roleLevel,
+    };
+
     next();
   } catch (err) {
     console.error("Auth error:", err.message);
     res.status(401).json({ message: "Invalid or expired token" });
   }
 };
+
+// const jwt = require("jsonwebtoken");
+// const { User } = require("../models/user");
+// require("dotenv").config();
+// exports.authenticate = async (req, res, next) => {
+//   try {
+//     const authHeader = req.headers["authorization"];
+//     if (!authHeader) return res.status(401).json({ message: "No token provided" });
+
+//     const token = authHeader.split(" ")[1];
+//     if (!token) return res.status(401).json({ message: "Token missing" });
+
+//     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+
+//     const user = await User.findByPk(decoded.id, {
+//       attributes: ["id", "name", "account_number", "role", "is_active","kyc_status","customer_type"],
+//     });
+
+//     if (!user) return res.status(404).json({ message: "User not found" });
+//     if (!user.is_active) return res.status(403).json({ message: "User inactive" });
+
+//     req.user = user; // attach to request
+//     next();
+//   } catch (err) {
+//     console.error("Auth error:", err.message);
+//     res.status(401).json({ message: "Invalid or expired token" });
+//   }
+// };
 
 
 
