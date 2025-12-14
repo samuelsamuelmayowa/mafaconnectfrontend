@@ -45,6 +45,8 @@ app.use(
       "https://www.mafaconnect.com",
       "mafaconnect.com",
       "http://127.0.0.1:8080",
+      "https://mafaconnect.com",
+      
       "http://localhost:8081/auth"
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
